@@ -14,10 +14,18 @@ try {
   // Check if running in production with environment variables
   if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
     // Use environment variables (for Railway, Render, etc.)
+    // Handle both formats: with literal \n and with actual newlines
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    // If the key contains literal \n strings, replace them with actual newlines
+    if (privateKey.includes('\\n')) {
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+    
     serviceAccount = {
       type: 'service_account',
       project_id: process.env.FIREBASE_PROJECT_ID,
-      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      private_key: privateKey,
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
     };
     console.log('🔧 Using Firebase credentials from environment variables');
@@ -42,6 +50,15 @@ try {
   console.log('✅ Firebase Storage Connected');
 } catch (error) {
   console.error('❌ Firebase Initialization Error:', error.message);
+  console.error('Stack:', error.stack);
+  
+  // Log what we have for debugging
+  console.log('Debug Info:');
+  console.log('- FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID ? 'Set' : 'Missing');
+  console.log('- FIREBASE_CLIENT_EMAIL:', process.env.FIREBASE_CLIENT_EMAIL ? 'Set' : 'Missing');
+  console.log('- FIREBASE_PRIVATE_KEY:', process.env.FIREBASE_PRIVATE_KEY ? `Set (${process.env.FIREBASE_PRIVATE_KEY.substring(0, 50)}...)` : 'Missing');
+  console.log('- FIREBASE_STORAGE_BUCKET:', process.env.FIREBASE_STORAGE_BUCKET ? 'Set' : 'Missing');
+  
   process.exit(1);
 }
 
