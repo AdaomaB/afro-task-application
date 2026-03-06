@@ -1,0 +1,415 @@
+import { useContext, useState, useEffect } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { Building, ExternalLink, MessageSquare, Heart, Trash2, Eye, CheckCircle } from 'lucide-react';
+import Button from '../components/Button';
+import ClientAnalytics from '../components/ClientAnalytics';
+import api from '../services/api';
+import toast from 'react-hot-toast';
+import { db } from '../config/firebase';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+
+const ClientDashboard = () => {
+  const { user, logout } = useContext(AuthContext);
+  const [profileData, setProfileData] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [activeJobs, setActiveJobs] = useState([]);
+  const [completedJobs, setCompletedJobs] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfileData();
+      fetchNotifications();
+      fetchJobs();
+      setupRealTimeListeners();
+    }
+  }, [user?.id]);
+
+  const fetchJobs = async () => {
+    try {
+      const response = await api.get('/jobs/my-jobs');
+      if (response.data.success) {
+        const jobs = response.data.jobs;
+        setActiveJobs(jobs.filter(j => j.status === 'open'));
+        setCompletedJobs(jobs.filter(j => j.status === 'closed'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch jobs');
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get('/notifications?limit=5');
+      if (response.data.success) {
+        const projectNotifs = response.data.notifications.filter(n => n.type === 'project_finished' && !n.read);
+        setNotifications(projectNotifs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications');
+    }
+  };
+
+  const setupRealTimeListeners = () => {
+    if (!user?.id) return;
+
+    // Real-time listener for posts
+    const postsQuery = query(
+      collection(db, 'posts'),
+      where('authorId', '==', user.id),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
+      const postsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setPosts(postsData);
+      setLoadingPosts(false);
+    });
+
+    return () => {
+      unsubscribePosts();
+    };
+  };
+
+  const fetchProfileData = async () => {
+    try {
+      const response = await api.get(`/profile/public/${user.id}`);
+      if (response.data.success) {
+        setProfileData(response.data.profile);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      await api.delete(`/posts/${postId}`);
+      toast.success('Post deleted');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
+  };
+
+  const handleLikePost = async (postId) => {
+    try {
+      await api.post(`/posts/${postId}/like`);
+    } catch (error) {
+      toast.error('Failed to like post');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-600 to-yellow-400 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-yellow-600 to-yellow-400">
+      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-white">Afro Task</h1>
+          <Button onClick={logout} variant="outline">Logout</Button>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto p-8">
+        {/* Project Completion Notifications */}
+        {notifications.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {notifications.map((notif) => (
+              <div key={notif.id} className="bg-white rounded-2xl shadow-lg p-4 flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">{notif.data?.jobTitle} - Project Finished!</p>
+                  <p className="text-sm text-gray-600">{notif.data?.message}</p>
+                </div>
+                <Button
+                  onClick={() => window.location.href = `/client/project/${notif.data?.projectId}`}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Review Now
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Profile Header */}
+        <div className="glass rounded-3xl p-8 mb-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            {profileData?.profileImage ? (
+              <img
+                src={profileData.profileImage}
+                alt={profileData?.fullName}
+                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.fullName || 'User')}&size=200&background=eab308&color=fff`;
+                }}
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-yellow-500 border-4 border-white flex items-center justify-center text-white text-4xl font-bold shadow-lg">
+                {profileData?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+            )}
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold text-white mb-1">{profileData?.fullName || 'User'}</h2>
+              {profileData?.companyName && (
+                <p className="text-white/90 text-xl mb-2 flex items-center gap-2">
+                  <Building className="w-5 h-5" />
+                  {profileData.companyName}
+                </p>
+              )}
+              <p className="text-white/80 text-sm mb-3">{profileData?.email}</p>
+              
+              <div className="flex flex-wrap gap-3 mb-4">
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
+                  Client
+                </span>
+                {profileData?.industry && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
+                    {profileData.industry}
+                  </span>
+                )}
+              </div>
+
+              {/* Company Links */}
+              <div className="flex flex-wrap gap-2">
+                {profileData?.companyWebsite && (
+                  <a
+                    href={profileData.companyWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Website
+                  </a>
+                )}
+                {profileData?.socialLinks?.linkedin && (
+                  <a
+                    href={profileData.socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-sm transition"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Analytics Section */}
+        <div className="mb-6">
+          <ClientAnalytics userId={user?.id} />
+        </div>
+
+        {/* Hiring Preferences Section */}
+        {profileData?.hiringPreferences && (
+          <div className="glass rounded-2xl p-6 mb-6">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Target className="w-6 h-6" />
+              Hiring Preferences
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profileData.hiringPreferences.lookingFor && (
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Looking For</p>
+                  <p className="text-white font-medium">{profileData.hiringPreferences.lookingFor}</p>
+                </div>
+              )}
+              {profileData.hiringPreferences.budgetRange && (
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Budget Range</p>
+                  <p className="text-white font-medium">{profileData.hiringPreferences.budgetRange}</p>
+                </div>
+              )}
+              {profileData.hiringPreferences.experienceLevel && (
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Experience Level</p>
+                  <p className="text-white font-medium">{profileData.hiringPreferences.experienceLevel}</p>
+                </div>
+              )}
+              {profileData.hiringPreferences.projectDuration && (
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Project Duration</p>
+                  <p className="text-white font-medium">{profileData.hiringPreferences.projectDuration}</p>
+                </div>
+              )}
+              {profileData.hiringPreferences.location && (
+                <div>
+                  <p className="text-white/70 text-sm mb-1">Location Preference</p>
+                  <p className="text-white font-medium">{profileData.hiringPreferences.location}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Active Jobs Section */}
+        <div className="glass rounded-2xl p-6 mb-6">
+          <h3 className="text-xl font-bold text-white mb-4">Active Jobs</h3>
+          {loadingJobs ? (
+            <p className="text-white/70 text-center py-8">Loading jobs...</p>
+          ) : activeJobs.length === 0 ? (
+            <p className="text-white/70 text-center py-8">No active jobs</p>
+          ) : (
+            <div className="space-y-3">
+              {activeJobs.map((job) => (
+                <div key={job.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition cursor-pointer" onClick={() => navigate(`/client/jobs/${job.id}`)}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-white text-lg">{job.title}</h4>
+                    <span className="px-3 py-1 bg-green-500 text-white text-xs rounded-full">Open</span>
+                  </div>
+                  <p className="text-white/80 text-sm mb-3 line-clamp-2">{job.description}</p>
+                  <div className="flex items-center gap-4 text-white/70 text-sm">
+                    <span>${job.budget}</span>
+                    <span>•</span>
+                    <span>{job.applicationsCount || 0} applications</span>
+                    <span>•</span>
+                    <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Completed Jobs Section */}
+        <div className="glass rounded-2xl p-6 mb-6">
+          <h3 className="text-xl font-bold text-white mb-4">Completed Jobs</h3>
+          {loadingJobs ? (
+            <p className="text-white/70 text-center py-8">Loading jobs...</p>
+          ) : completedJobs.length === 0 ? (
+            <p className="text-white/70 text-center py-8">No completed jobs</p>
+          ) : (
+            <div className="space-y-3">
+              {completedJobs.map((job) => (
+                <div key={job.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition cursor-pointer" onClick={() => navigate(`/client/jobs/${job.id}`)}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-white text-lg">{job.title}</h4>
+                    <span className="px-3 py-1 bg-gray-500 text-white text-xs rounded-full">Closed</span>
+                  </div>
+                  <p className="text-white/80 text-sm mb-3 line-clamp-2">{job.description}</p>
+                  <div className="flex items-center gap-4 text-white/70 text-sm">
+                    <span>${job.budget}</span>
+                    <span>•</span>
+                    <span>{job.applicationsCount || 0} applications</span>
+                    <span>•</span>
+                    <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Posts Section */}
+        <div className="glass rounded-2xl p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-white">Posts</h3>
+          </div>
+          {loadingPosts ? (
+            <p className="text-white/70 text-center py-8">Loading posts...</p>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-white/70 mb-4">No posts yet. Share your thoughts!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <div key={post.id} className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <img
+                      src={post.author?.profileImage || `https://ui-avatars.com/api/?name=${post.author?.fullName}`}
+                      alt={post.author?.fullName}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1">
+                      <p className="text-white font-medium">{post.author?.fullName}</p>
+                      <p className="text-white/60 text-xs">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="text-red-400 hover:text-red-300 transition"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  {post.content && (
+                    <p className="text-white mb-3">{post.content}</p>
+                  )}
+                  
+                  {post.mediaUrl && (
+                    <div className="mb-3">
+                      {post.type === 'video' || post.mediaType === 'video' ? (
+                        <video
+                          src={post.mediaUrl}
+                          controls
+                          className="w-full rounded-lg max-h-96"
+                        />
+                      ) : (
+                        <img
+                          src={post.mediaUrl}
+                          alt="Post media"
+                          className="w-full rounded-lg"
+                        />
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-4 text-white/70 text-sm">
+                    <button
+                      onClick={() => handleLikePost(post.id)}
+                      className={`flex items-center gap-1 hover:text-white transition ${
+                        post.likes?.includes(user.id) ? 'text-red-400' : ''
+                      }`}
+                    >
+                      <Heart className="w-5 h-5" fill={post.likes?.includes(user.id) ? 'currentColor' : 'none'} />
+                      <span>{post.likes?.length || 0}</span>
+                    </button>
+                    <div className="flex items-center gap-1">
+                      <MessageSquare className="w-5 h-5" />
+                      <span>{post.commentsCount || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-5 h-5" />
+                      <span>{post.views || 0} views</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ClientDashboard;

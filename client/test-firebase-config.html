@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Config</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Configuration Test</h1>
+        <p>This page will test if your Firebase configuration is correct.</p>
+        
+        <div id="status"></div>
+        
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Get your Firebase Web App config from Firebase Console</li>
+            <li>Update the config below with your real values</li>
+            <li>Click "Test Connection"</li>
+        </ol>
+        
+        <h3>Current Config:</h3>
+        <pre id="config"></pre>
+        
+        <button onclick="testFirebase()">Test Connection</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // REPLACE THESE WITH YOUR REAL VALUES FROM FIREBASE CONSOLE
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXxvq5fF_8QxH9vYZ3jK4mN2pL1rT6sU8",
+            authDomain: "my-p-2456.firebaseapp.com",
+            projectId: "my-p-2456",
+            storageBucket: "my-p-2456.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890"
+        };
+
+        // Display current config
+        document.getElementById('config').textContent = JSON.stringify(firebaseConfig, null, 2);
+
+        window.testFirebase = async function() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div class="info">Testing connection...</div>';
+
+            try {
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                statusDiv.innerHTML += '<div class="success">✅ Firebase initialized successfully!</div>';
+
+                // Test Firestore connection
+                const db = getFirestore(app);
+                statusDiv.innerHTML += '<div class="success">✅ Firestore instance created!</div>';
+
+                // Try to read from a collection (this will fail with placeholder config)
+                try {
+                    const testCollection = collection(db, 'users');
+                    const snapshot = await getDocs(testCollection);
+                    statusDiv.innerHTML += `<div class="success">✅ Successfully connected to Firestore! Found ${snapshot.size} users.</div>`;
+                    statusDiv.innerHTML += '<div class="success"><strong>🎉 Your Firebase config is CORRECT!</strong></div>';
+                } catch (firestoreError) {
+                    statusDiv.innerHTML += `<div class="error">❌ Firestore connection failed: ${firestoreError.message}</div>`;
+                    statusDiv.innerHTML += '<div class="error"><strong>Your Firebase config has PLACEHOLDER values. Please update with real values from Firebase Console.</strong></div>';
+                }
+
+            } catch (error) {
+                statusDiv.innerHTML += `<div class="error">❌ Firebase initialization failed: ${error.message}</div>`;
+                statusDiv.innerHTML += '<div class="error"><strong>Please check your Firebase configuration values.</strong></div>';
+            }
+        };
+    </script>
+</body>
+</html>
