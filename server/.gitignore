@@ -3,3 +3,4 @@ node_modules
 uploads/
 serviceAccountKey.json
 firebase-service-account.json
+serviceAccountKey.json

@@ -5,9 +5,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">A</span>
-              </div>
+                <img src="/img/afro-task.png" alt="Afro Task" className="h-12 w-auto" />
               <span className="text-2xl font-bold">Afro Task</span>
             </div>
           </div>

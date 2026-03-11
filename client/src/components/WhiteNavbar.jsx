@@ -5,7 +5,7 @@ import { Bell, Briefcase } from 'lucide-react';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Navbar = () => {
+const WhiteNavbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
@@ -95,7 +95,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg">
+    <nav className="bg-white text-black py-4 px-6 shadow-lg">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(user ? `/${user.role}/dashboard` : '/')}>
           <img 
@@ -185,7 +185,7 @@ const Navbar = () => {
             <button onClick={() => navigate('/login')} className="hover:text-green-200 transition">Log in</button>
             <button 
               onClick={() => navigate('/')} 
-              className="bg-green-500 hover:bg-green-600 px-6 py-2 rounded-lg transition"
+              className="bg-[#00564C] text-white hover:bg-[#027568] px-6 py-2 rounded-lg transition"
             >
               Sign up
             </button>
@@ -196,4 +196,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default WhiteNavbar;
