@@ -1,24 +1,39 @@
-﻿import { db, bucket } from '../config/firebase.js';
+import { db } from '../config/firebase.js';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
+import { createNotification } from './notificationController.js';
 
 export const getPreProjectChat = async (req, res) => {
   try {
     const { applicationId } = req.params;
     const userId = req.user.userId;
+    
+    console.log('Getting pre-project chat for application:', applicationId);
+    console.log('User ID:', userId);
+    
     const appDoc = await db.collection('applications').doc(applicationId).get();
     if (!appDoc.exists) {
+      console.log('Application not found:', applicationId);
       return res.status(404).json({ message: 'Application not found' });
     }
+    
     const appData = appDoc.data();
+    console.log('Application data:', { clientId: appData.clientId, freelancerId: appData.freelancerId });
+    
     if (appData.clientId !== userId && appData.freelancerId !== userId) {
+      console.log('Unauthorized access attempt. User:', userId, 'Client:', appData.clientId, 'Freelancer:', appData.freelancerId);
       return res.status(403).json({ message: 'Unauthorized' });
     }
+    
     const chatsSnapshot = await db.collection('preProjectChats')
       .where('applicationId', '==', applicationId)
       .where('active', '==', true)
       .get();
+      
     if (chatsSnapshot.empty) {
-      return res.status(404).json({ message: 'Chat not found' });
+      console.log('No active chat found for application:', applicationId);
+      return res.status(404).json({ message: 'Chat not found. Please start a chat first.' });
     }
+    
     const chatDoc = chatsSnapshot.docs[0];
     const chatData = { id: chatDoc.id, ...chatDoc.data() };
     const jobDoc = await db.collection('jobs').doc(chatData.jobId).get();
@@ -32,6 +47,8 @@ export const getPreProjectChat = async (req, res) => {
       profileImage: otherUserDoc.data().profileImage,
       role: otherUserDoc.data().role
     } : null;
+    
+    console.log('Chat found successfully:', chatDoc.id);
     res.json({ success: true, chat: chatData });
   } catch (error) {
     console.error('Get pre-project chat error:', error);
@@ -63,7 +80,24 @@ export const getChatMessages = async (req, res) => {
       }
     }
     const messagesSnapshot = await query.get();
-    const messages = messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const messages = await Promise.all(messagesSnapshot.docs.map(async (doc) => {
+      const msgData = { id: doc.id, ...doc.data() };
+      
+      // Fetch sender profile data
+      try {
+        const senderDoc = await db.collection('users').doc(msgData.senderId).get();
+        if (senderDoc.exists) {
+          const senderData = senderDoc.data();
+          msgData.senderName = senderData.fullName;
+          msgData.senderImage = senderData.profileImage;
+        }
+      } catch (error) {
+        console.error('Error fetching sender data:', error);
+      }
+      
+      return msgData;
+    }));
+    console.log(`Returning ${messages.length} messages for chat ${chatId}`);
     res.json({ success: true, messages: messages.reverse() });
   } catch (error) {
     console.error('Get chat messages error:', error);
@@ -76,17 +110,29 @@ export const sendMessage = async (req, res) => {
     const { chatId } = req.params;
     const { text } = req.body;
     const userId = req.user.userId;
+
+    console.log('Sending message to chat:', chatId);
+    console.log('User ID:', userId);
+    console.log('Message text:', text);
+    console.log('Has file:', !!req.file);
+
     const chatDoc = await db.collection('preProjectChats').doc(chatId).get();
     if (!chatDoc.exists) {
+      console.log('Chat not found:', chatId);
       return res.status(404).json({ message: 'Chat not found' });
     }
+
     const chatData = chatDoc.data();
     if (chatData.clientId !== userId && chatData.freelancerId !== userId) {
+      console.log('Unauthorized send attempt');
       return res.status(403).json({ message: 'Unauthorized' });
     }
+
     if (!chatData.active) {
+      console.log('Chat is not active');
       return res.status(400).json({ message: 'Chat is no longer active' });
     }
+
     const messageData = {
       senderId: userId,
       text: text || '',
@@ -97,31 +143,70 @@ export const sendMessage = async (req, res) => {
       createdAt: new Date().toISOString(),
       readBy: [userId]
     };
+
+    // Handle file upload using Cloudinary
     if (req.file) {
-      const file = req.file;
-      const fileName = `chat-files/${chatId}/${Date.now()}_${file.originalname}`;
-      const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { 
-        metadata: { contentType: file.mimetype } 
-      });
-      await fileUpload.makePublic();
-      const fileUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-      messageData.fileUrl = fileUrl;
-      messageData.fileName = file.originalname;
-      messageData.fileType = file.mimetype;
-      messageData.fileSize = file.size;
+      try {
+        console.log('Uploading file to Cloudinary:', req.file.originalname);
+        
+        // Determine resource type based on file mimetype
+        const isVideo = req.file.mimetype.startsWith('video/');
+        const isImage = req.file.mimetype.startsWith('image/');
+        const resourceType = isVideo ? 'video' : isImage ? 'image' : 'raw';
+        
+        const fileUrl = await uploadToCloudinary(
+          req.file.buffer, 
+          `chat-files/${chatId}`,
+          resourceType
+        );
+        
+        messageData.fileUrl = fileUrl;
+        messageData.fileName = req.file.originalname;
+        messageData.fileType = req.file.mimetype;
+        messageData.fileSize = req.file.size;
+        console.log('File uploaded successfully:', fileUrl);
+      } catch (uploadError) {
+        console.error('File upload error:', uploadError);
+        return res.status(500).json({ message: 'Failed to upload file' });
+      }
     }
+
     const messageRef = await db.collection('preProjectChats')
       .doc(chatId)
       .collection('messages')
       .add(messageData);
+
+    console.log('Message saved successfully:', messageRef.id);
+    console.log('Message data:', messageData);
+
+    // Send notification to the other user
+    const recipientId = chatData.clientId === userId ? chatData.freelancerId : chatData.clientId;
+    try {
+      await createNotification(recipientId, userId, 'message', { 
+        chatId,
+        messagePreview: text?.substring(0, 50) || 'Sent a file'
+      });
+    } catch (notifError) {
+      console.error('Failed to send message notification:', notifError);
+    }
+
+    // Fetch sender profile data to include in response
+    const senderDoc = await db.collection('users').doc(userId).get();
+    const savedMessage = { id: messageRef.id, ...messageData };
+    if (senderDoc.exists) {
+      const senderData = senderDoc.data();
+      savedMessage.senderName = senderData.fullName;
+      savedMessage.senderImage = senderData.profileImage;
+    }
+
     res.status(201).json({ 
       success: true, 
-      message: { id: messageRef.id, ...messageData } 
+      message: savedMessage
     });
   } catch (error) {
     console.error('Send message error:', error);
-    res.status(500).json({ message: 'Failed to send message' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Failed to send message', error: error.message });
   }
 };
 

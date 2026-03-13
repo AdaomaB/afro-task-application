@@ -1,210 +1,208 @@
-# Afro Task - Freelance Marketplace Platform
+# Afro Task Platform
 
-A modern, full-stack freelance marketplace connecting African freelancers with clients worldwide.
+A freelance marketplace platform connecting African freelancers with clients worldwide.
 
-## 🌟 Features
+## 🚀 Live Demo
+- **Frontend**: [Your Vercel URL]
+- **Backend**: https://afro-task.up.railway.app
 
-- **User Authentication**: Secure signup/login with JWT and Firebase
-- **Dual User Roles**: Freelancer and Client dashboards
-- **Job Marketplace**: Post jobs, browse opportunities, apply with proposals
-- **Project Management**: Track ongoing and completed projects
-- **Real-time Messaging**: Chat system for freelancers and clients
-- **Social Feed**: Share updates, like, comment, and follow users
-- **Portfolio Management**: Showcase work and services
-- **Analytics Dashboard**: Track views, applications, and engagement
-- **File Uploads**: Profile images, portfolios, CVs, and chat attachments
-- **Mobile Responsive**: Works seamlessly on all devices
+## 📋 Prerequisites
 
-## 🛠️ Tech Stack
+Before you begin, ensure you have the following installed:
+- Node.js (v18 or higher)
+- npm or yarn
+- Git
 
-### Frontend
-- React 18
-- Vite
-- React Router v6
-- Tailwind CSS
-- Framer Motion
-- Axios
-- Firebase (Client SDK)
+## 🛠️ Local Development Setup
 
-### Backend
-- Node.js
-- Express.js
-- Firebase Admin SDK
-- Firestore (Database)
-- JWT Authentication
-- Cloudinary (File Storage)
-- Multer (File Uploads)
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/AdaomaB/afro-task.git
+cd afro-task
+```
+
+### 2. Backend Setup
+
+#### Install Dependencies
+```bash
+cd server
+npm install
+```
+
+**Important**: You MUST run `npm install` after cloning the repository. The `node_modules` folder is not included in Git.
+
+#### Configure Environment Variables
+
+Create a `server/.env` file:
+```env
+PORT=3001
+NODE_ENV=development
+JWT_SECRET=your_jwt_secret_key_here
+
+# Firebase Configuration
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+FIREBASE_SERVICE_ACCOUNT_PATH=./serviceAccountKey.json
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+```
+
+#### Setup Firebase
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or use existing one
+3. Go to Project Settings → Service Accounts
+4. Click "Generate New Private Key"
+5. Save the downloaded JSON file as `server/serviceAccountKey.json`
+6. Enable Firestore Database in your Firebase project
+7. Enable Firebase Storage
+
+#### Start Backend Server
+```bash
+npm run dev
+```
+
+Server will run on `http://localhost:3001`
+
+### 3. Frontend Setup
+
+#### Install Dependencies
+```bash
+cd client
+npm install
+```
+
+**Important**: You MUST run `npm install` after cloning the repository. The `node_modules` folder is not included in Git.
+
+#### Configure Environment Variables
+
+Create a `client/.env.local` file:
+```env
+VITE_API_URL=http://localhost:3001/api
+
+# Firebase Configuration (Frontend)
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+To get Firebase frontend config:
+1. Go to Firebase Console → Project Settings
+2. Scroll to "Your apps" section
+3. Click the web app icon (</>)
+4. Copy the config values
+
+#### Start Frontend Development Server
+```bash
+npm run dev
+```
+
+Frontend will run on `http://localhost:5173`
+
+### 4. Access the Application
+
+Open your browser and navigate to `http://localhost:5173`
+
+## 🌐 Production Deployment
+
+### Backend Deployment (Railway)
+
+1. Create account on [Railway](https://railway.app)
+2. Create new project from GitHub repository
+3. Set Root Directory to `server`
+4. Add environment variables in Railway dashboard:
+   - All variables from `server/.env.example`
+   - Firebase credentials (individual variables, not the JSON file)
+5. Deploy
+
+### Frontend Deployment (Vercel)
+
+1. Create account on [Vercel](https://vercel.com)
+2. Import GitHub repository
+3. Configure:
+   - Framework: Vite
+   - Root Directory: `client`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+4. Add environment variables:
+   - `VITE_API_URL=https://your-railway-url.up.railway.app/api`
+   - All Firebase frontend variables
+5. Deploy
 
 ## 📁 Project Structure
 
 ```
 afro-task/
-├── client/                 # Frontend application
+├── client/                 # Frontend (React + Vite)
 │   ├── src/
 │   │   ├── components/    # Reusable components
 │   │   ├── pages/         # Page components
-│   │   ├── services/      # API services
 │   │   ├── context/       # React context
+│   │   ├── services/      # API services
 │   │   └── config/        # Configuration files
-│   ├── public/            # Static assets
-│   └── package.json
+│   └── public/            # Static assets
 │
-├── server/                # Backend application
+├── server/                # Backend (Node.js + Express)
 │   ├── config/           # Configuration files
 │   ├── controllers/      # Route controllers
-│   ├── middlewares/      # Custom middleware
 │   ├── routes/           # API routes
-│   ├── utils/            # Utility functions
-│   └── package.json
+│   └── serviceAccountKey.json  # Firebase credentials (not in git)
 │
-└── docs/                 # Documentation
-    ├── DEPLOYMENT_GUIDE.md
-    ├── DEPLOYMENT_QUICK_START.md
-    └── PRODUCTION_CHECKLIST.md
+└── README.md
 ```
 
-## 🚀 Quick Start
+## 🔑 Required Services
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- Firebase project
-- Cloudinary account
+### Firebase
+- Firestore Database
+- Firebase Storage
+- Firebase Authentication
 
-### Local Development
+### Cloudinary
+- Image hosting and transformation
+- Sign up at [Cloudinary](https://cloudinary.com)
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/yourusername/afro-task.git
-cd afro-task
-```
+## 👥 Team Collaboration Setup
 
-2. **Setup Backend**
-```bash
-cd server
-npm install
-cp .env.example .env
-# Edit .env with your credentials
-npm start
-```
+### Option 1: Shared Firebase Project (Recommended)
 
-3. **Setup Frontend**
-```bash
-cd client
-npm install
-cp .env.example .env
-# Edit .env with your API URL
-npm run dev
-```
+For team members working on the same project:
 
-4. **Access the application**
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3001
+1. **Project Owner**: Add team members to Firebase
+   - Go to Firebase Console → Project Settings → Users and Permissions
+   - Click "Add Member" and enter their email
+   - Assign "Editor" role
 
-## 🌐 Deployment
+2. **Share Credentials Securely**
+   - Send `serviceAccountKey.json` via encrypted channel (NOT GitHub)
+   - Share `.env` file contents securely
+   - Use a team password manager if available
 
-### Production Deployment
+3. **Team Member Setup**
+   - Clone the repository
+   - Create `server/.env` with shared credentials
+   - Create `client/.env.local` with shared Firebase config
+   - Start development
 
-This application is configured for deployment on:
-- **Backend**: Render
-- **Frontend**: Vercel
+**Benefits**: Shared database, real-time collaboration, same user accounts
 
-See detailed deployment instructions:
-- [Complete Deployment Guide](DEPLOYMENT_GUIDE.md)
-- [Quick Start Guide](DEPLOYMENT_QUICK_START.md)
-- [Production Checklist](PRODUCTION_CHECKLIST.md)
+### Option 2: Separate Development Environments
 
-### Quick Deploy
+For independent development/testing:
 
-```bash
-# Install production dependencies
-cd server && npm install helmet compression
+1. Each developer creates their own Firebase project
+2. Each developer gets their own Cloudinary account
+3. Everyone has isolated test data
 
-# Deploy backend to Render
-# (Follow Render dashboard instructions)
-
-# Deploy frontend to Vercel
-cd client
-vercel --prod
-```
-
-## 📝 Environment Variables
-
-### Backend (.env)
-```env
-PORT=5000
-NODE_ENV=production
-FRONTEND_URL=https://your-app.vercel.app
-JWT_SECRET=your-secret-key
-FIREBASE_PROJECT_ID=your-project-id
-# ... (see .env.example for complete list)
-```
-
-### Frontend (.env)
-```env
-VITE_API_URL=https://your-api.onrender.com/api
-VITE_FIREBASE_API_KEY=your-api-key
-# ... (see .env.example for complete list)
-```
-
-## 🔒 Security
-
-- JWT-based authentication
-- Firebase security rules
-- Helmet.js for security headers
-- CORS configuration
-- Environment variable protection
-- Input validation
-- File upload restrictions
-
-## 📊 Features in Detail
-
-### For Freelancers
-- Browse and apply for jobs
-- Manage applications
-- Track project progress
-- Build portfolio
-- Offer services
-- Real-time messaging
-- Analytics dashboard
-
-### For Clients
-- Post job opportunities
-- Review applications
-- Hire freelancers
-- Manage projects
-- Rate and review
-- Real-time messaging
-- Analytics dashboard
-
-### For Everyone
-- Social feed
-- Follow system
-- Like and comment
-- Profile customization
-- Notifications
-- Search functionality
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd server
-npm test
-
-# Frontend tests
-cd client
-npm test
-```
-
-## 📈 Performance
-
-- Optimized builds with Vite
-- Lazy loading for routes
-- Image optimization
-- Compression middleware
-- CDN delivery (Vercel)
-- Database indexing
+**Benefits**: No risk of breaking shared data, independent testing
 
 ## 🤝 Contributing
 
@@ -214,46 +212,39 @@ npm test
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+**Important**: Never commit `.env` files or `serviceAccountKey.json` to GitHub!
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📝 License
 
-## 👥 Authors
+This project is licensed under the MIT License.
 
-- Your Name - Initial work
+## � Troubleshooting
 
-## 🙏 Acknowledgments
+### Error: "npm registry deprecating TLS 1.0 and TLS 1.1"
+Your Node.js/npm version is outdated. Update to:
+- Node.js v18 or higher
+- npm v9 or higher
 
-- Firebase for backend infrastructure
-- Cloudinary for file storage
-- Render for hosting
-- Vercel for frontend deployment
+```bash
+# Update npm
+npm install -g npm@latest
 
-## 📞 Support
+# Or download latest Node.js from https://nodejs.org
+```
 
-For support, email support@afrotask.com or join our Slack channel.
+### Error: "Cannot find package 'express'"
+You forgot to install dependencies:
+```bash
+cd server
+npm install
+```
 
-## 🗺️ Roadmap
+### Firebase connection errors
+Make sure you:
+1. Created `server/.env` file with correct values
+2. Added `server/serviceAccountKey.json` file
+3. Enabled Firestore and Storage in Firebase Console
 
-- [ ] Payment integration (Stripe/PayPal)
-- [ ] Video calls
-- [ ] Advanced search filters
-- [ ] Mobile apps (iOS/Android)
-- [ ] Multi-language support
-- [ ] AI-powered job matching
-- [ ] Escrow system
-- [ ] Dispute resolution
+## 👥 Contact
 
-## 📱 Screenshots
-
-[Add screenshots here]
-
-## 🔗 Links
-
-- [Live Demo](https://your-app.vercel.app)
-- [API Documentation](https://your-api.onrender.com)
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
-
----
-
-Made with ❤️ for the African freelance community
+Project Link: [https://github.com/AdaomaB/afro-task](https://github.com/AdaomaB/afro-task)

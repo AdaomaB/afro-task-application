@@ -7,7 +7,7 @@
 
 ### Backend (Railway)
 **URL:** https://afro-task-production.up.railway.app
-**API:** https://afro-task-production.up.railway.app/api
+**API:** https://afro-task.up.railway.app/api
 
 ## Final Step: Update Railway FRONTEND_URL
 
