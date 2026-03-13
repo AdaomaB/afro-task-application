@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Paperclip, Smile, Search, MoreVertical } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
 import toast from 'react-hot-toast';

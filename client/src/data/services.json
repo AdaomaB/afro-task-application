@@ -1,0 +1,46 @@
+[
+  {
+    "id": 1,
+    "icon": "CiGlobe",
+    "title": "Web Development",
+    "description": "Web development, mobile apps, and software solutions"
+  },
+  {
+     "id": 2,
+    "icon": "FaToolbox",
+    "title": "Business",
+    "description": "Consulting, virtual assistance, and business services"
+  },
+  {
+    "id": 3,
+    "icon": "FaBullhorn",
+    "title": "Digital Marketing",
+    "description": "SEO, social media, and online advertising"
+  },
+  {
+    "id": 4,
+    "icon": "TfiWrite",
+    "title": "Content Writing",
+    "description": "Content writing, copywriting, and translation services"
+  },
+
+  {
+    "id": 5,
+    "icon": "FaRobot",
+    "title": "AI Services",
+    "description": "AI solutions, automation, and machine learning"
+  },
+  {
+    "id": 6,
+    "icon": "FaMagic",
+    "title": "Logo Design",
+    "description": "Custom logos and brand identity design"
+  },
+  {
+    "id": 7,
+    "icon": "FaPalette",
+    "title": "Graphics Design",
+    "description": "Logo design, branding, and visual identity"
+  }
+]
+

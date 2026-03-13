@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, MessageSquare, Calendar, DollarSign, Clock, AlertCircle } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import LoadingScreen from '../components/LoadingScreen';
 import { AuthContext } from '../context/AuthContext';

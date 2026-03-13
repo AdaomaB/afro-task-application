@@ -1,15 +1,18 @@
 import { useState, useEffect, useContext } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import EnhancedPostCard from '../components/EnhancedPostCard';
 import ProfileCompletionWidget from '../components/ProfileCompletionWidget';
 
 const FreelancerFeed = () => {
   const { user } = useContext(AuthContext);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -21,12 +24,22 @@ const FreelancerFeed = () => {
     profileViews: 0,
     followers: 0
   });
+  
+  // Get search and category from URL params
+  const searchQuery = searchParams.get('search') || '';
+  const categoryFilter = searchParams.get('category') || '';
 
   useEffect(() => {
     fetchStats();
     fetchFeed();
     fetchRecommendedJobs();
   }, []);
+
+  // Refetch feed when search or category changes
+  useEffect(() => {
+    setPage(1);
+    fetchFeed();
+  }, [searchQuery, categoryFilter]);
 
   useEffect(() => {
     if (page > 1) fetchFeed();
@@ -92,7 +105,17 @@ const FreelancerFeed = () => {
   const fetchFeed = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/posts/feed?page=${page}&limit=50`);
+      
+      // Build query params
+      let queryParams = `page=${page}&limit=50`;
+      if (searchQuery) {
+        queryParams += `&search=${encodeURIComponent(searchQuery)}`;
+      }
+      if (categoryFilter) {
+        queryParams += `&category=${encodeURIComponent(categoryFilter)}`;
+      }
+      
+      const response = await api.get(`/posts/feed?${queryParams}`);
       setPosts(prev => page === 1 ? response.data.posts : [...prev, ...response.data.posts]);
     } catch (error) {
       toast.error('Failed to load feed');
@@ -132,6 +155,27 @@ const FreelancerFeed = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
+              {/* Show search/filter info if active */}
+              {(searchQuery || categoryFilter) && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-800 font-medium">
+                        {searchQuery && `Searching for: "${searchQuery}"`}
+                        {searchQuery && categoryFilter && ' in '}
+                        {categoryFilter && `${categoryFilter}`}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => navigate('/freelancer/feed')}
+                      className="text-green-600 hover:text-green-800 text-sm font-medium"
+                    >
+                      Clear filters ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
                 Welcome back, {user?.fullName?.split(' ')[0]} 👋
               </h1>

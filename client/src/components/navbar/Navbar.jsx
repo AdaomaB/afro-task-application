@@ -1,8 +1,8 @@
 import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import { Bell, Briefcase } from 'lucide-react';
-import api from '../services/api';
+import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
@@ -181,7 +181,7 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="flex items-center gap-6">
-            <button className="hover:text-green-200 transition">Explore</button>
+            <button onClick={() => navigate('/welcome')} className="hover:text-green-200 transition">Explore</button>
             <button onClick={() => navigate('/login')} className="hover:text-green-200 transition">Log in</button>
             <button 
               onClick={() => navigate('/')} 

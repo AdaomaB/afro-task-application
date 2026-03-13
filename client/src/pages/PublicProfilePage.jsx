@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import ReviewModal from '../components/ReviewModal';
 import { MapPin, Briefcase, Award, ExternalLink, Mail, Phone, ArrowLeft, MessageCircle, X, DollarSign, Clock } from 'lucide-react';

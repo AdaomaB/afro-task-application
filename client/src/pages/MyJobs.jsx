@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import { AuthContext } from '../context/AuthContext';
 import { MessageCircle, Heart, Send, Smile } from 'lucide-react';
 

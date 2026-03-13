@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "5 Ways Nigerian Freelancers Can Win More Clients",
+    "description": "Explore practical strategies to help Nigerian freelancers attract and retain clients.",
+    "author": "Yemi",
+    "date": "March 23, 2025"
+  },
+  {
+    "id": 2,
+    "title": "Client Stories: How I Found My Perfect Freelancer in 3 Days",
+    "description": "A client shares their experience of quickly finding the right freelancer on Afro Task.",
+    "author": "Amina",
+    "date": "March 28, 2025",
+    "link": "/img/blog2.png"
+  },
+  {
+     "id": 3,
+    "title": "Room for Growth: Freelancing vs Full-time Work in Nigeria",
+    "description": "A comparative analysis of freelancing and traditional employment in Nigeria, highlighting the benefits and challenges of each.",
+    "author": "Chioma Adeyemi",
+    "date": "April 5, 2025",
+    "link": "/img/blog3.png"
+  }
+]
+

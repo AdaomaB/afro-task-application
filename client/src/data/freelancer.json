@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "name": "Tunde Balogun",
+    "title": "Graphics Designer",
+    "description": "I specialize in creating modern logos, brand identities, and social media designs that help businesses stand out.",
+    "rating": 5.0,
+    "reviews": 413,
+    "hourlyRate": 8110,
+    "image": "/img/tb.png"
+  },
+  {
+    "id": 2,
+    "name": "Sarah Johnson",
+    "title": "Full Stack Developer",
+    "description": "Building scalable web applications with React, Node.js, and modern technologies. 5+ years of experience.",
+    "rating": 4.9,
+    "reviews": 287,
+    "hourlyRate": 15000,
+    "image": "/img/tb.png"
+  },
+  {
+    "id": 3,
+    "name": "Michael Chen",
+    "title": "UI/UX Designer",
+    "description": "Creating intuitive user interfaces and seamless user experiences for mobile and web applications.",
+    "rating": 4.8,
+    "reviews": 156,
+    "hourlyRate": 12000,
+    "image": "/img/tb.png"
+  },
+  {
+    "id": 4,
+    "name": "Amara Okonkwo",
+    "title": "Content Writer",
+    "description": "SEO-optimized content writing for blogs, websites, and marketing materials that drive engagement.",
+    "rating": 4.7,
+    "reviews": 198,
+    "hourlyRate": 5000,
+    "image": "/img/tb.png"
+  },
+  {
+    "id": 5,
+    "name": "David Kumar",
+    "title": "Mobile App Developer",
+    "description": "Developing cross-platform mobile apps using React Native and Flutter for iOS and Android.",
+    "rating": 4.9,
+    "reviews": 342,
+    "hourlyRate": 18000,
+    "image": "/img/tb.png"
+  },
+  {
+    "id": 6,
+    "name": "Lisa Martinez",
+    "title": "Digital Marketer",
+    "description": "Strategic digital marketing campaigns across social media, Google Ads, and email marketing.",
+    "rating": 4.6,
+    "reviews": 125,
+    "hourlyRate": 7500,
+    "image": "/img/tb.png"
+  }
+]
+

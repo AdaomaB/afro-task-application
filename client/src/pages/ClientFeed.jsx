@@ -4,7 +4,7 @@ import { TrendingUp, Users, Briefcase, CheckCircle, Clock, Eye } from 'lucide-re
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import EnhancedPostCard from '../components/EnhancedPostCard';
 import ProfileCompletionWidget from '../components/ProfileCompletionWidget';
