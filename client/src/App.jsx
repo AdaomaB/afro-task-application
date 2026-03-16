@@ -27,6 +27,7 @@ import NotFound from './pages/NotFound';
 
 function App() {
   return (
+    <div className='overflow-x-hidden'>
     <Router>
       <AuthProvider>
         <Toaster position="top-right" />
@@ -164,6 +165,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </div>
   );
 }
 

@@ -16,7 +16,7 @@ export default function WhyAfroTask() {
   );
 
   return (
-    <div className='min-h-screen bg-[#00564C] relative overflow-hidden text-black'>
+    <div className='min-h-screen bg-[#00564C] relative text-black'>
       <WhiteNavbar />
         <WhyAfroTaskBoard />
         <div className='flex flex-col gap-4 justify-center items-center text-white my-8 px-4 sm:px-8'>

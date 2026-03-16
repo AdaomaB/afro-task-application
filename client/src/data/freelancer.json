@@ -17,7 +17,7 @@
     "rating": 4.9,
     "reviews": 287,
     "hourlyRate": 15000,
-    "image": "/img/tb.png"
+    "image": "/img/if.png"
   },
   {
     "id": 3,
@@ -37,7 +37,7 @@
     "rating": 4.7,
     "reviews": 198,
     "hourlyRate": 5000,
-    "image": "/img/tb.png"
+    "image": "/img/cn.png"
   },
   {
     "id": 5,
@@ -57,7 +57,7 @@
     "rating": 4.6,
     "reviews": 125,
     "hourlyRate": 7500,
-    "image": "/img/tb.png"
+    "image": "/img/cn.png"
   }
 ]
 
