@@ -174,6 +174,12 @@ const WhiteNavbar = () => {
           ) : (
             <>
               <button
+                onClick={() => navigate("/welcome")}
+                className="hover:text-green-700 transition font-medium"
+              >
+                Explore
+              </button>
+              <button
                 onClick={() => navigate("/login")}
                 className="hover:text-green-700 transition font-medium"
               >
