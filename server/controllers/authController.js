@@ -38,7 +38,7 @@ export const register = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role,
-      whatsapp,
+      whatsapp: whatsapp || null,
       profileImage: profileImageUrl,
       country: country || null,
       skillCategory: skillCategory || null,

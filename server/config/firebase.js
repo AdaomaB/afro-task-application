@@ -14,10 +14,14 @@ try {
   // Check if running in production with environment variables
   if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
     // Use environment variables (for Railway, Render, etc.)
-    // Handle both formats: with literal \n and with actual newlines
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
-    
-    // If the key contains literal \n strings, replace them with actual newlines
+
+    // Strip surrounding quotes if present (common Railway/Vercel paste issue)
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1);
+    }
+
+    // Replace literal \n with actual newlines
     if (privateKey.includes('\\n')) {
       privateKey = privateKey.replace(/\\n/g, '\n');
     }
