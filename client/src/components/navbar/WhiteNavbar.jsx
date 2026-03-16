@@ -174,19 +174,13 @@ const WhiteNavbar = () => {
           ) : (
             <>
               <button
-                onClick={() => navigate("/welcome")}
-                className="hover:text-green-200 transition"
-              >
-                Explore
-              </button>
-              <button
                 onClick={() => navigate("/login")}
-                className="hover:text-green-200 transition"
+                className="hover:text-green-700 transition font-medium"
               >
                 Log in
               </button>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/welcome")}
                 className="bg-[#00564C] text-white hover:bg-[#027568] px-6 py-2 rounded-lg transition"
               >
                 Sign up
