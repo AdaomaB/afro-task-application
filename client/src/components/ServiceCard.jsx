@@ -16,11 +16,7 @@ export default function ServiceCard({ icon: Icon, title, description, link, inde
   const navigate = useNavigate(); // <-- get navigate function
 
   const handleClick = () => {
-    if (link) {
-      navigate(link); // navigate to the provided link prop if available
-    } else {
-      navigate(user ? "/explore" : "/welcome"); // fallback based on user
-    }
+    navigate(`/explore-projects?category=${encodeURIComponent(title)}`);
   };
 
   return (
