@@ -9,6 +9,17 @@ import { MapPin, Briefcase, Award, ExternalLink, Mail, Phone, ArrowLeft, Message
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
+const PROJECT_CATEGORIES = [
+  'Web Development', 'Mobile Development', 'UI/UX Design', 'Graphic Design',
+  'Video Editing', 'Digital Marketing', 'Writing', 'Data Science',
+  'AI / Machine Learning', 'Cybersecurity', 'DevOps', 'Game Development', 'Others'
+];
+
+const emptyProjectForm = {
+  title: '', description: '', category: '', customCategory: '',
+  projectLink: '', technologies: '', completionDate: '', image: null
+};
+
 const PublicProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -28,6 +39,16 @@ const PublicProfilePage = () => {
   const [showDeletePortfolioModal, setShowDeletePortfolioModal] = useState(false);
   const [showDeleteServiceModal, setShowDeleteServiceModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [showcaseProjects, setShowcaseProjects] = useState([]);
+  const [loadingShowcase, setLoadingShowcase] = useState(false);
+
+  // Create/Edit project modal
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [projectForm, setProjectForm] = useState(emptyProjectForm);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const isOwnProfile = user?.id === userId;
   const isFreelancer = profile?.role === 'freelancer';
@@ -39,9 +60,9 @@ const PublicProfilePage = () => {
 
   const tabLabels = {
     about: 'About',
-    portfolio: 'Portfolio',
+    portfolio: 'Projects',
     services: 'Services',
-    projects: 'Projects',
+    projects: 'Active Jobs',
     posts: 'Posts',
     reviews: 'Reviews',
     'active-jobs': 'Active Jobs',
@@ -54,6 +75,25 @@ const PublicProfilePage = () => {
       checkFollowStatus();
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchShowcaseProjects(userId);
+    }
+  }, [userId]);
+
+  const fetchShowcaseProjects = async (uid) => {
+    setLoadingShowcase(true);
+    try {
+      const res = await api.get(`/profile/showcase-projects?freelancerId=${uid}&limit=50`);
+      setShowcaseProjects(res.data.projects || []);
+    } catch (err) {
+      console.error('Failed to fetch showcase projects:', err);
+      setShowcaseProjects([]);
+    } finally {
+      setLoadingShowcase(false);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -99,7 +139,7 @@ const PublicProfilePage = () => {
       // Fetch projects if freelancer
       if (profileData.role === 'freelancer') {
         try {
-          const projectsResponse = await api.get(`/projects?freelancerId=${userId}`);
+          const projectsResponse = await api.get(`/profile/showcase-projects?freelancerId=${userId}&limit=50`);
           profileData.projects = projectsResponse.data.projects || [];
         } catch (err) {
           console.error('Failed to fetch projects:', err);
@@ -199,6 +239,62 @@ const PublicProfilePage = () => {
     } catch (error) {
       console.error('Error creating chat:', error);
       toast.error('Failed to open chat');
+    }
+  };
+
+  // ── Showcase project handlers ─────────────────────────────────────────────
+  const openCreateProject = () => {
+    setEditingProject(null);
+    setProjectForm(emptyProjectForm);
+    setImagePreview(null);
+    setUploadProgress(0);
+    setShowProjectModal(true);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProjectForm(f => ({ ...f, image: file }));
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSaveProject = async () => {
+    const { title, description, category, customCategory, projectLink, technologies, completionDate, image } = projectForm;
+    if (!title.trim() || !description.trim() || !category) {
+      toast.error('Title, description and category are required'); return;
+    }
+    const finalCategory = category === 'Others' && customCategory.trim() ? customCategory.trim() : category;
+    setSaving(true);
+    try {
+      const data = new FormData();
+      data.append('title', title.trim());
+      data.append('description', description.trim());
+      data.append('category', finalCategory);
+      data.append('projectLink', projectLink.trim());
+      data.append('technologies', technologies);
+      data.append('completionDate', completionDate || '');
+      data.append('freelancerName', profile?.fullName || user.name || '');
+      data.append('freelancerProfileImage', profile?.profileImage || '');
+      if (image instanceof File) data.append('image', image);
+
+      await api.post('/profile/showcase-projects', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (e) => {
+          if (e.total) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+
+      toast.success('Project created and published!');
+      setShowProjectModal(false);
+      setProjectForm(emptyProjectForm);
+      setImagePreview(null);
+      setUploadProgress(0);
+      fetchShowcaseProjects(userId);
+    } catch (err) {
+      console.error('Save project error:', err);
+      toast.error('Failed to save project');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -668,24 +764,34 @@ const PublicProfilePage = () => {
                   >
                     {isOwnProfile && (
                       <button
-                        onClick={() => setShowPortfolioModal(true)}
+                        onClick={openCreateProject}
                         className="mb-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
                       >
-                        + Add Portfolio Item
+                        + Create Project
                       </button>
                     )}
-                    {profile.portfolio && profile.portfolio.length > 0 ? (
+                    {loadingShowcase ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {profile.portfolio.map((item) => (
+                        {[1,2,3].map(i => (
+                          <div key={i} className="bg-white rounded-xl overflow-hidden shadow-md animate-pulse">
+                            <div className="w-full h-48 bg-gray-200" />
+                            <div className="p-6 space-y-3">
+                              <div className="h-4 bg-gray-200 rounded w-3/4" />
+                              <div className="h-3 bg-gray-200 rounded w-full" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : showcaseProjects.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {showcaseProjects.map((item) => (
                           <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition">
-                            {item.image ? (
-                              <img 
-                                src={item.image} 
-                                alt={item.title} 
+                            {item.projectImage ? (
+                              <img
+                                src={item.projectImage}
+                                alt={item.title}
                                 className="w-full h-48 object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
+                                onError={(e) => { e.target.style.display = 'none'; }}
                               />
                             ) : (
                               <div className="w-full h-48 bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center">
@@ -693,38 +799,28 @@ const PublicProfilePage = () => {
                               </div>
                             )}
                             <div className="p-6">
-                              <h4 className="font-bold text-lg text-gray-900 mb-2">{item.title}</h4>
-                              <p className="text-gray-600 text-sm mb-4 line-clamp-3">{item.description}</p>
-                              
-                              {item.link && (
-                                <a
-                                  href={item.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium mb-4"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  View Project
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-bold text-lg text-gray-900">{item.title}</h4>
+                                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-2 shrink-0">{item.category}</span>
+                              </div>
+                              <p className="text-gray-600 text-sm mb-3 line-clamp-3">{item.description}</p>
+                              {item.technologies?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                  {item.technologies.map((t, i) => (
+                                    <span key={i} className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{t}</span>
+                                  ))}
+                                </div>
+                              )}
+                              {item.projectLink && (
+                                <a href={item.projectLink} target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium mb-4">
+                                  <ExternalLink className="w-4 h-4" />View Project
                                 </a>
                               )}
-                              
-                              {isOwnProfile ? (
-                                <button
-                                  onClick={() => {
-                                    setItemToDelete(item);
-                                    setShowDeletePortfolioModal(true);
-                                  }}
-                                  className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
-                                >
-                                  Delete Project
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={handleContactUser}
-                                  className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2"
-                                >
-                                  <MessageCircle className="w-4 h-4" />
-                                  Contact Me
+                              {!isOwnProfile && (
+                                <button onClick={handleContactUser}
+                                  className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2">
+                                  <MessageCircle className="w-4 h-4" />Contact Me
                                 </button>
                               )}
                             </div>
@@ -734,7 +830,7 @@ const PublicProfilePage = () => {
                     ) : (
                       <div className="text-center py-12">
                         <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No portfolio items yet</p>
+                        <p className="text-gray-600">No projects yet</p>
                       </div>
                     )}
                   </motion.div>
@@ -884,57 +980,58 @@ const PublicProfilePage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    {profile.projects && profile.projects.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {profile.projects.map((project) => (
-                          <div key={project.id} className="bg-white border border-gray-200 rounded-xl p-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <h4 className="font-bold text-lg text-gray-900 mb-1">{project.job?.title || 'Project'}</h4>
-                                <p className="text-gray-600 text-sm line-clamp-2">{project.job?.description}</p>
+                    {(() => {
+                      const activeJobs = (profile.projects || []).filter(p =>
+                        p.status === 'ongoing' || p.status === 'awaiting_confirmation' || p.status === 'active'
+                      );
+                      return activeJobs.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {activeJobs.map((project) => (
+                            <div key={project.id} className="bg-white border border-gray-200 rounded-xl p-6">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-lg text-gray-900 mb-1">{project.job?.title || 'Project'}</h4>
+                                  <p className="text-gray-600 text-sm line-clamp-2">{project.job?.description}</p>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${
+                                  project.status === 'awaiting_confirmation'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {project.status === 'awaiting_confirmation' ? 'Pending' : 'Ongoing'}
+                                </span>
                               </div>
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${
-                                project.status === 'completed' 
-                                  ? 'bg-green-100 text-green-700'
-                                  : project.status === 'awaiting_confirmation'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}>
-                                {project.status === 'awaiting_confirmation' ? 'Pending' : project.status}
-                              </span>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="w-4 h-4" />
+                                  <span>{project.job?.budget || project.job?.budgetRange || 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{new Date(project.startedAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                                <img
+                                  src={project.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.client?.fullName || 'Client')}`}
+                                  alt={project.client?.fullName}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                  <p className="text-gray-900 text-sm font-medium">{project.client?.fullName}</p>
+                                  <p className="text-gray-600 text-xs">{project.client?.companyName || 'Client'}</p>
+                                </div>
+                              </div>
                             </div>
-                            
-                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" />
-                                <span>{project.job?.budget || project.job?.budgetRange || 'N/A'}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" />
-                                <span>{new Date(project.startedAt).toLocaleDateString()}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                              <img
-                                src={project.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.client?.fullName || 'Client')}`}
-                                alt={project.client?.fullName}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                              <div className="flex-1">
-                                <p className="text-gray-900 text-sm font-medium">{project.client?.fullName}</p>
-                                <p className="text-gray-600 text-xs">{project.client?.companyName || 'Client'}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No projects yet</p>
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600">No active jobs at the moment</p>
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 )}
 
@@ -1430,6 +1527,103 @@ const PublicProfilePage = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── Create Project Modal ──────────────────────────────────────────── */}
+      {showProjectModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900">Create Project</h3>
+              <button onClick={() => setShowProjectModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
+                <input type="text" value={projectForm.title}
+                  onChange={e => setProjectForm(f => ({ ...f, title: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., E-commerce Website" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Description *</label>
+                <textarea value={projectForm.description}
+                  onChange={e => setProjectForm(f => ({ ...f, description: e.target.value }))}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Describe what you built, the problem it solves, and your role..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select value={projectForm.category}
+                  onChange={e => setProjectForm(f => ({ ...f, category: e.target.value, customCategory: '' }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                  <option value="">Select a category</option>
+                  {PROJECT_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              {projectForm.category === 'Others' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custom Category *</label>
+                  <input type="text" value={projectForm.customCategory}
+                    onChange={e => setProjectForm(f => ({ ...f, customCategory: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., Blockchain Development" />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Image</label>
+                <input type="file" accept="image/*" onChange={handleImageChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+                {imagePreview && (
+                  <img src={imagePreview} alt="Preview" className="mt-3 w-full h-48 object-cover rounded-lg" />
+                )}
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Uploading... {uploadProgress}%</p>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Link</label>
+                <input type="url" value={projectForm.projectLink}
+                  onChange={e => setProjectForm(f => ({ ...f, projectLink: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="https://github.com/... or live URL" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Technologies Used</label>
+                <input type="text" value={projectForm.technologies}
+                  onChange={e => setProjectForm(f => ({ ...f, technologies: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="React, Node.js, MongoDB (comma separated)" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Completion Date</label>
+                <input type="date" value={projectForm.completionDate}
+                  onChange={e => setProjectForm(f => ({ ...f, completionDate: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+              </div>
+            </div>
+            <div className="flex gap-3 p-6 border-t border-gray-100">
+              <button onClick={() => setShowProjectModal(false)}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button onClick={handleSaveProject} disabled={saving}
+                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white rounded-lg font-medium transition">
+                {saving ? 'Saving...' : 'Publish Project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

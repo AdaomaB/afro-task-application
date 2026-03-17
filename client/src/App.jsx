@@ -9,6 +9,8 @@ import FreelancerFeed from './pages/FreelancerFeed';
 import ClientFeed from './pages/ClientFeed';
 import AdminDashboard from './pages/AdminDashboard';
 import ExploreJobs from './pages/ExploreJobs';
+import ExploreProjects from './pages/ExploreProjects';
+import ContactPage from './pages/ContactPage';
 import MyApplications from './pages/MyApplications';
 import CreatePost from './pages/CreatePost';
 import PostJob from './pages/PostJob';
@@ -19,6 +21,7 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import MessagesPage from './pages/MessagesPage';
 import PreProjectChat from './pages/PreProjectChat';
 import FreelancerOnboarding from './pages/FreelancerOnboarding';
+import FreelancerDashboard from './pages/FreelancerDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import ProjectWorkspace from './pages/ProjectWorkspace';
 import LandingPage from './pages/LandingPage';
@@ -37,6 +40,8 @@ function App() {
           <Route path="/signup/:role" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/why-afro-task" element={<WhyAfroTask />} />
+          <Route path="/explore-projects" element={<ExploreProjects />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* Onboarding Routes */}
           <Route path="/freelancer/onboarding" element={
@@ -54,6 +59,11 @@ function App() {
           <Route path="/freelancer/dashboard" element={
             <PrivateRoute role="freelancer">
               <FreelancerFeed />
+            </PrivateRoute>
+          } />
+          <Route path="/freelancer/my-dashboard" element={
+            <PrivateRoute role="freelancer">
+              <FreelancerDashboard />
             </PrivateRoute>
           } />
           <Route path="/freelancer/feed" element={

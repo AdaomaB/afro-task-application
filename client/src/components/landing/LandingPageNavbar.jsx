@@ -18,15 +18,15 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: "AI Services", path: "/ai-services" },
-    { name: "Technology", path: "/technology" },
-    { name: "Programming", path: "/programming" },
-    { name: "Graphics Design", path: "/graphics-design" },
-    { name: "Video Editing", path: "/video-editing" },
-    { name: "SEO", path: "/seo" },
-    { name: "Branding & Sales", path: "/branding-sales" },
-    { name: "Writing & Translation", path: "/writing-translation" },
-    { name: "Business", path: "/business" },
+    { name: "AI Services", path: "/explore-projects?category=IT" },
+    { name: "Technology", path: "/explore-projects?category=IT" },
+    { name: "Programming", path: "/explore-projects?category=Web Development" },
+    { name: "Graphics Design", path: "/explore-projects?category=Graphic Design" },
+    { name: "Video Editing", path: "/explore-projects?category=Video Editing" },
+    { name: "SEO", path: "/explore-projects?category=Digital Marketing" },
+    { name: "Branding & Sales", path: "/explore-projects?category=Digital Marketing" },
+    { name: "Writing & Translation", path: "/explore-projects?category=Writing" },
+    { name: "Business", path: "/explore-projects?category=Others" },
   ];
 
   const navStyle =

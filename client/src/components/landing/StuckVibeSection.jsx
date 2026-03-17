@@ -14,7 +14,7 @@ export default function StuckVibeSection() {
       </div>
 
       <div className="flex flex-col md:flex-row justify-between w-full items-end gap-4 relative z-0 mt-4">
-        <Link to="/welcome">
+        <Link to="/explore-projects">
           <button className="text-black duration-300 ease-in-out hover:scale-105 bg-white flex flex-row justify-center items-center py-2 px-6 md:py-2 md:px-8 rounded-xl shadow-lg text-lg md:text-2xl font-semibold ring-2 ring-black cursor-pointer hover:bg-gray-200 w-full md:w-auto">
             Find an Expert
           </button>

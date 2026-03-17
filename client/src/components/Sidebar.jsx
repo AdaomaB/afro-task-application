@@ -21,6 +21,7 @@ const Sidebar = () => {
     { name: 'My Applications', path: '/freelancer/applications', icon: FileText },
     { name: 'Ongoing Projects', path: '/freelancer/projects/ongoing', icon: FolderOpen },
     { name: 'Completed Projects', path: '/freelancer/projects/completed', icon: CheckCircle },
+    { name: 'My Dashboard', path: '/freelancer/my-dashboard', icon: Briefcase },
     { name: 'Create Post', path: '/freelancer/create-post', icon: PlusCircle },
     { name: 'Messages', path: '/freelancer/messages', icon: MessageSquare },
     { name: 'Profile', path: '/freelancer/profile', icon: User }

@@ -1,0 +1,175 @@
+import { useState } from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { motion } from 'framer-motion';
+import { FaEnvelope, FaHeadset } from 'react-icons/fa';
+import WhiteNavbar from '../components/navbar/WhiteNavbar';
+import Footer from '../components/Footer';
+import toast from 'react-hot-toast';
+
+export default function ContactPage() {
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'contact_messages'), {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
+        createdAt: serverTimestamp(),
+      });
+      setSubmitted(true);
+      toast.success('Message sent successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <WhiteNavbar />
+
+      {/* Hero */}
+      <div className="bg-[#00564C] text-white py-14 px-6 text-center">
+        <h1 className="text-3xl md:text-5xl font-bold mb-3">Contact Us</h1>
+        <p className="text-green-100 text-lg max-w-xl mx-auto">
+          Have a question or need help? We'd love to hear from you.
+        </p>
+      </div>
+
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* Contact Info */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-8"
+        >
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Get in Touch</h2>
+            <p className="text-gray-600 leading-relaxed">
+              Whether you're a client looking for talent or a freelancer with questions,
+              our team is here to help. Reach out and we'll get back to you as soon as possible.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-[#00564C]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <FaEnvelope className="text-[#00564C]" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Business Email</p>
+                <a href="mailto:business@afrotask.com" className="text-[#00564C] hover:underline text-sm">
+                  business@afrotask.com
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm">
+              <div className="w-10 h-10 bg-[#00564C]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <FaHeadset className="text-[#00564C]" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Support Email</p>
+                <a href="mailto:support@afrotask.com" className="text-[#00564C] hover:underline text-sm">
+                  support@afrotask.com
+                </a>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Contact Form */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-2xl shadow-md p-8"
+        >
+          {submitted ? (
+            <div className="flex flex-col items-center justify-center h-full py-10 text-center">
+              <div className="w-16 h-16 bg-[#00564C]/10 rounded-full flex items-center justify-center mb-4">
+                <FaEnvelope className="text-3xl text-[#00564C]" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Message Sent!</h3>
+              <p className="text-gray-600">We'll get back to you within 24 hours.</p>
+              <button
+                onClick={() => { setSubmitted(false); setForm({ name: '', email: '', message: '' }); }}
+                className="mt-6 text-[#00564C] hover:underline text-sm font-medium"
+              >
+                Send another message
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Send a Message</h3>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Your full name"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="your@email.com"
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  name="message"
+                  value={form.message}
+                  onChange={handleChange}
+                  placeholder="How can we help you?"
+                  required
+                  rows={5}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#00564C] hover:bg-[#027568] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+              >
+                {loading ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          )}
+        </motion.div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
