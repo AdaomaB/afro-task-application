@@ -1,5 +1,5 @@
-import { IoSearch } from 'react-icons/io5'
-import { useState } from 'react'
+import { IoSearch, IoClose } from 'react-icons/io5'
+import { useState, useMemo } from 'react'
 import Footer from '../components/Footer'
 import WhiteNavbar from '../components/navbar/WhiteNavbar'
 import WhyAfroTaskBoard from '../components/WhyAfroTaskBoard'
@@ -8,12 +8,24 @@ import blogs from '../data/blogs.json'
 
 export default function WhyAfroTask() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(3);
 
-  const filteredBlogs = blogs.filter(blog => 
-    blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    blog.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    blog.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const suggestions = ["Freelancing in Nigeria", "Afro task freelancer", "Nigerian freelancer"];
+
+  const filteredSuggestions = useMemo(() => {
+    if (!searchTerm) return suggestions;
+    return suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [searchTerm]);
+
+  const filteredBlogs = useMemo(() => {
+    return blogs.filter(blog => 
+      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      blog.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      blog.author.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
+  const visibleBlogs = filteredBlogs.slice(0, visibleCount);
 
   return (
     <div className='min-h-screen bg-[#00564C] relative text-black'>
@@ -28,25 +40,33 @@ export default function WhyAfroTask() {
                 placeholder="Search blogs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className='w-full bg-white pl-12 pr-6 text-gray-900 rounded-2xl text-xl py-4 border-2 border-gray-300 focus:border-green-500 focus:outline-none shadow-lg' 
+                className='w-full bg-white pl-12 pr-12 text-gray-900 rounded-2xl text-xl py-4 border-2 border-gray-300 focus:border-green-500 focus:outline-none shadow-lg' 
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <IoClose className="text-xl" />
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl">
-            <button type='button' onClick={() => {}} className='flex items-center py-4 px-6 text-lg text-gray-900 hover:bg-gray-50 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500 rounded-t-2xl w-full'>
-              <IoSearch className="text-lg text-gray-400 mr-3 flex-shrink-0" />
-              Freelancing in Nigeria
-            </button>
-            <button type='button' onClick={() => {}} className='flex items-center py-4 px-6 text-lg text-gray-900 hover:bg-gray-50 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500  w-full'>
-              <IoSearch className="text-lg text-gray-400 mr-3 flex-shrink-0" />
-              Afro task freelancer
-            </button>
-            <button type='button' onClick={() => {}} className='flex items-center py-4 px-6 text-lg text-gray-900 hover:bg-gray-50 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500 rounded-b-2xl w-full'>
-              <IoSearch className="text-lg text-gray-400 mr-3 flex-shrink-0" />
-              Nigerian freelancer
-            </button>
-          </div>
+          {filteredSuggestions.length > 0 && (
+            <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl">
+              {filteredSuggestions.map((sug, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSearchTerm(sug)}
+                  className='flex items-center py-4 px-6 text-lg text-gray-900 hover:bg-gray-50 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500 w-full text-left'
+                >
+                  <IoSearch className="text-lg text-gray-400 mr-3 flex-shrink-0" />
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="px-4 sm:px-8 lg:px-12 py-12 lg:py-16 ">
