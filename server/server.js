@@ -20,6 +20,7 @@ import statsRoutes from './routes/statsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import rankingRoutes from './routes/rankingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 
 dotenv.config();
 
@@ -79,6 +80,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/search', searchRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 

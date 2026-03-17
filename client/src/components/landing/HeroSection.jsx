@@ -12,10 +12,8 @@ export default function HeroSection() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to freelancer feed with search query as URL parameter
-      navigate(
-        `/freelancer/feed?search=${encodeURIComponent(searchQuery.trim())}`,
-      );
+      // Navigate to search results page
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 

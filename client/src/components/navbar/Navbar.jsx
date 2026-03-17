@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { Bell, Briefcase } from 'lucide-react';
+import { Bell, Briefcase, Search, MessageCircle } from 'lucide-react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +11,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -63,6 +64,14 @@ const Navbar = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+      setSearchInput('');
+    }
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'job_match':
@@ -104,6 +113,22 @@ const Navbar = () => {
             className="h-10 w-auto"
           />
         </div>
+
+        {/* Search Bar */}
+        {user && (
+          <form onSubmit={handleSearch} className="hidden md:block flex-1 max-w-md mx-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search posts, jobs, people..."
+                className="w-full bg-white/10 border border-white/20 rounded-lg py-2 px-4 pl-10 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/50" />
+            </div>
+          </form>
+        )}
         
         {user ? (
           <div className="flex items-center gap-6">

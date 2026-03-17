@@ -3,9 +3,9 @@ import { IoIosArrowForward } from "react-icons/io";
 
 export default function WhyAfroTaskBoard() {
   return (
-    <div className="bg-white h-auto p-12 mx-2 lg:mx-8 py-12 lg:py-24 m-2 lg:m-12 flex flex-col justify-center lg:flex-row items-center rounded-2xl md:rounded-3xl gap-4 overflow-visible relative">
+    <div className="bg-white h-auto p-12 mx-4 mt-4 lg:mx-8 py-12 lg:py-24 m-2 lg:m-12 flex flex-col justify-center lg:flex-row items-center rounded-2xl md:rounded-3xl gap-4 overflow-visible relative">
         <div className="w-full gap-6 md:gap-12 flex flex-col z-10 md:text-left md:justify-start md:items-start lg:w-4/5">
-            <h1 className="text-2xl md:text-4xl lg:text-6xl font-semibold ">
+            <h1 className="text-xl md:text-3xl lg:text-5xl font-semibold ">
               Why Afro Task is Changing Freelancing in Africa
             </h1>
             <p className="text-lg md:text-2xl lg:text-3xl">
