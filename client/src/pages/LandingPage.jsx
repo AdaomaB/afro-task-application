@@ -9,7 +9,7 @@ import StuckVibeSection from "../components/landing/StuckVibeSection";
 import WhiteNavbar from "../components/navbar/WhiteNavbar";
 import LandingPageNavbar from "../components/landing/LandingPageNavbar";
 import HeroSection from "../components/landing/HeroSection";
-import ProductSection from "../components/landing/ProductSection";
+// import ProductSection from "../components/landing/ProductSection";
 
 // LandingPage Component
 // Main entry point for the AfroTask platform
@@ -35,7 +35,7 @@ export default function LandingPage() {
         <StuckVibeSection />
 
         {/* Made on Afro Task Section - Displays recent work/projects */}
-        <ProductSection />
+        {/* <ProductSection /> */}
       </section>
 
       {/* Why Choose Afro Task Features Section */}

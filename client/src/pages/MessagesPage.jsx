@@ -37,6 +37,12 @@ const MessagesPage = () => {
       const chat = conversations.find(c => c.id === chatId);
       if (chat) {
         setSelectedChat(chat);
+      } else {
+        // Chat exists but not in list yet — fetch it directly
+        api.get('/pre-project-chats/my-chats').then(res => {
+          const found = (res.data.chats || []).find(c => c.id === chatId);
+          if (found) setSelectedChat(found);
+        }).catch(() => {});
       }
     }
   }, [searchParams, conversations]);

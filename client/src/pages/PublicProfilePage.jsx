@@ -225,13 +225,11 @@ const PublicProfilePage = () => {
 
   const handleContactUser = async () => {
     try {
-      // Create or get existing chat with this user
-      const response = await api.post('/chats/create', {
+      const response = await api.post('/pre-project-chats/create-direct', {
         otherUserId: userId
       });
-      
+
       if (response.data.success) {
-        // Navigate to messages page with the chat ID
         const messagesPath = `/${user?.role}/messages?chatId=${response.data.chatId}`;
         navigate(messagesPath);
         toast.success(`Opening chat with ${profile?.fullName}`);

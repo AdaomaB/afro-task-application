@@ -139,4 +139,101 @@ router.post('/showcase-projects', protect, upload.single('image'), async (req, r
   }
 });
 
+// GET blogs
+router.get('/blogs', async (req, res) => {
+  try {
+    const snapshot = await db.collection('blogs').get();
+    let blogs = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate?.()?.toISOString() || null,
+    }));
+    blogs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    res.json({ success: true, blogs });
+  } catch (err) {
+    console.error('Fetch blogs error:', err);
+    res.status(500).json({ message: 'Failed to fetch blogs' });
+  }
+});
+
+// POST blogs
+router.post('/blogs', protect, upload.single('image'), async (req, res) => {
+  try {
+    const { title, description, content, authorName } = req.body;
+    if (!title || !description || !content) {
+      return res.status(400).json({ message: 'Title, description and content are required' });
+    }
+    let imageUrl = '';
+    if (req.file) {
+      try {
+        const { uploadToCloudinary } = await import('../utils/cloudinaryUpload.js');
+        imageUrl = await uploadToCloudinary(req.file.buffer, 'afro-task/blogs', 'image');
+      } catch (uploadErr) {
+        console.error('Image upload failed, continuing without image:', uploadErr.message);
+        // Don't fail the whole request if image upload fails
+      }
+    }
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      content: content.trim(),
+      image: imageUrl,
+      authorName: authorName || '',
+      authorId: req.user.userId,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+    const docRef = await db.collection('blogs').add(payload);
+    res.json({ success: true, id: docRef.id });
+  } catch (err) {
+    console.error('Blog create error:', err.message, err.stack);
+    res.status(500).json({ message: 'Failed to create blog', detail: err.message });
+  }
+});
+
+// PUT (edit) blog
+router.put('/blogs/:blogId', protect, upload.single('image'), async (req, res) => {
+  try {
+    const { blogId } = req.params;
+    const { title, description, content, authorName } = req.body;
+    const ref = db.collection('blogs').doc(blogId);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ message: 'Blog not found' });
+    if (doc.data().authorId !== req.user.userId) return res.status(403).json({ message: 'Not authorized' });
+
+    const updates = {};
+    if (title) updates.title = title.trim();
+    if (description) updates.description = description.trim();
+    if (content) updates.content = content.trim();
+    if (authorName) updates.authorName = authorName;
+    if (req.file) {
+      try {
+        const { uploadToCloudinary } = await import('../utils/cloudinaryUpload.js');
+        updates.image = await uploadToCloudinary(req.file.buffer, 'afro-task/blogs', 'image');
+      } catch (e) { console.error('Image upload failed:', e.message); }
+    }
+    updates.updatedAt = FieldValue.serverTimestamp();
+    await ref.update(updates);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Blog update error:', err.message);
+    res.status(500).json({ message: 'Failed to update blog', detail: err.message });
+  }
+});
+
+// DELETE blog
+router.delete('/blogs/:blogId', protect, async (req, res) => {
+  try {
+    const { blogId } = req.params;
+    const ref = db.collection('blogs').doc(blogId);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ message: 'Blog not found' });
+    if (doc.data().authorId !== req.user.userId) return res.status(403).json({ message: 'Not authorized' });
+    await ref.delete();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Blog delete error:', err.message);
+    res.status(500).json({ message: 'Failed to delete blog', detail: err.message });
+  }
+});
+
 export default router;

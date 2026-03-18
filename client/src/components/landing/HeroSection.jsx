@@ -1,40 +1,121 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch } from "react-icons/fa";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+
+const slides = [
+  { type: "image", src: "/img/Ld1.png" },
+  { type: "video", src: "/imgvid/video5897679113241500502.mp4" },
+  { type: "image", src: "/img/whisk.png" },
+];
 
 export default function HeroSection() {
-  // State for search query
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Hook for navigation
+  const [current, setCurrent] = useState(0);
+  const videoRef = useRef(null);
+  const timerRef = useRef(null);
   const navigate = useNavigate();
-  // Handle search functionality
+
+  const goTo = (index) => setCurrent((index + slides.length) % slides.length);
+
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    if (slides[current].type === "image") {
+      timerRef.current = setTimeout(() => goTo(current + 1), 5000);
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [current]);
+
+  useEffect(() => {
+    if (slides[current].type === "video" && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [current]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to search results page
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  // Handle category button click
   const handleCategoryClick = (category) => {
     navigate(`/explore-projects?category=${encodeURIComponent(category)}`);
   };
 
   return (
     <div>
-      <div className="p-4 md:p-10 m-2 md:m-10 bg-[url('/img/Ld1.png')] rounded-2xl lg:h-screen md:rounded-3xl min-h-[60vh] bg-cover bg-center flex flex-col justify-end">
-        {/* Main headline text */}
-        <div className="font-bold text-2xl md:text-4xl lg:text-5xl flex justify-center flex-col items-center text-center px-2">
+      <div className="relative p-4 md:p-10 m-2 md:m-10 rounded-2xl lg:h-screen md:rounded-3xl min-h-[60vh] overflow-hidden flex flex-col justify-end">
+
+        {/* Slides */}
+        {slides.map((slide, i) => (
+          <div
+            key={i}
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              i === current ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {slide.type === "image" ? (
+              <img
+                src={slide.src}
+                alt="hero"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <video
+                ref={i === current ? videoRef : null}
+                src={slide.src}
+                className="w-full h-full object-cover"
+                muted
+                playsInline
+                onEnded={() => goTo(current + 1)}
+              />
+            )}
+            {/* Dark overlay so text stays readable */}
+            <div className="absolute inset-0 bg-black/30" />
+          </div>
+        ))}
+
+        {/* Prev / Next arrows */}
+        <button
+          onClick={() => goTo(current - 1)}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition"
+          aria-label="Previous slide"
+        >
+          <IoIosArrowBack className="text-xl" />
+        </button>
+        <button
+          onClick={() => goTo(current + 1)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition"
+          aria-label="Next slide"
+        >
+          <IoIosArrowForward className="text-xl" />
+        </button>
+
+        {/* Dot indicators */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                i === current ? "bg-white scale-125" : "bg-white/50"
+              }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Content — unchanged */}
+        <div className="relative z-10 font-bold text-2xl md:text-4xl lg:text-5xl flex justify-center flex-col items-center text-center px-2">
           <p>Empowering Ideas, Connecting</p>
           <p>Talent , and Building the Future</p>
         </div>
 
-        {/* Search bar with form handler */}
         <form
           onSubmit={handleSearch}
-          className="relative flex justify-center items-center w-full md:w-2/3 mx-auto mt-4 px-2"
+          className="relative z-10 flex justify-center items-center w-full md:w-2/3 mx-auto mt-4 px-2"
         >
           <input
             type="text"
@@ -52,8 +133,7 @@ export default function HeroSection() {
           </button>
         </form>
 
-        {/* Quick category filter buttons */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-10 text-sm md:text-xl font-thin mt-3 md:mt-5 px-2">
+        <div className="relative z-10 flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-10 text-sm md:text-xl font-thin mt-3 md:mt-5 px-2">
           <button
             onClick={() => handleCategoryClick("Web Development")}
             className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs md:text-base"
@@ -79,7 +159,7 @@ export default function HeroSection() {
             Content Writing
           </button>
         </div>
-      </div>{" "}
+      </div>
     </div>
   );
 }

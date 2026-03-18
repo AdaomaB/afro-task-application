@@ -50,7 +50,7 @@ const Footer = () => {
 
           {/* Navigation */}
           <div>
-            <h3 className="font-semibold mb-4 text-white">Navigation</h3>
+            <h3 className="font-semibold mb-4 text-white">Quick Links</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link to="/" className="hover:text-white transition">

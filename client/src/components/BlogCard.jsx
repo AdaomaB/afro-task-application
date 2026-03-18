@@ -1,5 +1,5 @@
 
-export default function BlogCard({ title, description, author, date, link }) {
+export default function BlogCard({ title, description, author, date, link, onReadMore }) {
   return (
     <div className='flex flex-col lg:flex-row flex-shrink-0 items-start lg:items-center justify-center lg:h-[350px] rounded-2xl w-full text-white bg-white/10 backdrop-blur-sm shadow-2xl overflow-hidden'>
         <div className="w-full lg:w-1/3 h-48 lg:h-full">
@@ -10,7 +10,9 @@ export default function BlogCard({ title, description, author, date, link }) {
             <p className="text-base md:text-lg text-gray-100 leading-relaxed flex-1">{description}</p>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <p className="text-sm text-gray-300">{author} · {date}</p>
-              <button className="bg-green-500 hover:bg-green-600 transition-all duration-300 ease-in-out hover:scale-105 px-6 py-3 rounded-3xl text-lg font-medium whitespace-nowrap ml-auto sm:ml-0">
+              <button
+                onClick={onReadMore}
+                className="bg-green-500 hover:bg-green-600 transition-all duration-300 ease-in-out hover:scale-105 px-6 py-3 rounded-3xl text-lg font-medium whitespace-nowrap ml-auto sm:ml-0">
                 Read More
               </button>
             </div>
