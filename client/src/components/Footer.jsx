@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { FaLinkedin, FaTwitter, FaGithub } from 'react-icons/fa';
+import { Link } from "react-router-dom";
+import { FaLinkedin, FaTwitter, FaGithub } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -9,23 +9,40 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/img/afro-task.png" alt="Afro Task" className="h-12 w-auto" />
+              <img
+                src="/img/afro-task.png"
+                alt="Afro Task"
+                className="h-12 w-auto"
+              />
               <span className="text-2xl font-bold">Afro Task</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Connecting African talent to global opportunities. Build, grow, and thrive.
+              Connecting African talent to global opportunities. Build, grow,
+              and thrive.
             </p>
             <div className="flex gap-4 mt-5">
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition text-xl">
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition text-xl"
+              >
                 <FaLinkedin />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition text-xl">
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition text-xl"
+              >
                 <FaTwitter />
               </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition text-xl">
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition text-xl"
+              >
                 <FaGithub />
               </a>
             </div>
@@ -33,12 +50,34 @@ const Footer = () => {
 
           {/* Navigation */}
           <div>
-            <h3 className="font-semibold mb-4 text-white">Navigation</h3>
+            <h3 className="font-semibold mb-4 text-white">Quick Links</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><Link to="/" className="hover:text-white transition">Home</Link></li>
-              <li><Link to="/explore-projects" className="hover:text-white transition">Explore Projects</Link></li>
-              <li><Link to="/why-afro-task" className="hover:text-white transition">About</Link></li>
-              <li><Link to="/contact" className="hover:text-white transition">Contact Us</Link></li>
+              <li>
+                <Link to="/" className="hover:text-white transition">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/explore-projects"
+                  className="hover:text-white transition"
+                >
+                  Explore Projects
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/why-afro-task"
+                  className="hover:text-white transition"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition">
+                  Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -46,16 +85,34 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4 text-white">Account</h3>
             <ul className="space-y-2 text-gray-400">
-              <li><Link to="/login" className="hover:text-white transition">Login</Link></li>
-              <li><Link to="/welcome" className="hover:text-white transition">Sign Up</Link></li>
-              <li><Link to="/contact" className="hover:text-white transition">Privacy Policy</Link></li>
-              <li><Link to="/contact" className="hover:text-white transition">Terms of Service</Link></li>
+              <li>
+                <Link to="/login" className="hover:text-white transition">
+                  Login
+                </Link>
+              </li>
+              <li>
+                <Link to="/welcome" className="hover:text-white transition">
+                  Sign Up
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition">
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-800 pt-6 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} Afro Task. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} Afro Task. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

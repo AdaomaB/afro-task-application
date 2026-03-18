@@ -27,7 +27,7 @@ export default function WhyAfroTaskSection() {
           />
         </div>
         <div className="self-start md:ml-20 mt-4">
-          <Link to="/why-afro-task">
+          <Link to="/blogs">
             <button className="text-black bg-white flex flex-row md:w-[200px] lg:justify-center items-center py-2 px-6 md:py-2 md:px-8 rounded-2xl md:rounded-3xl shadow-lg text-base md:text-xl font-semibold group transition-transform duration-300 ease-in-out hover:scale-105">
               Read More {" "}
               <IoIosArrowForward className="font-semibold text-xl md:text-2xl transition-transform duration-300 group-hover:translate-x-4 group-hover:font-bold" />

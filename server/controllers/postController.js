@@ -85,18 +85,47 @@ export const createPost = async (req, res) => {
 
 export const getFeed = async (req, res) => {
   try {
-    const { page = 1, limit = 50 } = req.query; // Increased default limit to 50
+    const { page = 1, limit = 50, search, category } = req.query; // Added search and category params
     const offset = (page - 1) * limit;
 
-    const postsSnapshot = await db.collection('posts')
-      .orderBy('createdAt', 'desc')
-      .limit(parseInt(limit))
-      .offset(offset)
-      .get();
+    let query = db.collection('posts').orderBy('createdAt', 'desc');
 
-    const posts = await Promise.all(postsSnapshot.docs.map(async (doc) => {
-      const postData = { id: doc.id, ...doc.data() };
-      
+    // Fetch all posts first, then filter (Firestore limitation - can't do text search directly)
+    const postsSnapshot = await query.get();
+
+    let allPosts = postsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allPosts = allPosts.filter(post => {
+        const contentMatch = post.content?.toLowerCase().includes(searchLower);
+        const hashtagMatch = post.hashtags?.some(tag => tag.toLowerCase().includes(searchLower));
+        return contentMatch || hashtagMatch;
+      });
+    }
+
+    // Apply category filter
+    if (category) {
+      const categoryLower = category.toLowerCase();
+      allPosts = allPosts.filter(post => {
+        const hashtagMatch = post.hashtags?.some(tag => tag.toLowerCase() === categoryLower);
+        const contentMatch = post.content?.toLowerCase().includes(categoryLower);
+        return hashtagMatch || contentMatch;
+      });
+    }
+
+    // Get total count after filtering
+    const total = allPosts.length;
+
+    // Apply pagination
+    const paginatedPosts = allPosts.slice(offset, offset + parseInt(limit));
+
+    // Enrich posts with author data
+    const posts = await Promise.all(paginatedPosts.map(async (postData) => {
       const userDoc = await db.collection('users').doc(postData.authorId).get();
       postData.author = userDoc.exists ? {
         fullName: userDoc.data().fullName,
@@ -107,9 +136,6 @@ export const getFeed = async (req, res) => {
       return postData;
     }));
 
-    // Get total count for pagination info
-    const totalSnapshot = await db.collection('posts').get();
-    const total = totalSnapshot.size;
     const hasMore = (offset + posts.length) < total;
 
     res.json({ 

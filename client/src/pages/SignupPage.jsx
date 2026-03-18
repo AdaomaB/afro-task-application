@@ -1,10 +1,11 @@
 import { useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import { ArrowLeft } from 'lucide-react';
 
 const SignupPage = () => {
   const { role } = useParams();
@@ -79,7 +80,13 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="flex-1 flex items-center justify-center py-12 px-6 lg:px-12">
+      <div className="p-4">
+        <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition font-medium text-sm">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+      </div>
+      <div className="flex-1 flex items-center justify-center py-6 px-6 lg:px-12">
         <div className="w-full max-w-6xl flex gap-8 lg:gap-12">
           <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
             <motion.div

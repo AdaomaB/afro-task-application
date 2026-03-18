@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Briefcase, FileText, FolderOpen, CheckCircle, 
-  User, PlusCircle, Search, MessageSquare, X 
+  User, PlusCircle, Search, MessageSquare, X, BookOpen
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
@@ -21,9 +21,9 @@ const Sidebar = () => {
     { name: 'My Applications', path: '/freelancer/applications', icon: FileText },
     { name: 'Ongoing Projects', path: '/freelancer/projects/ongoing', icon: FolderOpen },
     { name: 'Completed Projects', path: '/freelancer/projects/completed', icon: CheckCircle },
-    { name: 'My Dashboard', path: '/freelancer/my-dashboard', icon: Briefcase },
     { name: 'Create Post', path: '/freelancer/create-post', icon: PlusCircle },
     { name: 'Messages', path: '/freelancer/messages', icon: MessageSquare },
+    { name: 'Blog', path: '/why-afro-task', icon: BookOpen },
     { name: 'Profile', path: '/freelancer/profile', icon: User }
   ];
 
@@ -35,6 +35,7 @@ const Sidebar = () => {
     { name: 'Ongoing Projects', path: '/client/projects/ongoing', icon: FolderOpen },
     { name: 'Completed Projects', path: '/client/projects/completed', icon: CheckCircle },
     { name: 'Messages', path: '/client/messages', icon: MessageSquare },
+    { name: 'Blog', path: '/why-afro-task', icon: BookOpen },
     { name: 'Profile', path: '/client/profile', icon: User }
   ];
 
@@ -147,7 +148,7 @@ const Sidebar = () => {
       {!isMobileMenuOpen && (
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="lg:hidden fixed top-4 left-4 p-3 bg-green-600 text-white rounded-lg shadow-lg z-40"
+          className="lg:hidden fixed top-4 left-4 p-3 bg-[#00564c] text-white rounded-lg shadow-lg z-40"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

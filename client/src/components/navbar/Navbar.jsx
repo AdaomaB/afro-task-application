@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import { Bell, Briefcase } from 'lucide-react';
+import { Bell, Briefcase, Search, MessageCircle } from 'lucide-react';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,15 +11,16 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
     if (user) {
       fetchNotifications();
       
-      // Poll for new notifications every 30 seconds
+      // Poll for new notifications every 10 seconds
       const interval = setInterval(() => {
         fetchNotifications();
-      }, 30000);
+      }, 10000);
       
       return () => clearInterval(interval);
     }
@@ -33,6 +34,15 @@ const Navbar = () => {
       setUnreadCount(notifs.filter(n => !n.read).length);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await api.put('/notifications/mark-all-read');
+      fetchNotifications();
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
     }
   };
 
@@ -51,15 +61,29 @@ const Navbar = () => {
     
     // Navigate based on notification type
     if (notification.type === 'job_match') {
-      navigate('/freelancer/explore-jobs');
+      navigate(`/${user.role}/jobs`);
     } else if (notification.type === 'new_post') {
       navigate(`/${user.role}/feed`);
     } else if (notification.type === 'message') {
-      navigate('/messages');
+      navigate(`/${user.role}/messages`);
     } else if (notification.type === 'application') {
       navigate('/client/my-jobs');
     } else if (notification.type === 'like' || notification.type === 'comment') {
       navigate(`/${user.role}/feed`);
+    } else if (notification.type === 'follow') {
+      navigate(`/profile/${notification.senderId}`);
+    } else if (notification.type === 'application_accepted') {
+      navigate(`/${user.role}/applications`);
+    } else if (notification.type === 'application_rejected') {
+      navigate(`/${user.role}/applications`);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+      setSearchInput('');
     }
   };
 
@@ -86,27 +110,41 @@ const Navbar = () => {
       case 'comment':
         return `${notification.fromUser?.fullName || 'Someone'} commented on your post`;
       case 'application':
-        return `New application for your job`;
+        return `${notification.fromUser?.fullName || 'Someone'} applied for your job`;
       case 'message':
         return `New message from ${notification.fromUser?.fullName || 'someone'}`;
+      case 'follow':
+        return `${notification.fromUser?.fullName || 'Someone'} started following you`;
+      case 'application_accepted':
+        return `Your application was accepted!`;
+      case 'application_rejected':
+        return `Your application was not selected`;
       default:
         return notification.message || 'New notification';
     }
   };
 
   return (
-    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(user ? `/${user.role}/dashboard` : '/')}>
-          <img 
-            src="/img/afro-task-logo.png" 
-            alt="Afro Task" 
-            className="h-10 w-auto"
-          />
-        </div>
+    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg ">
+      <div className="max-w-7xl mx-auto flex lg:justify-between justify-end items-center">
+        {/* Search Bar */}
+        {user && (
+          <form onSubmit={handleSearch} className="hidden lg:block flex-1 max-w-md mx-4 ">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search posts, jobs, people..."
+                className="w-full bg-white/10 border border-white/20 rounded-lg py-2 px-4 pl-10 text-white placeholder-white/50 focus:outline-none focus:border-white/40 transition"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/50" />
+            </div>
+          </form>
+        )}
         
         {user ? (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-end gap-6 ml-12">
             {/* Notifications Icon */}
             <div className="relative">
               <button
@@ -130,8 +168,16 @@ const Navbar = () => {
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
                   >
-                    <div className="p-4 border-b border-gray-200">
+                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                       <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllRead}
+                          className="text-xs text-green-600 hover:text-green-700 font-medium"
+                        >
+                          Mark all read
+                        </button>
+                      )}
                     </div>
                     {notifications.length === 0 ? (
                       <div className="p-8 text-center text-gray-500">
@@ -171,10 +217,10 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            <span className="text-white/90">Welcome, {user.fullName}</span>
+              {/* <span className="text-white/90">Welcome, {user.fullName}</span> */}
             <button 
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded-lg transition"
+              className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded-lg transition max-w-36"
             >
               Logout
             </button>
