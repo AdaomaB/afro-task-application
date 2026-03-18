@@ -41,7 +41,7 @@ function App() {
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/signup/:role" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/why-afro-task" element={<WhyAfroTask />} />
+          <Route path="/blogs" element={<WhyAfroTask />} />
           <Route path="/explore-projects" element={<ExploreProjects />} />
           <Route path="/contact" element={<ContactPage />} />
           

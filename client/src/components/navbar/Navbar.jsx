@@ -104,19 +104,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate(user ? `/${user.role}/dashboard` : '/')}>
-          <img 
-            src="/img/afro-task-logo.png" 
-            alt="Afro Task" 
-            className="h-10 w-auto"
-          />
-        </div>
-
+    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg ">
+      <div className="max-w-7xl mx-auto flex lg:justify-between justify-end items-center">
         {/* Search Bar */}
         {user && (
-          <form onSubmit={handleSearch} className="hidden md:block flex-1 max-w-md mx-4">
+          <form onSubmit={handleSearch} className="hidden lg:block flex-1 max-w-md mx-4 ">
             <div className="relative">
               <input
                 type="text"
@@ -131,7 +123,7 @@ const Navbar = () => {
         )}
         
         {user ? (
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-end gap-6 ml-12">
             {/* Notifications Icon */}
             <div className="relative">
               <button
@@ -196,10 +188,10 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            <span className="text-white/90">Welcome, {user.fullName}</span>
+              {/* <span className="text-white/90">Welcome, {user.fullName}</span> */}
             <button 
               onClick={logout}
-              className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded-lg transition"
+              className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded-lg transition max-w-36"
             >
               Logout
             </button>
