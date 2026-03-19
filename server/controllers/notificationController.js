@@ -30,11 +30,16 @@ export const getNotifications = async (req, res) => {
 
     const notificationsSnapshot = await db.collection('notifications')
       .where('recipientId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .limit(parseInt(limit))
       .get();
 
-    const notifications = await Promise.all(notificationsSnapshot.docs.map(async (doc) => {
+    // Sort in-memory to avoid needing a composite Firestore index
+    const sortedDocs = notificationsSnapshot.docs.sort((a, b) => {
+      const aTime = new Date(a.data().createdAt).getTime();
+      const bTime = new Date(b.data().createdAt).getTime();
+      return bTime - aTime;
+    }).slice(0, parseInt(limit));
+
+    const notifications = await Promise.all(sortedDocs.map(async (doc) => {
       const notifData = { id: doc.id, ...doc.data() };
       
       // Get sender info

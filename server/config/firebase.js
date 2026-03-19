@@ -50,7 +50,15 @@ try {
 
   db = admin.firestore();
   bucket = admin.storage().bucket();
-  console.log('✅ Firebase Firestore Connected');
+
+  // Connect to Firestore emulator ONLY when USE_EMULATOR=true
+  if (process.env.USE_EMULATOR === 'true') {
+    db.settings({ host: 'localhost:8080', ssl: false });
+    console.log('🔧 Firestore connected to LOCAL EMULATOR (localhost:8080)');
+  } else {
+    console.log('✅ Firebase Firestore Connected (production)');
+  }
+
   console.log('✅ Firebase Storage Connected');
 } catch (error) {
   console.error('❌ Firebase Initialization Error:', error.message);

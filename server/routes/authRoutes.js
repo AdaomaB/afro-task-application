@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getMe } from '../controllers/authController.js';
+import { register, login, getMe, googleAuth } from '../controllers/authController.js';
 import { protect } from '../middlewares/auth.js';
 import { upload } from '../middlewares/upload.js';
 import { admin } from '../config/firebase.js';
@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post('/register', upload.single('profileImage'), register);
 router.post('/login', login);
+router.post('/google', googleAuth);
 router.get('/me', protect, getMe);
 
 // Generate Firebase custom token for client-side Firestore auth

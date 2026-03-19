@@ -62,6 +62,10 @@ const FreelancerOnboarding = () => {
     }
   };
 
+  const handleSkip = () => {
+    navigate('/freelancer/feed');
+  };
+
   const handleStep1 = async () => {
     if (!professionalInfo.professionalTitle || !professionalInfo.yearsOfExperience || !professionalInfo.bio) {
       toast.error('Please fill all required fields');
@@ -185,6 +189,12 @@ const FreelancerOnboarding = () => {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Your Professional Profile</h1>
           <p className="text-gray-600">Let's set up your profile</p>
+          <button
+            onClick={handleSkip}
+            className="mt-3 text-sm text-gray-400 hover:text-gray-600 underline transition"
+          >
+            Skip for now
+          </button>
         </div>
 
         <div className="mb-8">

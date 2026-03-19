@@ -48,6 +48,10 @@ const ClientOnboarding = () => {
     }
   };
 
+  const handleSkip = () => {
+    navigate('/client/feed');
+  };
+
   const handleStep1Submit = async () => {
     if (!companyInfo.companyName) {
       toast.error('Company name is required');
@@ -152,6 +156,12 @@ const ClientOnboarding = () => {
           <p className="text-gray-600">
             Let's set up your profile to start hiring talent
           </p>
+          <button
+            onClick={handleSkip}
+            className="mt-3 text-sm text-gray-400 hover:text-gray-600 underline transition"
+          >
+            Skip for now
+          </button>
         </div>
 
         {/* Progress Bar */}
