@@ -9,13 +9,13 @@ export default function TermsPage() {
       <WhiteNavbar />
       
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 bg-[url('/img/tm.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
+      <section className="relative p-10 bg-[url('/img/tm.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
         <div className="absolute inset-0 bg-[#00564C]/80"></div>
         <div className="relative max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent drop-shadow-2xl">
+          <h1 className="text-3xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent drop-shadow-2xl">
             Terms of Service
           </h1>
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed opacity-95 mb-8">
+          <p className="text-green-100 text-lg max-w-2xl mx-auto leading-relaxed opacity-95 mb-2">
             The legal agreement between you and AfroTask. Governing your use of our freelancer platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">

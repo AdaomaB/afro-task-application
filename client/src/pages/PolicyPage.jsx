@@ -9,16 +9,16 @@ export default function PolicyPage() {
       <WhiteNavbar />
       
       {/* Hero Section - Fixed blend and overlay */}
-      <section className="relative pt-24 pb-20 bg-[url('/img/sk.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
+      <section className="relative p-10 bg-[url('/img/sk.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
         <div className="absolute inset-0 bg-[#00564C]/80"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent drop-shadow-2xl">
+        <div className="relative max-w-7xl mx-auto px-6 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent drop-shadow-2xl">
             Privacy Policy
           </h1>
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed mb-8 drop-shadow-lg">
+          <p className="text-green-100 text-lg max-w-2xl  mx-auto leading-relaxed mb-2 drop-shadow-lg">
             Your trust is our priority. We protect your data with enterprise-grade security while connecting African talent to global opportunities.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row justify-center items-center max-w-md mx-auto">
             <span className="text-sm opacity-90 drop-shadow-md">Last Updated: March 1, 2026</span>
           </div>
         </div>

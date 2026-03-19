@@ -144,12 +144,14 @@ export default function ExploreProjects() {
       <WhiteNavbar />
 
       {/* Page Header */}
-      <div className="bg-[#00564C] text-white py-12 px-6 text-center">
+      <section className="relative pt-24 pb-20 bg-[url('/img/pjt.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
+      <div className="absolute inset-0 bg-[#00564C]/80 text-white py-12 px-6 text-center">
         <h1 className="text-3xl md:text-5xl font-bold mb-3">Explore Projects</h1>
         <p className="text-lg text-green-100 max-w-2xl mx-auto">
           Discover amazing work by talented African freelancers
         </p>
       </div>
+      </section>
 
       {/* Category Filters */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">

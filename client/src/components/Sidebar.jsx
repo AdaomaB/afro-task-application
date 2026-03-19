@@ -25,7 +25,7 @@ const Sidebar = () => {
     { name: 'Completed Projects', path: '/freelancer/projects/completed', icon: CheckCircle },
     { name: 'Create Post', path: '/freelancer/create-post', icon: PlusCircle },
     { name: 'Messages', path: '/freelancer/messages', icon: MessageSquare },
-    { name: 'Blog', path: '/why-afro-task', icon: BookOpen },
+    { name: 'Blog', path: '/blogs', icon: BookOpen },
     { name: 'Profile', path: '/freelancer/profile', icon: User }
   ];
 
@@ -37,7 +37,7 @@ const Sidebar = () => {
     { name: 'Ongoing Projects', path: '/client/projects/ongoing', icon: FolderOpen },
     { name: 'Completed Projects', path: '/client/projects/completed', icon: CheckCircle },
     { name: 'Messages', path: '/client/messages', icon: MessageSquare },
-    { name: 'Blog', path: '/why-afro-task', icon: BookOpen },
+    { name: 'Blog', path: '/blogs', icon: BookOpen },
     { name: 'Profile', path: '/client/profile', icon: User }
   ];
 

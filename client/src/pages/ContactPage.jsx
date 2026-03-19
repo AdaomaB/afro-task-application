@@ -42,12 +42,14 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <WhiteNavbar />
 
-      <div className="bg-[#00564C] text-white py-14 px-6 text-center">
+      <section className="relative pt-24 pb-20 bg-[url('/img/cl.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden"> 
+      <div className="absolute inset-0 bg-[#00564C]/80 text-white py-14 px-6 text-center">
         <h1 className="text-3xl md:text-5xl font-bold mb-3">Contact Us</h1>
         <p className="text-green-100 text-lg max-w-xl mx-auto">
           Have a question or need help? We'd love to hear from you.
         </p>
       </div>
+      </section>
 
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* Info */}
