@@ -4,11 +4,22 @@ import nodemailer from 'nodemailer';
 const router = express.Router();
 
 router.post('/', async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, email, message, recipientEmail } = req.body;
 
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     return res.status(400).json({ message: 'All fields are required' });
   }
+
+  // Allowed recipients — add more here when needed
+  const ALLOWED_RECIPIENTS = [
+    process.env.CONTACT_EMAIL_1,
+    process.env.CONTACT_EMAIL_2,
+  ].filter(Boolean);
+
+  // Use chosen recipient if valid, otherwise fall back to all
+  const toAddress = ALLOWED_RECIPIENTS.includes(recipientEmail)
+    ? recipientEmail
+    : ALLOWED_RECIPIENTS.join(', ');
 
   try {
     const transporter = nodemailer.createTransport({
@@ -21,7 +32,7 @@ router.post('/', async (req, res) => {
 
     const mailOptions = {
       from: `"Afro Task Contact" <${process.env.SMTP_USER}>`,
-      to: [process.env.CONTACT_EMAIL_1, process.env.CONTACT_EMAIL_2].filter(Boolean).join(', '),
+      to: toAddress,
       replyTo: email.trim(),
       subject: `New Contact Message from ${name.trim()}`,
       html: `

@@ -11,6 +11,14 @@
 </head>
 <body>
   <div id="root"></div>
+  <!-- Apply dark mode before React mounts to prevent flash -->
+  <script>
+    try {
+      if (localStorage.getItem('afrotask-dark') === 'true') {
+        document.documentElement.classList.add('dark');
+      }
+    } catch(e) {}
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

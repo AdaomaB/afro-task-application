@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import { DarkModeProvider } from './context/DarkModeContext';
 import PrivateRoute from './components/PrivateRoute';
 import WelcomePage from './pages/WelcomePage';
 import SignupPage from './pages/SignupPage';
@@ -30,20 +31,25 @@ import TermsPage from './pages/TermsPage';
 import WhyAfroTask from './pages/WhyAfroTask';
 import SearchResults from './pages/SearchResults';
 import FreelancersPage from './pages/FreelancersPage';
+import AboutPage from './pages/AboutPage';
 import NotFound from './pages/NotFound';
+import WhatsAppBubble from './components/WhatsAppBubble';
 
 function App() {
   return (
     <div className='overflow-x-hidden'>
     <Router>
+      <DarkModeProvider>
       <AuthProvider>
         <Toaster position="top-right" />
+        <WhatsAppBubble />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/signup/:role" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/blogs" element={<WhyAfroTask />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/explore-projects" element={<ExploreProjects />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/policy" element={<PolicyPage />} />
@@ -190,6 +196,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
+      </DarkModeProvider>
     </Router>
     </div>
   );

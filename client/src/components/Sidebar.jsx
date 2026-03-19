@@ -3,14 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Briefcase, FileText, FolderOpen, CheckCircle, 
-  User, PlusCircle, Search, MessageSquare, X, BookOpen
+  User, PlusCircle, Search, MessageSquare, X, BookOpen, Moon, Sun
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { useDarkMode } from '../context/DarkModeContext';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useContext(AuthContext);
+  const { dark, toggle } = useDarkMode();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isFreelancer = user?.role === 'freelancer';
@@ -48,17 +50,14 @@ const Sidebar = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const SidebarContent = () => (
+  // Inline JSX — not a nested component, so hooks/context always stay in sync
+  const sidebarInner = (
     <>
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNavigation('/')}>
-            <img 
-              src="/img/afro-task-logo.png" 
-              alt="Afro Task" 
-              className="h-10 w-auto"
-            />
+            <img src="/img/afro-task-logo.png" alt="Afro Task" className="h-10 w-auto" />
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
@@ -75,7 +74,6 @@ const Sidebar = () => {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
-            
             return (
               <motion.button
                 key={item.path}
@@ -83,8 +81,8 @@ const Sidebar = () => {
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive 
-                    ? `${activeColor} text-white shadow-lg` 
+                  isActive
+                    ? `${activeColor} text-white shadow-lg`
                     : `text-gray-700 ${hoverColor}`
                 }`}
               >
@@ -96,9 +94,9 @@ const Sidebar = () => {
         </div>
       </nav>
 
-      {/* User Info */}
+      {/* User Info + Dark Mode Toggle */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-3">
           <img
             src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
             alt={user?.fullName}
@@ -109,6 +107,17 @@ const Sidebar = () => {
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>
         </div>
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggle}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition"
+        >
+          <span className="text-sm font-medium text-gray-700">
+            {dark ? 'Light Mode' : 'Dark Mode'}
+          </span>
+          {dark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-gray-500" />}
+        </button>
       </div>
     </>
   );
@@ -116,8 +125,8 @@ const Sidebar = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-40">
-        <SidebarContent />
+      <div className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white dashboard-sidebar border-r border-gray-200 z-40">
+        {sidebarInner}
       </div>
 
       {/* Mobile Menu Overlay */}
@@ -136,15 +145,15 @@ const Sidebar = () => {
               animate={{ x: 0 }}
               exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 25 }}
-              className="lg:hidden fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50"
+              className="lg:hidden fixed left-0 top-0 h-screen w-64 bg-white dashboard-sidebar border-r border-gray-200 flex flex-col z-50"
             >
-              <SidebarContent />
+              {sidebarInner}
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* Mobile Menu Button - Export for use in Navbar */}
+      {/* Mobile Menu Button */}
       {!isMobileMenuOpen && (
         <button
           onClick={() => setIsMobileMenuOpen(true)}

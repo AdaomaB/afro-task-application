@@ -125,7 +125,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#00564C] text-white py-4 px-6 shadow-lg ">
+    <nav className="bg-[#00564C] dashboard-navbar text-white py-4 px-6 shadow-lg">
       <div className="max-w-7xl mx-auto flex lg:justify-between justify-end items-center">
         {/* Search Bar */}
         {user && (
