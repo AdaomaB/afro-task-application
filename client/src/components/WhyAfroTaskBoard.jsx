@@ -51,7 +51,7 @@ export default function WhyAfroTaskBoard() {
       </div>
 
       {/* Carousel */}
-      <div className="flex flex-col items-center gap-4 w-full lg:w-2/5 relative z-0 mt-6 md:mt-0">
+      <div className="flex flex-col items-center gap-4 w-full lg:w-3/5 relative z-0 mt-6 md:mt-0">
         <div className="relative w-full overflow-hidden rounded-2xl shadow-xl aspect-video bg-black">
           {slides.map((slide, i) => (
             <div
@@ -108,16 +108,6 @@ export default function WhyAfroTaskBoard() {
               />
             ))}
           </div>
-        </div>
-
-        {/* Read More button */}
-        <div className="self-start mt-2">
-          <Link to="/why-afro-task">
-            <button className="text-white transition-transform duration-300 ease-in-out hover:scale-105 bg-green-500 flex flex-row items-center py-2 px-6 md:py-2 md:px-8 rounded-2xl md:rounded-3xl shadow-lg text-base md:text-xl font-semibold group">
-              Read More{" "}
-              <IoIosArrowForward className="font-semibold text-xl md:text-2xl transition-transform duration-300 group-hover:translate-x-4 group-hover:font-bold" />
-            </button>
-          </Link>
         </div>
       </div>
     </div>

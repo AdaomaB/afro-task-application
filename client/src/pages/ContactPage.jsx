@@ -5,8 +5,14 @@ import WhiteNavbar from '../components/navbar/WhiteNavbar';
 import Footer from '../components/Footer';
 import api from '../services/api';
 
+// ── Recipient emails — easy to update ──
+const RECIPIENT_EMAILS = [
+  { label: 'Business Enquiries', value: 'adaoma2826@gmail.com' },
+  { label: 'Support', value: 'mbatab@gmail.com' },
+];
+
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', message: '', recipientEmail: RECIPIENT_EMAILS[0].value });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +28,7 @@ export default function ContactPage() {
         name: form.name.trim(),
         email: form.email.trim(),
         message: form.message.trim(),
+        recipientEmail: form.recipientEmail,
       });
       setSubmitted(true);
     } catch (err) {
@@ -65,9 +72,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-semibold text-gray-800">Business Email</p>
-
-                <a href="mailto:business@afrotask.com" className="text-[#00564C] hover:underline text-sm">
-                  business@afrotask.com
+                <a href="mailto:adaoma2826@gmail.com" className="text-[#00564C] hover:underline text-sm">
+                  adaoma2826@gmail.com
                 </a>
               </div>
             </div>
@@ -78,8 +84,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-semibold text-gray-800">Support Email</p>
-                <a href="mailto:support@afrotask.com" className="text-[#00564C] hover:underline text-sm">
-                  support@afrotask.com
+                <a href="mailto:mbatab@gmail.com" className="text-[#00564C] hover:underline text-sm">
+                  mbatab@gmail.com
                 </a>
               </div>
             </div>
@@ -99,7 +105,7 @@ export default function ContactPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">Message sent successfully!</h3>
               <p className="text-gray-600">We'll get back to you within 24 hours.</p>
               <button
-                onClick={() => { setSubmitted(false); setForm({ name: '', email: '', message: '' }); }}
+                onClick={() => { setSubmitted(false); setForm({ name: '', email: '', message: '', recipientEmail: RECIPIENT_EMAILS[0].value }); }}
                 className="mt-6 text-[#00564C] hover:underline text-sm font-medium"
               >
                 Send another message
@@ -135,6 +141,20 @@ export default function ContactPage() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Send To</label>
+                <select
+                  name="recipientEmail"
+                  value={form.recipientEmail}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition bg-white"
+                >
+                  {RECIPIENT_EMAILS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label} — {r.value}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
