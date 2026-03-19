@@ -67,7 +67,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/why-afro-task"
+                  to="/about"
                   className="hover:text-white transition"
                 >
                   About
@@ -96,12 +96,12 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-white transition">
+                <Link to="/policy" className="hover:text-white transition">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-white transition">
+                <Link to="/terms" className="hover:text-white transition">
                   Terms of Service
                 </Link>
               </li>

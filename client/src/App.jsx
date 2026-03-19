@@ -25,6 +25,8 @@ import FreelancerDashboard from './pages/FreelancerDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import ProjectWorkspace from './pages/ProjectWorkspace';
 import LandingPage from './pages/LandingPage';
+import PolicyPage from './pages/PolicyPage';
+import TermsPage from './pages/TermsPage';
 import WhyAfroTask from './pages/WhyAfroTask';
 import SearchResults from './pages/SearchResults';
 import FreelancersPage from './pages/FreelancersPage';
@@ -44,6 +46,8 @@ function App() {
           <Route path="/blogs" element={<WhyAfroTask />} />
           <Route path="/explore-projects" element={<ExploreProjects />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/policy" element={<PolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           
           {/* Global Search Route */}
           <Route path="/search" element={

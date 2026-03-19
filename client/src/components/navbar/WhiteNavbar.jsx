@@ -139,8 +139,8 @@ const WhiteNavbar = () => {
             Contact Us
           </button>
           <button
-            onClick={() => navigate("blogs")}
-            className={pathname === "/post-project" ? "text-[#00564C]" :"hover:text-green-700 transition"}
+            onClick={() => navigate("/blogs")}
+            className={pathname === "/blogs" ? "text-[#00564C]" :"hover:text-green-700 transition"}
           >
             Blogs
           </button>
@@ -151,6 +151,21 @@ const WhiteNavbar = () => {
           {user ? (
             <>
               <span className="text-black/90">Welcome, {user.fullName}</span>
+              {user.profileImage ? (
+                <img 
+                  src={user.profileImage} 
+                  alt={user.fullName}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+              ) : null}
+              <IoPersonCircleOutline 
+                className="w-8 h-8 text-gray-400" 
+                style={{ display: user.profileImage ? 'none' : 'block' }}
+              />
               <button
                 onClick={() => navigate("/freelancer/feed")}
                 className="bg-[#00564C] hover:bg-[#027568] text-white px-6 py-2 rounded-lg transition "
