@@ -116,7 +116,7 @@ const ExploreJobs = () => {
       <div className="flex-1 lg:ml-64">
         {/* Simple header without user info */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto text-center lg:text-start">
             <h1 className="text-2xl font-bold text-gray-800">Explore Jobs</h1>
           </div>
         </div>

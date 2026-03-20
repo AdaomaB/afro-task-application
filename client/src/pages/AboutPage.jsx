@@ -137,7 +137,7 @@ export default function AboutPage() {
       <section className="max-w-7xl mx-auto px-6 py-20 lg:py-28">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           <FadeIn direction="right" className="flex-1">
-            <img src="/img/if.png" alt="Who we are" className="w-full rounded-3xl shadow-xl object-cover max-h-[480px]" />
+            <img src="/img/mr_tope.png" alt="Who we are" className="w-full rounded-3xl shadow-xl object-cover max-h-[480px]" />
           </FadeIn>
           <FadeIn direction="left" delay={0.15} className="flex-1">
             <p className="text-[#00564C] font-semibold tracking-widest uppercase text-sm mb-3">Who We Are</p>
@@ -252,9 +252,9 @@ export default function AboutPage() {
           <FadeIn delay={0.1} className="flex justify-center mb-10">
             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-10 flex flex-col items-center w-full max-w-sm hover:shadow-2xl transition-shadow duration-300">
               <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#00564C] to-[#027568] flex items-center justify-center mb-6 shadow-lg">
-                <span className="text-white text-4xl font-bold">T</span>
+                <img src="/img/mr_tope.png" alt="Founder" className="h-full w-full rounded-full" />
               </div>
-              <h3 className="text-xl font-bold mb-1">Mr Tope</h3>
+              <h3 className="text-xl font-bold mb-1">Tope Adeosun</h3>
               <p className="text-[#FB9E01] font-semibold text-sm mb-4">Founder of AfroTask</p>
               <p className="text-gray-500 text-sm leading-relaxed text-center">
                 Visionary behind AfroTask — driven by a mission to unlock Africa's talent potential and create a transparent, opportunity-rich freelance ecosystem across the continent.
@@ -267,9 +267,9 @@ export default function AboutPage() {
             <FadeIn delay={0.15}>
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 flex flex-col items-center hover:shadow-xl transition-shadow duration-300">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00564C] to-[#027568] flex items-center justify-center mb-5 shadow-md">
-                  <span className="text-white text-2xl font-bold">B</span>
+                  <img src="/img/mba.png" alt="dev" className="h-full w-full rounded-full" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Blessing</h3>
+                <h3 className="text-lg font-bold mb-1">Mbata Blessing</h3>
                 <p className="text-[#00564C] font-medium text-sm mb-3">Lead Developer</p>
                 <p className="text-gray-500 text-sm leading-relaxed text-center">
                   Responsible for building the full AfroTask application — from architecture to deployment.
@@ -279,9 +279,9 @@ export default function AboutPage() {
             <FadeIn delay={0.2}>
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 flex flex-col items-center hover:shadow-xl transition-shadow duration-300">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FB9E01] to-[#CC8102] flex items-center justify-center mb-5 shadow-md">
-                  <span className="text-white text-2xl font-bold">V</span>
+                  <img src="/img/vo.png" alt="dev" className="h-full w-full rounded-full" />
                 </div>
-                <h3 className="text-lg font-bold mb-1">Victor</h3>
+                <h3 className="text-lg font-bold mb-1">Victor Olumide</h3>
                 <p className="text-[#FB9E01] font-medium text-sm mb-3">Frontend Developer</p>
                 <p className="text-gray-500 text-sm leading-relaxed text-center">
                   Crafting the user-facing experience — ensuring AfroTask looks and feels world-class on every device.

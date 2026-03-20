@@ -52,7 +52,7 @@ const MyProjects = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-5xl mx-auto"
         >
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">
+          <h1 className="text-2xl text-center lg:text-start font-bold text-gray-800 mb-8">
             {status === 'ongoing' ? 'Ongoing' : 'Completed'} Projects
           </h1>
 

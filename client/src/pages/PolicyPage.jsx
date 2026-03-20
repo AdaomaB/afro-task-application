@@ -142,28 +142,24 @@ export default function PolicyPage() {
                 <li><strong>Delete:</strong> Request account deletion (30-day hold)</li>
                 <li><strong>Correct:</strong> Update inaccurate info</li>
                 <li><strong>Opt-out:</strong> Marketing emails, cookies</li>
-                <li>Email privacy@afrotask.com to exercise rights</li>
               </dl>
             </section>
 
             <section id="changes" className="mb-12">
               <h2 className="lg:text-3xl text-xl font-bold">9. Changes to This Policy</h2>
-              <p>We may update this policy. Significant changes posted 30 days in advance with email notification. Continued use = acceptance.</p>
+              <p>We may update this policy. Significant changes posted 30 days in advance with email notification. Continued use means acceptance.</p>
             </section>
 
             <section id="contact">
               <h2 className="lg:text-3xl text-xl font-bold">10. Contact Us</h2>
-              <div className="bg-white p-12 rounded-3xl shadow-2xl border border-gray-200 max-w-2xl text-center md:mx-auto">
+              <div className="bg-white p-12 rounded-3xl shadow-2xl border border-gray-200 max-w-2xl text-center mx-auto lg:mx-0 mt-2">
                 <h3 className="text-3xl font-bold text-gray-900 mb-6">Questions? We're here to help</h3>
                 <p className="text-xl text-gray-600 mb-8 leading-relaxed">
                   Reach our Data Protection Officer anytime.
                 </p>
                 <div className="space-y-4 text-lg">
-                  <a href="mailto:privacy@afrotask.com" className="block bg-gradient-to-r from-[#00564C] to-[#008B7D] text-white py-4 px-8 rounded-2xl hover:from-[#004438] hover:to-[#00665A] transition-all duration-300 font-semibold shadow-xl hover:shadow-2xl hover:-translate-y-1">
-                    privacy@afrotask.com
-                  </a>
-                  <a href="/contact" className="block border-2 border-gray-200 py-4 px-8 rounded-2xl hover:border-[#00564C] hover:text-[#00564C] hover:bg-green-50 transition-all duration-300 font-semibold flex flex-row items-center justify-center gap-2">
-                    Contact us <FaArrowRightLong />
+                   <a href="/contact" className="block text-white bg-[#00564C] hover:bg-[#017a6c] py-4 px-8 rounded-2xl  hover:-translate-y-1 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold flex flex-row items-center justify-center gap-2">
+                    Contact Us <FaArrowRightLong />
                   </a>
                 </div>
               </div>
