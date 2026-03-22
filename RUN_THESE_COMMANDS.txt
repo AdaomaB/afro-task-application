@@ -1,0 +1,15 @@
+# COPY AND RUN THESE COMMANDS IN YOUR TERMINAL
+# Replace YOUR_TOKEN_HERE with the token you copied from GitHub
+
+# Step 1: Update the remote URL with your token
+git remote set-url origin https://YOUR_TOKEN_HERE@github.com/AdaomaB/afro-task.git
+
+# Step 2: Push to GitHub
+git push -u origin main
+
+# That's it! Your code will be pushed to AdaomaB/afro-task
+
+
+# EXAMPLE (with fake token):
+# git remote set-url origin https://ghp_1234567890abcdefghijklmnop@github.com/AdaomaB/afro-task.git
+# git push -u origin main

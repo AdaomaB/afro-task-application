@@ -1,0 +1,20 @@
+import express from 'express';
+import { createPost, getFeed, likePost, addComment, likeComment, deletePost, getUserPosts, incrementPostView, getComments, repostPost, getPostViewers } from '../controllers/postController.js';
+import { protect } from '../middlewares/auth.js';
+import { mediaUpload } from '../middlewares/upload.js';
+
+const router = express.Router();
+
+router.post('/', protect, mediaUpload.single('media'), createPost);
+router.get('/feed', protect, getFeed);
+router.get('/user/:userId', protect, getUserPosts);
+router.post('/:postId/like', protect, likePost);
+router.post('/:postId/comments', protect, addComment);
+router.post('/:postId/comments/:commentId/like', protect, likeComment);
+router.get('/:postId/comments', protect, getComments);
+router.post('/:postId/view', protect, incrementPostView);
+router.get('/:postId/viewers', protect, getPostViewers);
+router.post('/:postId/repost', protect, repostPost);
+router.delete('/:postId', protect, deletePost);
+
+export default router;
