@@ -1,12 +1,12 @@
-import { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import api from '../services/api';
-import toast from 'react-hot-toast';
-import Sidebar from '../components/Sidebar';
-import Navbar from '../components/navbar/Navbar';
-import { AuthContext } from '../context/AuthContext';
-import { MessageCircle, Heart, Send, Smile } from 'lucide-react';
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import api from "../services/api";
+import toast from "react-hot-toast";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/navbar/Navbar";
+import { AuthContext } from "../context/AuthContext";
+import { MessageCircle, Heart, Send, Smile } from "lucide-react";
 
 const MyJobs = () => {
   const navigate = useNavigate();
@@ -26,10 +26,10 @@ const MyJobs = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await api.get('/jobs/my-jobs');
+      const response = await api.get("/jobs/my-jobs");
       setJobs(response.data.jobs);
     } catch (error) {
-      toast.error('Failed to load jobs');
+      toast.error("Failed to load jobs");
     } finally {
       setLoading(false);
     }
@@ -42,41 +42,43 @@ const MyJobs = () => {
       setSelectedJob(job);
       setShowModal(true);
     } catch (error) {
-      toast.error('Failed to load applicants');
+      toast.error("Failed to load applicants");
     }
   };
 
   const handleApplicationAction = async (applicationId, action) => {
     try {
-      if (action === 'start-chat') {
+      if (action === "start-chat") {
         await api.post(`/applications/${applicationId}/start-chat`);
-        toast.success('Chat started successfully!');
+        toast.success("Chat started successfully!");
         // Navigate to pre-project chat
         navigate(`/pre-project-chat/${applicationId}`);
-      } else if (action === 'reject') {
+      } else if (action === "reject") {
         await api.post(`/applications/${applicationId}/reject`, {
-          reason: 'Not selected'
+          reason: "Not selected",
         });
-        toast.success('Application rejected');
+        toast.success("Application rejected");
         setShowModal(false);
         fetchJobs();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to process application');
+      toast.error(
+        error.response?.data?.message || "Failed to process application",
+      );
     }
   };
 
   const downloadCV = (cvUrl) => {
     if (!cvUrl) {
-      toast.error('CV not available');
+      toast.error("CV not available");
       return;
     }
-    
+
     // Open CV in new tab for download
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = cvUrl;
-    link.target = '_blank';
-    link.download = 'CV.pdf';
+    link.target = "_blank";
+    link.download = "CV.pdf";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -89,16 +91,16 @@ const MyJobs = () => {
   const fetchComments = async (jobId) => {
     try {
       const response = await api.get(`/jobs/${jobId}/comments`);
-      setComments(prev => ({ ...prev, [jobId]: response.data.comments }));
+      setComments((prev) => ({ ...prev, [jobId]: response.data.comments }));
     } catch (error) {
-      console.error('Failed to load comments:', error);
+      console.error("Failed to load comments:", error);
     }
   };
 
   const toggleComments = async (jobId) => {
     const isShowing = showComments[jobId];
-    setShowComments(prev => ({ ...prev, [jobId]: !isShowing }));
-    
+    setShowComments((prev) => ({ ...prev, [jobId]: !isShowing }));
+
     if (!isShowing && !comments[jobId]) {
       await fetchComments(jobId);
     }
@@ -107,288 +109,398 @@ const MyJobs = () => {
   const handleAddComment = async (jobId) => {
     const content = newComment[jobId];
     if (!content || !content.trim()) {
-      toast.error('Please enter a comment');
+      toast.error("Please enter a comment");
       return;
     }
 
     try {
       const response = await api.post(`/jobs/${jobId}/comments`, { content });
-      setComments(prev => ({
+      setComments((prev) => ({
         ...prev,
-        [jobId]: [response.data.comment, ...(prev[jobId] || [])]
+        [jobId]: [response.data.comment, ...(prev[jobId] || [])],
       }));
-      setNewComment(prev => ({ ...prev, [jobId]: '' }));
-      toast.success('Comment posted!');
-      
+      setNewComment((prev) => ({ ...prev, [jobId]: "" }));
+      toast.success("Comment posted!");
+
       // Update job comment count
-      setJobs(prev => prev.map(job => 
-        job.id === jobId 
-          ? { ...job, commentsCount: (job.commentsCount || 0) + 1 }
-          : job
-      ));
+      setJobs((prev) =>
+        prev.map((job) =>
+          job.id === jobId
+            ? { ...job, commentsCount: (job.commentsCount || 0) + 1 }
+            : job,
+        ),
+      );
     } catch (error) {
-      toast.error('Failed to post comment');
+      toast.error("Failed to post comment");
     }
   };
 
   const handleLikeComment = async (jobId, commentId) => {
     try {
-      const response = await api.post(`/jobs/${jobId}/comments/${commentId}/like`);
-      setComments(prev => ({
+      const response = await api.post(
+        `/jobs/${jobId}/comments/${commentId}/like`,
+      );
+      setComments((prev) => ({
         ...prev,
-        [jobId]: prev[jobId].map(comment => {
+        [jobId]: prev[jobId].map((comment) => {
           if (comment.id === commentId) {
             const likes = comment.likes || [];
             const newLikes = response.data.liked
               ? [...likes, user.id]
-              : likes.filter(id => id !== user.id);
+              : likes.filter((id) => id !== user.id);
             return { ...comment, likes: newLikes };
           }
           return comment;
-        })
+        }),
       }));
     } catch (error) {
-      console.error('Failed to like comment:', error);
+      console.error("Failed to like comment:", error);
     }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      
+
       <div className="flex-1 lg:ml-64">
         <Navbar />
-        
-        <div className="p-4 md:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-7xl mx-auto"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Posted Jobs</h1>
-              <p className="text-gray-600 mt-1">Manage your job postings and applicants</p>
-            </div>
-            <button
-              onClick={() => navigate('/client/post-job')}
-              className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-medium transition shadow-lg"
-            >
-              + Post New Job
-            </button>
-          </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 animate-pulse">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
-                    <div className="flex-1">
-                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+        <div className="p-4 md:p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-7xl mx-auto"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                  My Posted Jobs
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Manage your job postings and applicants
+                </p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No jobs posted yet</h3>
-              <p className="text-gray-600 mb-6">Start by posting your first job to find talented freelancers</p>
               <button
-                onClick={() => navigate('/client/post-job')}
-                className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-medium transition"
+                onClick={() => navigate("/client/post-job")}
+                className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-medium transition shadow-lg"
               >
-                Post Your First Job
+                + Post New Job
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:gap-6">
-              {jobs.map(job => (
-                <motion.div
-                  key={job.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    {/* Job Icon */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                      {job.title?.charAt(0) || 'J'}
-                    </div>
 
-                    {/* Job Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">{job.title}</h3>
-                          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                            {job.status && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                job.status === 'open' ? 'bg-green-100 text-green-700' : 
-                                job.status === 'closed' ? 'bg-gray-100 text-gray-700' : 
-                                'bg-blue-100 text-blue-700'
-                              }`}>
-                                {job.status.toUpperCase()}
-                              </span>
-                            )}
-                            {job.workLocation && (
-                              <>
-                                {job.status && <span>•</span>}
-                                <span>{job.workLocation}</span>
-                              </>
-                            )}
-                            {job.createdAt && (
-                              <>
-                                {(job.status || job.workLocation) && <span>•</span>}
-                                <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
-                              </>
-                            )}
+            {loading ? (
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
+                {[...Array(3)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl p-6 animate-pulse"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
+                      <div className="flex-1">
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-12 h-12 text-yellow-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  No jobs posted yet
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Start by posting your first job to find talented freelancers
+                </p>
+                <button
+                  onClick={() => navigate("/client/post-job")}
+                  className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg font-medium transition"
+                >
+                  Post Your First Job
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
+                {jobs.map((job) => (
+                  <motion.div
+                    key={job.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      {/* Job Icon */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={job.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.client?.fullName || "Client")}&background=10b981&color=fff`}
+                        alt={job.client?.fullName || "Client"}
+                          className="w-full h-full rounded-xl object-cover"
+                        />
+                      </div>
+
+                      {/* Job Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">
+                              {job.title}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                              {job.status && (
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    job.status === "open"
+                                      ? "bg-green-100 text-green-700"
+                                      : job.status === "closed"
+                                        ? "bg-gray-100 text-gray-700"
+                                        : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {job.status.toUpperCase()}
+                                </span>
+                              )}
+                              {job.workLocation && (
+                                <>
+                                  {job.status && <span>•</span>}
+                                  <span>{job.workLocation}</span>
+                                </>
+                              )}
+                              {job.createdAt && (
+                                <>
+                                  {(job.status || job.workLocation) && (
+                                    <span>•</span>
+                                  )}
+                                  <span>
+                                    Posted{" "}
+                                    {new Date(
+                                      job.createdAt,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
+                          {(job.budgetRange || job.budget) && (
+                            <div className="text-left md:text-right">
+                              <p className="text-xl md:text-2xl font-bold text-yellow-600">
+                                {job.budgetRange ||
+                                  `$${job.budget?.toLocaleString()}`}
+                              </p>
+                              {job.projectType && (
+                                <p className="text-sm text-gray-500">
+                                  {job.projectType}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        {(job.budgetRange || job.budget) && (
-                          <div className="text-left md:text-right">
-                            <p className="text-xl md:text-2xl font-bold text-yellow-600">
-                              {job.budgetRange || `$${job.budget?.toLocaleString()}`}
-                            </p>
-                            {job.projectType && (
-                              <p className="text-sm text-gray-500">{job.projectType}</p>
+
+                        {job.description && (
+                          <p className="text-gray-700 mb-4 line-clamp-2">
+                            {job.description}
+                          </p>
+                        )}
+
+                        {/* Skills */}
+                        {((job.requiredSkills &&
+                          job.requiredSkills.length > 0) ||
+                          (job.skills && job.skills.length > 0)) && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {(job.requiredSkills || job.skills)
+                              ?.slice(0, 5)
+                              .map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            {(job.requiredSkills || job.skills)?.length > 5 && (
+                              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                                +{(job.requiredSkills || job.skills).length - 5}{" "}
+                                more
+                              </span>
                             )}
                           </div>
                         )}
-                      </div>
 
-                      {job.description && (
-                        <p className="text-gray-700 mb-4 line-clamp-2">{job.description}</p>
-                      )}
-
-                      {/* Skills */}
-                      {((job.requiredSkills && job.requiredSkills.length > 0) || (job.skills && job.skills.length > 0)) && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {(job.requiredSkills || job.skills)?.slice(0, 5).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                        {/* Stats and Actions */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                />
+                              </svg>
+                              <span className="font-medium">
+                                {job.applicantsCount || 0} Applicants
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                              <span>{job.views || 0} Views</span>
+                            </div>
+                            <button
+                              onClick={() => toggleComments(job.id)}
+                              className="flex items-center gap-1 hover:text-blue-600 transition"
                             >
-                              {skill}
-                            </span>
-                          ))}
-                          {(job.requiredSkills || job.skills)?.length > 5 && (
-                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                              +{(job.requiredSkills || job.skills).length - 5} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Stats and Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100">
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span className="font-medium">{job.applicantsCount || 0} Applicants</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>{job.views || 0} Views</span>
+                              <MessageCircle className="w-5 h-5" />
+                              <span>{job.commentsCount || 0} Comments</span>
+                            </button>
                           </div>
                           <button
-                            onClick={() => toggleComments(job.id)}
-                            className="flex items-center gap-1 hover:text-blue-600 transition"
+                            onClick={() => viewApplicants(job)}
+                            className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition"
                           >
-                            <MessageCircle className="w-5 h-5" />
-                            <span>{job.commentsCount || 0} Comments</span>
+                            View Applicants
                           </button>
                         </div>
-                        <button
-                          onClick={() => viewApplicants(job)}
-                          className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition"
-                        >
-                          View Applicants
-                        </button>
-                      </div>
 
-                      {/* Comments Section */}
-                      {showComments[job.id] && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          {/* Add Comment */}
-                          <div className="flex items-start gap-3 mb-4">
-                            <img
-                              src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}`}
-                              alt="Your avatar"
-                              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                            />
-                            <div className="flex-1 flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Write a comment..."
-                                value={newComment[job.id] || ''}
-                                onChange={(e) => setNewComment(prev => ({ ...prev, [job.id]: e.target.value }))}
-                                onKeyPress={(e) => e.key === 'Enter' && handleAddComment(job.id)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                        {/* Comments Section */}
+                        {showComments[job.id] && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            {/* Add Comment */}
+                            <div className="flex items-start gap-3 mb-4">
+                              <img
+                                src={
+                                  user?.photoURL ||
+                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || "User")}`
+                                }
+                                alt="Your avatar"
+                                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                               />
-                              <button
-                                onClick={() => handleAddComment(job.id)}
-                                className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full transition"
-                              >
-                                <Send className="w-5 h-5" />
-                              </button>
+                              <div className="flex-1 flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Write a comment..."
+                                  value={newComment[job.id] || ""}
+                                  onChange={(e) =>
+                                    setNewComment((prev) => ({
+                                      ...prev,
+                                      [job.id]: e.target.value,
+                                    }))
+                                  }
+                                  onKeyPress={(e) =>
+                                    e.key === "Enter" &&
+                                    handleAddComment(job.id)
+                                  }
+                                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                />
+                                <button
+                                  onClick={() => handleAddComment(job.id)}
+                                  className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-full transition"
+                                >
+                                  <Send className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Comments List */}
+                            <div className="space-y-3">
+                              {comments[job.id]?.length === 0 && (
+                                <p className="text-center text-gray-500 py-4">
+                                  No comments yet. Be the first to comment!
+                                </p>
+                              )}
+                              {comments[job.id]?.map((comment) => (
+                                <div
+                                  key={comment.id}
+                                  className="flex items-start gap-3 bg-gray-50 rounded-lg p-3"
+                                >
+                                  <img
+                                    src={
+                                      comment.user?.profileImage ||
+                                      `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.fullName || "User")}`
+                                    }
+                                    alt={comment.user?.fullName}
+                                    className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-semibold text-sm">
+                                        {comment.user?.fullName}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        {new Date(
+                                          comment.createdAt,
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-700 text-sm">
+                                      {comment.content}
+                                    </p>
+                                    <button
+                                      onClick={() =>
+                                        handleLikeComment(job.id, comment.id)
+                                      }
+                                      className={`flex items-center gap-1 mt-2 text-xs ${
+                                        comment.likes?.includes(user?.id)
+                                          ? "text-red-500"
+                                          : "text-gray-500"
+                                      } hover:text-red-500 transition`}
+                                    >
+                                      <Heart
+                                        className={`w-4 h-4 ${comment.likes?.includes(user?.id) ? "fill-current" : ""}`}
+                                      />
+                                      <span>{comment.likes?.length || 0}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-
-                          {/* Comments List */}
-                          <div className="space-y-3">
-                            {comments[job.id]?.length === 0 && (
-                              <p className="text-center text-gray-500 py-4">No comments yet. Be the first to comment!</p>
-                            )}
-                            {comments[job.id]?.map(comment => (
-                              <div key={comment.id} className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
-                                <img
-                                  src={comment.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.fullName || 'User')}`}
-                                  alt={comment.user?.fullName}
-                                  className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-sm">{comment.user?.fullName}</span>
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(comment.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-700 text-sm">{comment.content}</p>
-                                  <button
-                                    onClick={() => handleLikeComment(job.id, comment.id)}
-                                    className={`flex items-center gap-1 mt-2 text-xs ${
-                                      comment.likes?.includes(user?.id) ? 'text-red-500' : 'text-gray-500'
-                                    } hover:text-red-500 transition`}
-                                  >
-                                    <Heart className={`w-4 h-4 ${comment.likes?.includes(user?.id) ? 'fill-current' : ''}`} />
-                                    <span>{comment.likes?.length || 0}</span>
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
 
@@ -408,39 +520,78 @@ const MyJobs = () => {
                 onClick={() => setShowModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            
+
             {applications.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <svg
+                    className="w-10 h-10 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
                   </svg>
                 </div>
                 <p className="text-gray-500">No applications yet</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {applications.map(app => (
-                  <div key={app.id} className="border border-gray-200 rounded-xl p-4 md:p-6">
+                {applications.map((app) => (
+                  <div
+                    key={app.id}
+                    className="border border-gray-200 rounded-xl p-4 md:p-6"
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                       <img
-                        src={app.freelancer?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(app.freelancer?.fullName || 'User')}`}
+                        src={
+                          app.freelancer?.profileImage ||
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(app.freelancer?.fullName || "User")}`
+                        }
                         alt={app.freelancer?.fullName}
                         className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg">{app.freelancer?.fullName}</h3>
-                        <p className="text-sm text-gray-600">{app.freelancer?.skillCategory}</p>
-                        <p className="mt-3 text-gray-700 text-sm md:text-base">{app.proposalMessage}</p>
+                        <h3 className="font-bold text-lg">
+                          {app.freelancer?.fullName}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {app.freelancer?.skillCategory}
+                        </p>
+                        <p className="mt-3 text-gray-700 text-sm md:text-base">
+                          {app.proposalMessage}
+                        </p>
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                          <span className="font-medium text-green-600">Budget: {app.proposedBudget}</span>
+                          <span className="font-medium text-green-600">
+                            Budget: {app.proposedBudget}
+                          </span>
                           {app.portfolioLink && (
-                            <a href={app.portfolioLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            <a
+                              href={app.portfolioLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
                               View Portfolio →
                             </a>
                           )}
@@ -458,37 +609,48 @@ const MyJobs = () => {
                           >
                             Download CV
                           </button>
-                          {app.status === 'pending' && (
+                          {app.status === "pending" && (
                             <>
                               <button
-                                onClick={() => handleApplicationAction(app.id, 'start-chat')}
+                                onClick={() =>
+                                  handleApplicationAction(app.id, "start-chat")
+                                }
                                 className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm"
                               >
                                 Start Chat
                               </button>
                               <button
-                                onClick={() => handleApplicationAction(app.id, 'reject')}
+                                onClick={() =>
+                                  handleApplicationAction(app.id, "reject")
+                                }
                                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition text-sm"
                               >
                                 Reject
                               </button>
                             </>
                           )}
-                          {app.status === 'chatting' && (
+                          {app.status === "chatting" && (
                             <button
-                              onClick={() => navigate(`/pre-project-chat/${app.id}`)}
+                              onClick={() =>
+                                navigate(`/pre-project-chat/${app.id}`)
+                              }
                               className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition text-sm"
                             >
                               Continue Chat
                             </button>
                           )}
-                          {app.status !== 'pending' && app.status !== 'chatting' && (
-                            <span className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                              app.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {app.status}
-                            </span>
-                          )}
+                          {app.status !== "pending" &&
+                            app.status !== "chatting" && (
+                              <span
+                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                                  app.status === "accepted"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {app.status}
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>

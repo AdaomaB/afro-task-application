@@ -5,7 +5,8 @@ import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 const slides = [
   { type: "image", src: "/img/Ld1.png" },
-  { type: "video", src: "/imgvid/video5897679113241500502.mp4" },
+  { type: "video", src: "/imgvid/vid_2.mp4" },
+  { type: "video", src: "/imgvid/vid_1.mp4" },
   { type: "image", src: "/img/whisk.png" },
 ];
 
@@ -14,7 +15,7 @@ export default function HeroSection() {
   const [current, setCurrent] = useState(0);
   const videoRef = useRef(null);
   const timerRef = useRef(null);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const goTo = (index) => setCurrent((index + slides.length) % slides.length);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -19,13 +19,39 @@ const ExploreJobs = () => {
     portfolioLink: ''
   });
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: '',
+    projectType: '',
+    location: '',
+    status: 'open',
+    budgetMin: '',
+    budgetMax: '',
+    sortBy: 'newest',
+    skills: []
+  });
+
+  // Unique filter options
+  const uniqueProjectTypes = useMemo(() => {
+    return Array.from(new Set(jobs.map(job => job.projectType).filter(Boolean))).sort();
+  }, [jobs]);
+
+  const uniqueLocations = useMemo(() => {
+    return Array.from(new Set(jobs.map(job => job.workLocation).filter(Boolean))).sort();
+  }, [jobs]);
+
+  const uniqueSkills = useMemo(() => {
+    const allSkills = jobs.flatMap(job => job.requiredSkills || []);
+    return Array.from(new Set(allSkills)).sort();
+  }, [jobs]);
+
   useEffect(() => {
     fetchJobs();
   }, []);
 
   const fetchJobs = async () => {
     try {
-      const response = await api.get('/jobs?status=open');
+      const response = await api.get('/jobs');
       setJobs(response.data.jobs);
     } catch (error) {
       toast.error('Failed to load jobs');
@@ -33,6 +59,89 @@ const ExploreJobs = () => {
       setLoading(false);
     }
   };
+
+  const filteredJobs = useMemo(() => {
+    let filtered = [...jobs];
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(job => 
+        job.title?.toLowerCase().includes(searchLower) ||
+        job.description?.toLowerCase().includes(searchLower) ||
+        job.client?.fullName?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Project type filter
+    if (filters.projectType) {
+      filtered = filtered.filter(job => job.projectType === filters.projectType);
+    }
+
+    // Location filter
+    if (filters.location) {
+      filtered = filtered.filter(job => job.workLocation?.includes(filters.location));
+    }
+
+    // Status filter
+    if (filters.status) {
+      filtered = filtered.filter(job => job.status === filters.status);
+    }
+
+    // Budget filters (parse ranges like "$500-$1000")
+    if (filters.budgetMin || filters.budgetMax) {
+      filtered = filtered.filter(job => {
+        const budgetMatch = job.budgetRange || job.budget;
+        if (!budgetMatch) return true;
+        
+        // Handle single values or ranges
+        const cleanBudget = budgetMatch.replace(/[$\s]/g, '');
+        let jobMin, jobMax;
+        
+        if (cleanBudget.includes('-')) {
+          [jobMin, jobMax] = cleanBudget.split('-').map(num => parseFloat(num));
+        } else {
+          jobMin = jobMax = parseFloat(cleanBudget);
+        }
+        
+        const min = parseFloat(filters.budgetMin) || 0;
+        const max = parseFloat(filters.budgetMax) || Infinity;
+        
+        return (jobMin >= min && jobMax <= max) || 
+               (min === 0 && max === Infinity) || 
+               (jobMax >= min && jobMin <= max);
+      });
+    }
+
+    // Skills filter
+    if (filters.skills.length > 0) {
+      filtered = filtered.filter(job => {
+        const jobSkills = job.requiredSkills || [];
+        return filters.skills.some(skill => jobSkills.includes(skill));
+      });
+    }
+
+    // Sort
+    switch (filters.sortBy) {
+      case 'most-viewed':
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+        break;
+      case 'most-recent':
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+      case 'highest-budget':
+        filtered.sort((a, b) => {
+          const aBudget = parseFloat((a.budgetRange || a.budget || '0').split('-')[1]?.replace(/[$\s]/g, '') || 0);
+          const bBudget = parseFloat((b.budgetRange || b.budget || '0').split('-')[1]?.replace(/[$\s]/g, '') || 0);
+          return bBudget - aBudget;
+        });
+        break;
+      default:
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    return filtered;
+  }, [jobs, filters]);
 
   const handleApply = async (job) => {
     // Check if profile is completed and has intro video
@@ -110,6 +219,7 @@ const ExploreJobs = () => {
   };
 
   return (
+    
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
@@ -132,6 +242,135 @@ const ExploreJobs = () => {
               <p className="text-gray-600">Find your next opportunity</p>
             </div>
 
+            {/* Filters Section */}
+            <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100 sticky top-20 z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* Search */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Search Jobs</label>
+                  <input
+                    type="text"
+                    placeholder="Job title, description, client..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({...filters, search: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Project Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Project Type</label>
+                  <select
+                    value={filters.projectType}
+                    onChange={(e) => setFilters({...filters, projectType: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">All Types</option>
+                    {uniqueProjectTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <select
+                    value={filters.location}
+                    onChange={(e) => setFilters({...filters, location: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">All Locations</option>
+                    {uniqueLocations.map(loc => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Budget Min */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Min Budget</label>
+                  <input
+                    type="number"
+                    placeholder="$0"
+                    value={filters.budgetMin}
+                    onChange={(e) => setFilters({...filters, budgetMin: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Budget Max */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Budget</label>
+                  <input
+                    type="number"
+                    placeholder="$5000"
+                    value={filters.budgetMax}
+                    onChange={(e) => setFilters({...filters, budgetMax: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Sort */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="most-recent">Most Recent</option>
+                    <option value="most-viewed">Most Viewed</option>
+                    <option value="highest-budget">Highest Budget</option>
+                  </select>
+                </div>
+
+                {/* Skills */}
+                <div className="lg:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+                  <select
+                    
+                    value={filters.skills}
+                    onChange={(e) => setFilters({...filters, skills: Array.from(e.target.selectedOptions, option => option.value)})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent h-12"
+                  >
+                  <option placeholder="">Select a skill...</option>
+                    {uniqueSkills.slice(0, 10).map(skill => (
+                      <option key={skill} value={skill}>{skill}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Clear Filters */}
+                <div className="flex items-end">
+                  <button
+                    onClick={() => setFilters({
+                      search: '',
+                      projectType: '',
+                      location: '',
+                      status: 'open',
+                      budgetMin: '',
+                      budgetMax: '',
+                      sortBy: 'newest',
+                      skills: []
+                    })}
+                    className="w-full px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-sm text-gray-600">
+                  Showing {filteredJobs.length} of {jobs.length} jobs
+                </p>
+              </div>
+            </div>
+
             {loading ? (
               <div className="grid grid-cols-1 gap-4 md:gap-6">
                 {[...Array(4)].map((_, i) => (
@@ -149,7 +388,7 @@ const ExploreJobs = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:gap-6">
-                {jobs.map(job => (
+                {filteredJobs.map(job => (
                   <motion.div
                     key={job.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -158,9 +397,12 @@ const ExploreJobs = () => {
                   >
                     <div className="flex flex-col md:flex-row md:items-start gap-4">
                       {/* Company Logo/Icon */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                        {job.title?.charAt(0) || 'J'}
-                      </div>
+
+                      <img
+                        src={job.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.client?.fullName || "Client")}&background=10b981&color=fff`}
+                        alt={job.client?.fullName || "Client"}
+                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-gradient-to-br from-green-500 to-green-600"
+                      />
 
                       {/* Job Details */}
                       <div className="flex-1 min-w-0">

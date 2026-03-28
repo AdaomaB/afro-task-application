@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 
 const slides = [
   { type: "image", src: "/img/whisk.png", alt: "Afro Task" },
-  { type: "video", src: "/imgvid/video5897679113241500502.mp4" },
+  { type: "video", src: "/imgvid/vid_2.mp4" },
   { type: "image", src: "/imgvid/5897679113701494037.jpg", alt: "Afro Task" },
 ];
 

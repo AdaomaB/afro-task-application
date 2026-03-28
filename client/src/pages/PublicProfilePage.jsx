@@ -8,6 +8,7 @@ import ReviewModal from '../components/ReviewModal';
 import { MapPin, Briefcase, Award, ExternalLink, Mail, Phone, ArrowLeft, MessageCircle, X, DollarSign, Clock } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import ProfileCompletionWidget from '../components/ProfileCompletionWidget';
 
 const PROJECT_CATEGORIES = [
   'Web Development', 'Mobile Development', 'UI/UX Design', 'Graphic Design',
@@ -341,13 +342,13 @@ const PublicProfilePage = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen  bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 lg:ml-64">
+      <div className="w-screen lg:flex-1 lg:ml-64">
         <Navbar />
-        <div className="p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
+        <div className="p-2 md:p-8">
+          <div className="mx-auto">
             {/* Back Button */}
             <button
               onClick={() => navigate(-1)}
@@ -361,18 +362,18 @@ const PublicProfilePage = () => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`h-64 rounded-t-3xl ${
+              className={`lg:h-64 h-32 rounded-t-3xl ${
                 isFreelancer 
                   ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
                   : 'bg-gradient-to-r from-yellow-500 to-orange-500'
               } relative`}
             >
-              <div className="absolute -bottom-16 left-8">
+              <div className="absolute lg:-bottom-16 -bottom-10 left-8">
                 {profile?.profileImage ? (
                   <img
                     src={profile.profileImage}
                     alt={profile?.fullName}
-                    className="w-32 h-32 rounded-full object-cover border-8 border-white shadow-xl"
+                    className="lg:w-32 lg:h-32 w-20 h-20 rounded-full object-cover lg:border-8 border-4 border-white shadow-xl"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || 'User')}&size=200&background=${isFreelancer ? '10b981' : 'eab308'}&color=fff`;
@@ -393,12 +394,12 @@ const PublicProfilePage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-b-3xl shadow-lg pt-20 px-8 pb-6 mb-6"
+              className="bg-white rounded-b-3xl shadow-lg lg:pt-20 pt-10 px-8 pb-6 mb-6"
             >
-              <div className="flex justify-between items-start">
+              <div className="grid grid-rows-1 lg:grid-cols-2 md:grid-cols-2 justify-between items-end">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{profile?.fullName}</h1>
-                  <div className="flex items-center gap-4 text-gray-600 mb-4">
+                  <h1 className="lg:text-3xl text-xl font-bold text-gray-900 mb-2">{profile?.fullName}</h1>
+                  <div className="flex items-center gap-4 text-gray-600 lg:text-base text-sm mb-4">
                     {profile?.country && (
                       <div className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
@@ -412,25 +413,26 @@ const PublicProfilePage = () => {
                       </div>
                     )}
                   </div>
+                  
                   <div className="flex items-center gap-4">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">{profile.followersCount || 0}</p>
-                      <p className="text-sm text-gray-600">Followers</p>
+                      <p className="lg:text-2xl text-xl font-bold text-gray-900">{profile.followersCount || 0}</p>
+                      <p className="lg:text-sm text-xs text-gray-600">Followers</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900">{profile.followingCount || 0}</p>
-                      <p className="text-sm text-gray-600">Following</p>
+                      <p className="lg:text-2xl text-xl  font-bold text-gray-900">{profile.followingCount || 0}</p>
+                      <p className="lg:text-sm text-xs text-gray-600">Following</p>
                     </div>
                     {isFreelancer && (
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-gray-900">{profile.projects?.length || 0}</p>
-                        <p className="text-sm text-gray-600">Projects</p>
+                        <p className="lg:text-2xl text-xl font-bold text-gray-900">{profile.projects?.length || 0}</p>
+                        <p className="lg:text-sm text-xs text-gray-600">Projects</p>
                       </div>
                     )}
                   </div>
                 </div>
                 {!isOwnProfile && (
-                  <div className="flex gap-3">
+                  <div className="flex justify-end mt-4 gap-3">
                     <button
                       onClick={handleFollow}
                       disabled={loadingFollow}
@@ -460,33 +462,38 @@ const PublicProfilePage = () => {
               </div>
             </motion.div>
 
+             {/* Profile Completion Widget */}
+            <ProfileCompletionWidget userRole={profile?.role} />
+
             {/* Tabs */}
             <div className="bg-white rounded-2xl shadow-lg mb-6">
-              <div className="border-b border-gray-200">
-                <div className="flex gap-8 px-8">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`py-4 font-medium transition relative ${
-                        activeTab === tab
-                          ? isFreelancer
-                            ? 'text-green-600'
-                            : 'text-yellow-600'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      {tabLabels[tab]}
-                      {activeTab === tab && (
-                        <motion.div
-                          layoutId="activeTab"
-                          className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                            isFreelancer ? 'bg-green-600' : 'bg-yellow-600'
-                          }`}
-                        />
-                      )}
-                    </button>
-                  ))}
+<div className="border-b border-gray-200">
+                <div className="overflow-x-auto no-scrollbar pb-2">
+                  <div className="flex flex-nowrap gap-3 sm:gap-6 px-6 sm:px-8 min-w-max">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`py-3 px-3 sm:px-4 font-medium text-sm sm:text-base flex items-center transition whitespace-nowrap relative ${
+                          activeTab === tab
+                            ? isFreelancer
+                              ? 'text-green-600'
+                              : 'text-yellow-600'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        {tabLabels[tab]}
+                        {activeTab === tab && (
+                          <motion.div
+                            layoutId="activeTab"
+                            className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                              isFreelancer ? 'bg-green-600' : 'bg-yellow-600'
+                            }`}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -500,8 +507,8 @@ const PublicProfilePage = () => {
                   >
                     {/* Intro Video Section - Show for Freelancers */}
                     {isFreelancer && profile.introVideoUrl && (
-                      <div className="bg-gray-50 rounded-xl p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <div className="bg-gray-50 rounded-xl lg:p-6 p-3">
+                        <h3 className="lg:text-xl text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                           <Award className="w-6 h-6 text-green-600" />
                           Introduction Video
                         </h3>
@@ -516,7 +523,7 @@ const PublicProfilePage = () => {
                     {/* Professional Info - From Onboarding */}
                     {isFreelancer && (profile.professionalTitle || profile.bio || profile.yearsOfExperience) && (
                       <div className="bg-gray-50 rounded-xl p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Professional Information</h3>
+                        <h3 className="lg:text-xl text-sm font-bold text-gray-900 mb-4">Professional Information</h3>
                         {profile.professionalTitle && (
                           <div className="mb-3">
                             <span className="font-semibold text-gray-900">Title: </span>

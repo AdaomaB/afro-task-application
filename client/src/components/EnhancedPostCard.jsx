@@ -273,28 +273,31 @@ const EnhancedPostCard = ({ post, onDelete }) => {
 
   return (
     // Use layout="position" to prevent re-animation on state updates
+    
     <motion.div
       layout="position"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible"
+      className="bg-white lg:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible contain-content  min-sm:w-[100%] lg:w-[100%] w-full"
     >
       {/* Header */}
       <div className="p-6 pb-4">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
+            <div className="contain-content lg:w-12 w-10 lg:h-12 h-10">
             <img
               src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
               alt={postAuthor?.fullName}
               onClick={handleUserClick}
-              className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
+              className="w-full h-full rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
             />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 onClick={handleUserClick} className="font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition">
                   {postAuthor?.fullName || 'Unknown User'}
                 </h3>
-                {getTypeBadge()}
+                {/* {getTypeBadge()} */}
               </div>
               <p className="text-sm text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
             </div>
@@ -358,7 +361,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
       </div>
 
       {/* Actions */}
-      <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-around">
+      <div className="lg:px-6 px-1 py-3 border-t border-gray-100 flex items-center justify-around">
         {/* Reaction picker */}
         <div className="relative" ref={reactionRef}>
           <motion.button
@@ -367,7 +370,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
             onMouseEnter={() => setShowReactions(true)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
           >
-            <span className="text-lg leading-none">{myReaction || '👍'}</span>
+            <span className="lg:text-lg leading-none">{myReaction || '👍'}</span>
             <span className="font-medium text-sm">{myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}</span>
           </motion.button>
 
@@ -383,7 +386,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
               >
                 {REACTIONS.map((r) => (
                   <button key={r.emoji} onClick={() => handleReaction(r.emoji)} title={r.label}
-                    className={`text-2xl hover:scale-125 transition-transform p-1 rounded-full ${myReaction === r.emoji ? 'bg-blue-50 scale-125' : ''}`}>
+                    className={`lg:text-2xl hover:scale-125 transition-transform p-1 rounded-full ${myReaction === r.emoji ? 'bg-blue-50 scale-125' : ''}`}>
                     {r.emoji}
                   </button>
                 ))}
@@ -394,14 +397,14 @@ const EnhancedPostCard = ({ post, onDelete }) => {
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
-          <MessageCircle className="w-5 h-5" />
-          <span className="font-medium">Comment</span>
+          <MessageCircle className="lg:w-5 w-4 h-4 lg:h-5" />
+          <span className="font-medium text-sm">Comment</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
-          <Share2 className="w-5 h-5" />
-          <span className="font-medium">Share</span>
+          <Share2 className="lg:w-5 w-4 h-4 lg:h-5" />
+          <span className="font-medium text-sm">Share</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBookmarked(!bookmarked)}
@@ -571,6 +574,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
       `}</style>
     </motion.div>
   );
+  
 };
 
 export default EnhancedPostCard;

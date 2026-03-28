@@ -35,16 +35,16 @@ const MyApplications = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 ">
       <Sidebar role="freelancer" onLogout={logout} />
       
-      <div className="flex-1 ml-[280px] p-8">
+      <div className="flex-1 lg:ml-[280px] p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-5xl mx-auto"
         >
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">My Applications</h1>
+          <h1 className="flex items-center justify-center text-3xl font-bold text-gray-800 mb-8">My Applications</h1>
 
           {loading ? (
             <div className="space-y-4">
