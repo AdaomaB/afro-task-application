@@ -126,10 +126,10 @@ const Navbar = () => {
 
   return (
     <nav className="bg-[#00564C] dashboard-navbar text-white py-4 px-6 shadow-lg">
-      <div className="max-w-7xl mx-auto flex lg:justify-between justify-end items-center">
+      <div className="max-w-7xl mx-auto flex justify-between first-line:items-center pl-8 lg:pl-0 md:pl-12">
         {/* Search Bar */}
         {user && (
-          <form onSubmit={handleSearch} className="hidden lg:block flex-1 max-w-md mx-4 ">
+          <form onSubmit={handleSearch} className="flex-1 max-w-36 md:max-w-sm lg:max-w-md mx-4">
             <div className="relative">
               <input
                 type="text"
@@ -166,7 +166,7 @@ const Navbar = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
+                    className="absolute lg:right-0 md:right-0 right-1 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
                   >
                     <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                       <h3 className="font-semibold text-gray-900">Notifications</h3>

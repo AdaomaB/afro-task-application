@@ -263,7 +263,7 @@ export default function AboutPage() {
           </FadeIn>
 
           {/* Dev team — side by side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto justify-between">
             <FadeIn delay={0.15}>
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8 flex flex-col items-center hover:shadow-xl transition-shadow duration-300">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00564C] to-[#027568] flex items-center justify-center mb-5 shadow-md">

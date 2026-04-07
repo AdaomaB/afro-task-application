@@ -29,7 +29,7 @@ try {
     throw new Error('Firebase credentials not found. Set FIREBASE_BASE64_CREDENTIALS or FIREBASE_SERVICE_ACCOUNT_PATH.');
   }
 
-  // Initialize Firebase (The JSON object already has the project ID, email, and private key inside it!)
+  // Initialize Firebase
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET
@@ -43,6 +43,9 @@ try {
     db.settings({ host: 'localhost:8080', ssl: false });
     console.log('🔧 Firestore connected to LOCAL EMULATOR (localhost:8080)');
   } else {
+    // 👇 ADDED THIS LINE TO FORCE HTTP/REST AND BYPASS gRPC SSL ERRORS 👇
+    db.settings({ preferRest: true });
+    
     console.log('✅ Firebase Firestore Connected (production)');
   }
 

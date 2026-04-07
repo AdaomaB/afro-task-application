@@ -127,9 +127,9 @@ export default function HeroSection() {
           />
           <button
             type="submit"
-            className="absolute right-1 md:right-0 bg-[#00564C] text-sm md:text-xl px-6 py-3 md:py-4 font-thin rounded-3xl flex flex-row gap-1 md:gap-2 hover:bg-[#027568] transition-colors duration-300"
+            className="absolute right-1 md:right-0 bg-[#00564C] text-sm lg:text-xl px-6 py-3 md:py-4 font-thin rounded-3xl flex flex-row gap-1 md:gap-2 hover:bg-[#027568] transition-colors duration-300 border-2 border-[#00564C]"
           >
-            <FaSearch className="text-lg md:text-2xl" />{" "}
+            <FaSearch className="text-lg lg:text-2xl" />{" "}
             <span className="hidden md:inline">Search</span>
           </button>
         </form>
@@ -137,25 +137,25 @@ export default function HeroSection() {
         <div className="relative z-10 flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-10 text-sm md:text-xl font-thin mt-3 md:mt-5 px-2">
           <button
             onClick={() => handleCategoryClick("Web Development")}
-            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs md:text-base"
+            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs lg:text-base"
           >
             Web Development
           </button>
           <button
             onClick={() => handleCategoryClick("Logo Design")}
-            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs md:text-base"
+            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs lg:text-base"
           >
             Logo Design
           </button>
           <button
             onClick={() => handleCategoryClick("Video Editing")}
-            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs md:text-base"
+            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs lg:text-base"
           >
             Video Editing
           </button>
           <button
             onClick={() => handleCategoryClick("Content Writing")}
-            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs md:text-base"
+            className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs lg:text-base"
           >
             Content Writing
           </button>

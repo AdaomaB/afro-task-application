@@ -31,10 +31,10 @@ export default function CTA() {
         <p className="text-[#FB9E01] font-semibold tracking-widest uppercase text-sm mb-4">
           Get Started Today
         </p>
-        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+        {/* <h2 className="text-xl md:text-3xl font-bold text-white mb-6 leading-tight">
           Ready to get started?
-        </h2>
-        <p className="text-white/70 text-lg md:text-2xl mb-10">
+        </h2> */}
+        <p className="text-white/70 text-xs md:text-base mb-10">
           Join thousands of verified professionals and trusted clients on AfroTask
         </p>
 

@@ -1,76 +1,128 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import FreelancerCard from "../FreelancerCard";
-import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import api from "../../services/api";
 
 export default function FreelancerHireSection() {
-  const containerRef = useRef(null);
-  const [freelancers, setFreelancers] = useState([]);
+  const [allFreelancers, setAllFreelancers] = useState([]);
+  const [filteredFreelancers, setFilteredFreelancers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const CATEGORIES = [
+    'All',
+  'Web Development',
+  'Mobile Development',
+  'UI/UX Design',
+  'Graphic Design',
+  'Video Editing',
+  'Digital Marketing',
+  'Writing',
+  'Data Science',
+  'AI / Machine Learning',
+  'Cybersecurity',
+  'DevOps',
+  'Game Development',
+  'Others',
+  ];
+
+  const fetchFreelancers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/ranking/top-freelancers?limit=12");
+      setAllFreelancers(response.data.freelancers || []);
+      setFilteredFreelancers(response.data.freelancers || []);
+    } catch (error) {
+      console.error("Error fetching top freelancers:", error);
+      setAllFreelancers([]);
+      setFilteredFreelancers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchFreelancers = async () => {
-      try {
-        const response = await api.get("/ranking/top-freelancers?limit=6");
-        setFreelancers(response.data.freelancers || []);
-      } catch (error) {
-        console.error("Error fetching top freelancers:", error);
-        // Fallback to empty array, no dummy data
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFreelancers();
-  }, []);
+  }, [fetchFreelancers]);
+
+  const handleCategoryFilter = (category) => {
+    setActiveCategory(category);
+    if (category === "All") {
+      setFilteredFreelancers(allFreelancers.slice(0, 12));
+    } else {
+      const filtered = allFreelancers.filter(
+        (freelancer) =>
+          freelancer.skillCategory?.toLowerCase() === category.toLowerCase() ||
+          freelancer.professionalTitle
+            ?.toLowerCase()
+            .includes(category.toLowerCase()) ||
+          (freelancer.skills &&
+            freelancer.skills.some((skill) =>
+              skill.toLowerCase().includes(category.toLowerCase()),
+            )),
+      );
+      setFilteredFreelancers(filtered.slice(0, 12));
+    }
+  };
 
   return (
     <div className="text-black">
       <div className="flex items-center justify-center flex-col gap-4 mb-6 md:mb-10 px-2">
-        <h1 className="text-2xl md:text-4xl lg:text-6xl font-bold tracking-wider text-center">
+        <h1 className="text-xl md:text-xl lg:text-3xl font-semibold tracking-wider text-center">
           Hire a Freelancer
         </h1>
 
-        <h2 className="flex flex-col lg:flex-row text-lg md:text-2xl lg:text-3xl font-normal text-center">
+        <h2 className="flex flex-col md:flex-row text-sm lg:text-xl font-thin text-center">
           <span className="md:ml-2">Find the right talent.</span>
           <span className="md:ml-2">Start your project.</span>
           <span className="md:ml-2">Watch your vision come alive.</span>
         </h2>
       </div>
 
-      {/* Freelancer cards container with scroll buttons */}
-      <div className="relative w-screen h-full max-w-7xl mx-auto">
-        <div
-          ref={containerRef}
-          className="flex justify-start items-center flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing select-none lg:gap-6 gap-4 px-2 m-4 no-scrollbar"
-        >
+      <div className=" w-full px-6">
+      {/* Category Filter Buttons */}
+      <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth -webkit-overflow-scrolling-touch w-full max-w-5xl mx-auto px-4 py-2 gap-x-2 mb-8 md:!grid md:!grid-cols-7 md:gap-4 md:overflow-visible md:max-w-none lg:px-12 md:p-0">
+        {CATEGORIES.map((category) => (
+          <button
+            key={category}
+            onClick={() => handleCategoryFilter(category)}
+            className={`min-w-[80px] px-2 py-2 lg:px-3 text-[10px] lg:text-xs xl:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 rounded-lg ${
+              activeCategory === category
+                ? "bg-[#00564c] text-white shadow-lg shadow-blue-500/25"
+                : "bg-white/80 backdrop-blur-sm h-12 hover:bg-white border border-gray-300 hover:shadow-md text-gray-800"
+            }`}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      {/* Freelancer cards container */}
+        <div className="flex flex-wrap grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-4 grid-cols-3 xl:justify-start sm:justify-center lg:gap-6 gap-4 px-6 mx-auto w-screen">
           {loading ? (
-            Array(6)
+            Array(12)
               .fill()
               .map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="snap-start w-80 h-96 bg-gray-200 animate-pulse rounded-lg"
+                  className="w-[100px] h-[180px] md:w-[180px] md:h-[220px] sm:w-[120px] sm:h-[200px] bg-gray-200 animate-pulse rounded-xl flex-shrink-0 shadow-lg"
                 ></div>
               ))
-          ) : freelancers.length === 0 ? (
-            <div className="snap-start w-full flex items-center justify-center h-96 text-gray-500">
-              No top freelancers available
+          ) : filteredFreelancers.length === 0 ? (
+            <div className="text-gray-500 w-screen flex justify-center items-center h-96">
+              No freelancers found for this category
             </div>
           ) : (
-            freelancers.map((freelancer) => (
-              <div key={freelancer.uid || freelancer.id} className="snap-start">
+            filteredFreelancers.map((freelancer) => (
+              <div
+                key={freelancer.uid || freelancer.id}
+                className="snap-start flex-shrink-0"
+              >
                 <FreelancerCard
                   userId={freelancer.uid || freelancer.id}
-                  name={freelancer.fullName || "Unnamed Freelancer"}
+                  name={freelancer.fullName || "Unknown"}
                   title={
                     freelancer.professionalTitle ||
                     freelancer.skillCategory ||
                     "Skilled Professional"
-                  }
-                  description={
-                    freelancer.bio?.slice(0, 150) ||
-                    freelancer.skills?.slice(0, 3).join(", ") + " expert"
                   }
                   rating={freelancer.averageRating || 0}
                   reviews={freelancer.totalReviews || 0}
@@ -84,28 +136,6 @@ export default function FreelancerHireSection() {
             ))
           )}
         </div>
-
-        {/* Left Arrow */}
-        <button
-          onClick={() =>
-            containerRef.current?.scrollBy({ left: -320, behavior: "smooth" })
-          }
-          className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white shadow-xl rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 border border-gray-200 z-20 w-14 h-14 flex items-center justify-center text-gray-700 hover:text-black"
-          aria-label="Scroll left"
-        >
-          <IoIosArrowBack className="w-6 h-6" />
-        </button>
-
-        {/* Right Arrow */}
-        <button
-          onClick={() =>
-            containerRef.current?.scrollBy({ left: 320, behavior: "smooth" })
-          }
-          className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white shadow-xl rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 border border-gray-200 z-20 w-14 h-14 flex items-center justify-center text-gray-700 hover:text-black"
-          aria-label="Scroll right"
-        >
-          <IoIosArrowForward className="w-6 h-6" />
-        </button>
       </div>
     </div>
   );

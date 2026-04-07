@@ -1,8 +1,5 @@
-// Fix gRPC SSL cert verification on local dev (Windows TLS issue)
-if (process.env.NODE_ENV !== 'production') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
+import 'win-ca';
+// ... the rest of your imports
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';

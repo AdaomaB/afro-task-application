@@ -9,7 +9,7 @@ import AppReviews from "../components/landing/AppReviews";
 import WhiteNavbar from "../components/navbar/WhiteNavbar";
 import LandingPageNavbar from "../components/landing/LandingPageNavbar";
 import HeroSection from "../components/landing/HeroSection";
-
+import Card from "../components/Card";4
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#00564C] relative text-white">

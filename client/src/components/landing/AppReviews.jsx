@@ -1,77 +1,39 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { getDoc } from "firebase/firestore";
+import { AuthContext } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Star, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { db } from "../../config/firebase";
-import { collection, addDoc, getDocs, orderBy, query, limit } from "firebase/firestore";
+import { db, ensureFirebaseAuth } from "../../config/firebase";
+import { MdDelete, MdModeEditOutline } from "react-icons/md";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  doc,
+  query,
+  where,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore";
 
-// ── Fallback reviews shown when Firestore is unavailable ──
-const FALLBACK_REVIEWS = [
-  {
-    id: "1",
-    name: "Amara Osei",
-    role: "Freelancer",
-    rating: 5,
-    message: "AfroTask helped me land my first freelance job within a week. The platform is clean and easy to use.",
-    avatar: "A",
-    avatarColor: "from-[#00564C] to-[#027568]",
-  },
-  {
-    id: "2",
-    name: "Chidi Nwosu",
-    role: "Client",
-    rating: 5,
-    message: "I found a reliable developer within minutes. The video profiles made it so easy to pick the right person.",
-    avatar: "C",
-    avatarColor: "from-[#FB9E01] to-[#CC8102]",
-  },
-  {
-    id: "3",
-    name: "Fatima Al-Hassan",
-    role: "Freelancer",
-    rating: 4,
-    message: "The video feature makes hiring so much easier. Clients can actually see who they're working with.",
-    avatar: "F",
-    avatarColor: "from-[#00564C] to-[#027568]",
-  },
-  {
-    id: "4",
-    name: "Kwame Mensah",
-    role: "Client",
-    rating: 5,
-    message: "Best freelance platform built for Africa. I've hired three designers and all delivered excellent work.",
-    avatar: "K",
-    avatarColor: "from-[#FB9E01] to-[#CC8102]",
-  },
-  {
-    id: "5",
-    name: "Ngozi Adeyemi",
-    role: "Freelancer",
-    rating: 5,
-    message: "AfroTask gave me the visibility I needed. My profile gets seen by real clients every day.",
-    avatar: "N",
-    avatarColor: "from-[#00564C] to-[#027568]",
-  },
-  {
-    id: "6",
-    name: "Seun Balogun",
-    role: "User",
-    rating: 4,
-    message: "Smooth experience from start to finish. The messaging system keeps everything in one place.",
-    avatar: "S",
-    avatarColor: "from-[#FB9E01] to-[#CC8102]",
-  },
-];
+// No fallback - use Firestore only
 
 // ── Star rating display ──
 function StarRating({ rating, interactive = false, onChange }) {
   const [hovered, setHovered] = useState(0);
+
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
           className={`w-5 h-5 transition-colors duration-150 ${
-            star <= (interactive ? hovered || rating : rating)
+            star <= (interactive ? (hovered > 0 ? hovered : rating) : rating)
               ? "text-[#FB9E01] fill-[#FB9E01]"
               : "text-gray-300"
           } ${interactive ? "cursor-pointer" : ""}`}
@@ -85,9 +47,13 @@ function StarRating({ rating, interactive = false, onChange }) {
 }
 
 // ── Review card ──
-function ReviewCard({ review, delay = 0 }) {
+function ReviewCard({ review, onEdit, onDelete, user, delay = 0 }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
+  const isOwnReview =
+    review.reviewerId === user?.id ||
+    review.reviewerId === user?._id ||
+    review.reviewerId === user?.uid;
 
   return (
     <motion.div
@@ -95,28 +61,65 @@ function ReviewCard({ review, delay = 0 }) {
       initial={{ opacity: 0, y: 30 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 h-full"
+      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 h-full relative"
     >
+      {/* Edit/Delete buttons for own reviews */}
+      {isOwnReview && (
+        <div className="absolute top-3 right-3 flex gap-1 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(review);
+            }}
+            className="w-7 h-7 rounded-lg bg-blue-100 hover:bg-blue-200 p-1 flex items-center justify-center text-blue-600 hover:text-blue-700 hover:shadow-md transition-all duration-200 cursor-pointer"
+            title="Edit review"
+          >
+            <MdModeEditOutline className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(review.id);
+            }}
+            className="w-7 h-7 rounded-lg bg-red-100 hover:bg-red-200 p-1 flex items-center justify-center text-red-600 hover:text-red-700 hover:shadow-md transition-all duration-200 cursor-pointer"
+            title="Delete review"
+          >
+            <MdDelete className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Stars */}
       <StarRating rating={review.rating} />
 
       {/* Message */}
       <p className="text-gray-600 text-sm leading-relaxed flex-1">
-        "{review.message}"
+        "{review.comment || review.message}"
       </p>
 
       {/* User info */}
       <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-        <div
-          className={`w-10 h-10 rounded-full bg-gradient-to-br ${review.avatarColor || "from-[#00564C] to-[#027568]"} flex items-center justify-center shadow-sm flex-shrink-0`}
-        >
-          <span className="text-white font-bold text-sm">
-            {review.avatar || review.name?.[0]?.toUpperCase() || "?"}
-          </span>
+        <div className="relative w-10 h-10 rounded-full shadow-sm flex-shrink-0 overflow-hidden">
+          <img
+            src={
+              review.reviewer?.profileImage ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                review.reviewer?.fullName || review.name || "User",
+              )}&background=2563eb&color=fff&bold=true&size=128`
+            }
+            className="w-10 h-10 rounded-full"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=User`;
+            }}
+          />
         </div>
         <div>
-          <p className="font-semibold text-gray-900 text-sm">{review.name}</p>
-          <p className="text-xs text-gray-400">{review.role}</p>
+          <p className="font-semibold text-gray-900 text-sm">
+            {review.reviewer?.fullName || review.name}
+          </p>
+          <p className="text-xs text-gray-400">
+            {review.reviewer?.role || review.role}
+          </p>
         </div>
       </div>
     </motion.div>
@@ -124,14 +127,31 @@ function ReviewCard({ review, delay = 0 }) {
 }
 
 // ── Leave a Review Modal ──
-function ReviewModal({ onClose, onSubmit }) {
-  const [form, setForm] = useState({ name: "", role: "Freelancer", rating: 5, message: "" });
+function ReviewModal({ onClose, onSubmit, editingReview, user }) {
+  const [form, setForm] = useState({
+    name: "",
+    role: "",
+    rating: 5,
+    message: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
+  // RESTORED: This is the correct useEffect for the Modal to load existing review text
+  useEffect(() => {
+    if (user) {
+      setForm({
+        name: user.fullName || user.name || "",
+        role: user.role === "freelancer" ? "Freelancer" : "Client",
+        rating: editingReview?.rating || 5,
+        message: editingReview?.comment || "",
+      });
+    }
+  }, [user, editingReview]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.message.trim()) return;
+    if (!form.message.trim()) return;
     setSubmitting(true);
     await onSubmit(form);
     setSubmitting(false);
@@ -165,8 +185,12 @@ function ReviewModal({ onClose, onSubmit }) {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Star className="w-8 h-8 text-green-600 fill-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Thank you!</h3>
-            <p className="text-gray-500 mb-6">Your review has been submitted.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              {editingReview ? "Review updated!" : "Thank you!"}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Your review has been {editingReview ? "updated" : "submitted"}.
+            </p>
             <button
               onClick={onClose}
               className="bg-[#00564C] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#027568] transition-colors"
@@ -176,37 +200,18 @@ function ReviewModal({ onClose, onSubmit }) {
           </div>
         ) : (
           <>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">Leave a Review</h3>
-            <p className="text-gray-500 text-sm mb-6">Share your experience with AfroTask</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              {editingReview ? "Edit Review" : "Leave Review"}
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">
+              Share your experience with AfroTask
+            </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Your Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Amara Osei"
-                  required
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#00564C]/30 focus:border-[#00564C] transition"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Role</label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#00564C]/30 focus:border-[#00564C] transition"
-                >
-                  <option>Freelancer</option>
-                  <option>Client</option>
-                  <option>User</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Rating</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Rating
+                </label>
                 <StarRating
                   rating={form.rating}
                   interactive
@@ -215,10 +220,14 @@ function ReviewModal({ onClose, onSubmit }) {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Your Review</label>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Your Review
+                </label>
                 <textarea
                   value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, message: e.target.value })
+                  }
                   placeholder="Tell us about your experience..."
                   required
                   rows={4}
@@ -231,7 +240,13 @@ function ReviewModal({ onClose, onSubmit }) {
                 disabled={submitting}
                 className="bg-[#00564C] hover:bg-[#027568] text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {submitting ? "Submitting..." : "Submit Review"}
+                {submitting
+                  ? editingReview
+                    ? "Updating..."
+                    : "Submitting..."
+                  : editingReview
+                    ? "Update Review"
+                    : "Submit Review"}
               </button>
             </form>
           </>
@@ -243,83 +258,210 @@ function ReviewModal({ onClose, onSubmit }) {
 
 // ── Main AppReviews section ──
 export default function AppReviews() {
-  const [reviews, setReviews] = useState(FALLBACK_REVIEWS);
-  const [usingFirestore, setUsingFirestore] = useState(false);
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
   const [page, setPage] = useState(0);
   const headerRef = useRef(null);
   const headerInView = useInView(headerRef, { once: true, margin: "-60px" });
+  const usersCache = useRef({});
 
   const CARDS_PER_PAGE = 3;
   const totalPages = Math.ceil(reviews.length / CARDS_PER_PAGE);
-  const visibleReviews = reviews.slice(page * CARDS_PER_PAGE, page * CARDS_PER_PAGE + CARDS_PER_PAGE);
+  const visibleReviews = reviews.slice(
+    page * CARDS_PER_PAGE,
+    page * CARDS_PER_PAGE + CARDS_PER_PAGE,
+  );
 
-  // Try to load from Firestore
+  // THE CORRECTED USEEFFECT FOR FETCHING REVIEWS
   useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"), limit(20));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const firestoreReviews = snap.docs.map((doc) => {
-            const d = doc.data();
-            return {
-              id: doc.id,
-              name: d.name,
-              role: d.role,
-              rating: d.rating,
-              message: d.message,
-              avatar: d.name?.[0]?.toUpperCase() || "?",
-              avatarColor: d.role === "Client" ? "from-[#FB9E01] to-[#CC8102]" : "from-[#00564C] to-[#027568]",
-            };
+    setLoadingReviews(true);
+    const q = query(collection(db, "reviews"), limit(20));
+    
+    const unsubscribe = onSnapshot(
+      q,
+      async (snap) => {
+        try {
+          const rawReviews = snap.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            ref: doc.ref,
+          }));
+
+          const getTimestamp = (val) => {
+            if (!val) return 0;
+            if (typeof val.toDate === 'function') return val.toDate().getTime();
+            if (val.seconds) return val.seconds * 1000;
+            return new Date(val).getTime() || 0; 
+          };
+
+          const sortedReviews = [...rawReviews].sort((a, b) => {
+            return getTimestamp(b.createdAt) - getTimestamp(a.createdAt);
           });
-          setReviews(firestoreReviews);
-          setUsingFirestore(true);
+
+          let userReview = null;
+          const currentUserId = user?.id || user?.uid || user?._id; 
+          
+          if (currentUserId) {
+            userReview = sortedReviews.find((r) => r.reviewerId === currentUserId);
+          }
+
+          const orderedReviews = userReview
+            ? [userReview, ...sortedReviews.filter((r) => r.id !== userReview?.id)]
+            : sortedReviews;
+
+          const reviewsWithReviewers = await Promise.all(
+            orderedReviews.map(async (review) => {
+              let reviewer = null;
+
+              if (!review.reviewerId) {
+                return {
+                  ...review,
+                  reviewer: {
+                    fullName: review.name || "Anonymous",
+                    profileImage: null,
+                    role: review.role || "Client",
+                  }
+                };
+              }
+
+              if (!usersCache.current[review.reviewerId]) {
+                try {
+                  const userRef = doc(db, "users", review.reviewerId);
+                  const userSnap = await getDoc(userRef);
+
+                  if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    usersCache.current[review.reviewerId] = {
+                      fullName: userData.fullName || userData.name || "Anonymous",
+                      profileImage: userData.profileImage || userData.photoURL || null,
+                      role: userData.role === "freelancer" ? "Freelancer" : "Client",
+                    };
+                  } else {
+                    usersCache.current[review.reviewerId] = {
+                      fullName: review.name || "Anonymous",
+                      profileImage: null,
+                      role: review.role || "Client",
+                    };
+                  }
+                } catch (err) {
+                  console.error(`Failed to fetch user ${review.reviewerId}:`, err);
+                  usersCache.current[review.reviewerId] = {
+                    fullName: review.name || "Anonymous",
+                    profileImage: null,
+                    role: review.role || "Client",
+                  };
+                }
+              }
+              
+              reviewer = usersCache.current[review.reviewerId];
+              return { ...review, reviewer };
+            })
+          );
+          
+          setReviews(reviewsWithReviewers);
+          setError(null);
+        } catch (err) {
+          console.error("Snapshot processing error:", err);
+          setError(err.message);
+        } finally {
+          setLoadingReviews(false);
         }
-      } catch {
-        // Firestore unavailable — keep fallback data silently
+      },
+      (error) => {
+        console.error("Error loading reviews:", error);
+        setError(
+          error.code === "permission-denied"
+            ? "Permission denied - check authentication"
+            : error.message
+        );
+        setLoadingReviews(false);
       }
-    };
-    loadReviews();
-  }, []);
+    );
+
+    return () => unsubscribe();
+  }, [user]); 
 
   const handleSubmitReview = async (form) => {
-    const newReview = {
-      ...form,
-      id: Date.now().toString(),
-      avatar: form.name[0]?.toUpperCase() || "?",
-      avatarColor: form.role === "Client" ? "from-[#FB9E01] to-[#CC8102]" : "from-[#00564C] to-[#027568]",
-      createdAt: new Date().toISOString(),
-    };
-
-    // Try Firestore first
-    try {
-      const docRef = await addDoc(collection(db, "reviews"), {
-        name: form.name,
-        role: form.role,
-        rating: form.rating,
-        message: form.message,
-        createdAt: new Date().toISOString(),
-      });
-      newReview.id = docRef.id;
-      setUsingFirestore(true);
-    } catch {
-      // Firestore unavailable — add to local state only
+    if (!user?.id && !user?.uid && !user?._id) {
+      toast.error("Please log in to leave a review.");
+      navigate("/login");
+      setShowModal(false);
+      return;
     }
 
-    setReviews((prev) => [newReview, ...prev]);
-    setPage(0);
+    try {
+      await ensureFirebaseAuth();
+      const currentUserId = user.id || user.uid || user._id;
+
+      if (editingReview) {
+        await updateDoc(editingReview.ref, {
+          rating: form.rating,
+          comment: form.message,
+          updatedAt: serverTimestamp(),
+        });
+        toast.success("Review updated!");
+        setEditingReview(null);
+      } else {
+        const existingQuery = query(
+          collection(db, "reviews"),
+          where("reviewerId", "==", currentUserId),
+        );
+        const existingSnap = await getDocs(existingQuery);
+
+        if (!existingSnap.empty) {
+          toast.error(
+            "You already left a review. Edit it from your review below.",
+          );
+          return;
+        }
+
+        await addDoc(collection(db, "reviews"), {
+          name: user.fullName || user.name || "Anonymous",
+          role: user.role === "freelancer" ? "Freelancer" : "Client",
+          rating: form.rating,
+          comment: form.message,
+          reviewerId: currentUserId,
+          createdAt: serverTimestamp(),
+        });
+        toast.success("Review submitted!");
+      }
+      setShowModal(false);
+    } catch (error) {
+      console.error("Review submit error:", error.code, error.message);
+      toast.error(`Failed to ${editingReview ? 'update' : 'submit'} review: ${error.message}`);
+    }
   };
 
-  const avgRating = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
+  const handleDeleteReview = async (reviewId) => {
+    if (!user || !window.confirm("Delete your review?")) return;
+    try {
+      await ensureFirebaseAuth();
+      await deleteDoc(doc(db, "reviews", reviewId));
+      toast.success("Review deleted.");
+    } catch (error) {
+      toast.error("Failed to delete review.");
+    }
+  };
+
+  const avgRating =
+    reviews.length > 0
+      ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+      : "0.0";
 
   return (
     <section className="relative py-20 md:py-28 overflow-hidden">
+
       {/* Background */}
       <div
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(160deg, #f8fffe 0%, #f0faf8 40%, #fff8ee 100%)",
+          background:
+            "linear-gradient(160deg, #f8fffe 0%, #f0faf8 40%, #fff8ee 100%)",
         }}
       />
       <div
@@ -339,13 +481,10 @@ export default function AppReviews() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center mb-14"
         >
-          <p className="text-[#00564C] font-semibold tracking-widest uppercase text-sm mb-3">
-            Testimonials
-          </p>
-          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
             Trusted by freelancers and clients worldwide
           </h2>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto mb-6">
+          <p className="text-gray-500 text-sm max-w-xl mx-auto mb-6">
             Real stories from real people building their future with AfroTask.
           </p>
 
@@ -353,20 +492,71 @@ export default function AppReviews() {
           <div className="inline-flex items-center gap-3 bg-white rounded-2xl px-6 py-3 shadow-md border border-gray-100">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className="w-5 h-5 text-[#FB9E01] fill-[#FB9E01]" />
+                <Star
+                  key={s}
+                  className="w-5 h-5 text-[#FB9E01] fill-[#FB9E01]"
+                />
               ))}
             </div>
             <span className="font-bold text-gray-900 text-lg">{avgRating}</span>
-            <span className="text-gray-400 text-sm">/ 5 · {reviews.length} reviews</span>
+            <span className="text-gray-400 text-sm">
+              / 5 · {reviews.length} reviews
+            </span>
           </div>
         </motion.div>
 
-        {/* Review cards grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {visibleReviews.map((review, i) => (
-            <ReviewCard key={review.id} review={review} delay={i * 0.08} />
-          ))}
-        </div>
+        {loadingReviews ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
+            {Array(3)
+              .fill()
+              .map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse h-64"
+                />
+              ))}
+          </div>
+        ) : error ? (
+
+          <div className="col-span-full text-center py-12 rounded-2xl lg:p-8 p-6 bg-white mb-6 shadow-md">
+            <X className="lg:w-12 lg:h-12 w-10 h-10 mx-auto text-red-400 mb-4" />
+            <h3 className="lg:text-lg text-sm font-normal text-gray-900 mb-2">
+              Failed to load reviews
+            </h3>
+            <button className="text-red-500 hover:text-red-300 mb-6" onClick={() => window.location.reload()}>
+              Refresh Page
+            </button>
+          </div>
+
+        ) : reviews.length === 0 ? (
+          <div className="col-span-full text-center py-4">
+            <Star className="lg:w-20 w-12 h-12 lg:h-20 mx-auto text-gray-300 mb-6" />
+            <h3 className="lg:text-3xl text-xl font-bold text-gray-900 mb-4">
+              No Reviews Yet
+            </h3>
+            <p className="lg:text-xl text-xs text-gray-500 max-w-lg mx-auto mb-8">
+              Be the first to share your experience!
+              <br />
+              Your feedback helps freelancers and clients worldwide.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 mb-10">
+            {visibleReviews.map((review, i) => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                onEdit={(review) => {
+                  setEditingReview(review);
+                  setShowModal(true); 
+                }}
+                onDelete={handleDeleteReview}
+                user={user}
+                delay={i * 0.08}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -408,10 +598,22 @@ export default function AppReviews() {
           className="text-center"
         >
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-[#00564C] hover:bg-[#027568] text-white font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl text-base"
+            onClick={() => {
+              if (!user) {
+                toast.error("Please log in to leave a review.");
+                navigate("/welcome");
+                return;
+              }
+              setShowModal(true);
+            }}
+            className={`font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg text-base inline-flex items-center gap-2 ${
+              user
+                ? "bg-[#00564C] hover:bg-[#027568] text-white hover:shadow-xl"
+                : "bg-gray-200 text-gray-500 cursor-not-allowed hover:scale-100 shadow-none"
+            }`}
+            title={!user ? "Log in to leave a review" : ""}
           >
-            Leave a Review
+            {!user ? "SignUp Now" : "Leave a Review"}
           </button>
         </motion.div>
       </div>
@@ -420,8 +622,30 @@ export default function AppReviews() {
       <AnimatePresence>
         {showModal && (
           <ReviewModal
-            onClose={() => setShowModal(false)}
-            onSubmit={handleSubmitReview}
+            editingReview={editingReview}
+            user={user}
+            onClose={() => {
+              setShowModal(false);
+              setEditingReview(null);
+            }}
+            onSubmit={async (form) => {
+              await ensureFirebaseAuth();
+              if (editingReview) {
+                const updatedReview = {
+                  ...editingReview,
+                  rating: form.rating,
+                  comment: form.message,
+                  updatedAt: new Date(),
+                };
+                setReviews((prev) =>
+                  prev.map((r) =>
+                    r.id === editingReview.id ? updatedReview : r,
+                  ),
+                );
+              } else {
+                await handleSubmitReview(form);
+              }
+            }}
           />
         )}
       </AnimatePresence>
