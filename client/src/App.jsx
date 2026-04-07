@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
 import PrivateRoute from './components/PrivateRoute';
+import ScrollToTop from './components/ScrollToTop';
 import WelcomePage from './pages/WelcomePage';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
@@ -28,9 +29,10 @@ import ProjectWorkspace from './pages/ProjectWorkspace';
 import LandingPage from './pages/LandingPage';
 import PolicyPage from './pages/PolicyPage';
 import TermsPage from './pages/TermsPage';
-import WhyAfroTask from './pages/WhyAfroTask';
+import Blogs from './pages/Blogs';
 import SearchResults from './pages/SearchResults';
 import FreelancersPage from './pages/FreelancersPage';
+import BlogPage from './pages/BlogPage';
 import AboutPage from './pages/AboutPage';
 import NotFound from './pages/NotFound';
 import WhatsAppBubble from './components/WhatsAppBubble';
@@ -41,6 +43,7 @@ function App() {
     <Router>
       <DarkModeProvider>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster position="top-right" />
         <WhatsAppBubble />
         <Routes>
@@ -48,7 +51,8 @@ function App() {
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/signup/:role" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/blogs" element={<WhyAfroTask />} />
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs/:blogId" element={<BlogPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/explore-projects" element={<ExploreProjects />} />
           <Route path="/contact" element={<ContactPage />} />
