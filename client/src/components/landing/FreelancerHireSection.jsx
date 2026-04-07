@@ -46,20 +46,69 @@ export default function FreelancerHireSection() {
   const handleCategoryFilter = (category) => {
     setActiveCategory(category);
     if (category === "All") {
-      setFilteredFreelancers(allFreelancers.slice(0, 12));
+      setFilteredFreelancers(allFreelancers);
+    } else if (category === "Others") {
+      // For "Others", show freelancers that don't match any of the specific categories
+      const specificCategories = CATEGORIES.filter(cat => cat !== "All" && cat !== "Others");
+      const filtered = allFreelancers.filter((freelancer) => {
+        const skillCategory = freelancer.skillCategory?.toLowerCase() || '';
+        const professionalTitle = freelancer.professionalTitle?.toLowerCase() || '';
+        const skills = freelancer.skills || [];
+        
+        // Check if this freelancer has any data that could match categories
+        const hasCategoryData = skillCategory || professionalTitle || skills.length > 0;
+        
+        if (!hasCategoryData) {
+          // If freelancer has no category data, include in "Others"
+          return true;
+        }
+        
+        // Check if this freelancer matches ANY of the specific categories
+        const matchesAnySpecificCategory = specificCategories.some(specificCat => {
+          const matchesCategory = skillCategory === specificCat.toLowerCase();
+          const matchesTitle = professionalTitle.includes(specificCat.toLowerCase());
+          const matchesSkills = skills.some(skill => 
+            skill.toLowerCase().includes(specificCat.toLowerCase())
+          );
+          return matchesCategory || matchesTitle || matchesSkills;
+        });
+        
+        // Include in "Others" if it doesn't match any specific category
+        return !matchesAnySpecificCategory;
+      });
+      console.log(`Filtered ${filtered.length} freelancers for "Others" category`);
+      setFilteredFreelancers(filtered);
     } else {
-      const filtered = allFreelancers.filter(
-        (freelancer) =>
-          freelancer.skillCategory?.toLowerCase() === category.toLowerCase() ||
-          freelancer.professionalTitle
-            ?.toLowerCase()
-            .includes(category.toLowerCase()) ||
-          (freelancer.skills &&
-            freelancer.skills.some((skill) =>
-              skill.toLowerCase().includes(category.toLowerCase()),
-            )),
-      );
-      setFilteredFreelancers(filtered.slice(0, 12));
+      const filtered = allFreelancers.filter((freelancer) => {
+        const skillCategory = freelancer.skillCategory?.toLowerCase() || '';
+        const professionalTitle = freelancer.professionalTitle?.toLowerCase() || '';
+        const skills = freelancer.skills || [];
+        
+        // Check if category matches skill category, title, or any skill
+        const matchesCategory = skillCategory === category.toLowerCase();
+        const matchesTitle = professionalTitle.includes(category.toLowerCase());
+        const matchesSkills = skills.some(skill => 
+          skill.toLowerCase().includes(category.toLowerCase())
+        );
+        
+        const matches = matchesCategory || matchesTitle || matchesSkills;
+        
+        // Debug logging
+        if (matches) {
+          console.log(`Freelancer ${freelancer.fullName} matches ${category}:`, {
+            skillCategory: freelancer.skillCategory,
+            professionalTitle: freelancer.professionalTitle,
+            skills: freelancer.skills,
+            matchesCategory,
+            matchesTitle,
+            matchesSkills
+          });
+        }
+        
+        return matches;
+      });
+      console.log(`Filtered ${filtered.length} freelancers for category: ${category}`);
+      setFilteredFreelancers(filtered);
     }
   };
 
@@ -84,7 +133,7 @@ export default function FreelancerHireSection() {
           <button
             key={category}
             onClick={() => handleCategoryFilter(category)}
-            className={`min-w-[80px] px-2 py-2 lg:px-3 text-[10px] lg:text-xs xl:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 rounded-lg ${
+            className={`min-w-[80px] px-2 py-2 lg:px-3 text-[10px] lg:text-xs xl:text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 rounded-lg ${
               activeCategory === category
                 ? "bg-[#00564c] text-white shadow-lg shadow-blue-500/25"
                 : "bg-white/80 backdrop-blur-sm h-12 hover:bg-white border border-gray-300 hover:shadow-md text-gray-800"
@@ -96,25 +145,28 @@ export default function FreelancerHireSection() {
       </div>
 
       {/* Freelancer cards container */}
-        <div className="flex flex-wrap grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-4 grid-cols-3 xl:justify-start sm:justify-center lg:gap-6 gap-4 px-6 mx-auto w-screen">
+        <div className="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 xl:justify-start justify-center lg:gap-6 gap-4 px-6 mx-auto max-w-7xl">
           {loading ? (
             Array(12)
               .fill()
               .map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
-                  className="w-[100px] h-[180px] md:w-[180px] md:h-[220px] sm:w-[120px] sm:h-[200px] bg-gray-200 animate-pulse rounded-xl flex-shrink-0 shadow-lg"
+                  className="w-full aspect-[3/4] bg-gray-200 animate-pulse rounded-xl shadow-lg"
                 ></div>
               ))
           ) : filteredFreelancers.length === 0 ? (
-            <div className="text-gray-500 w-screen flex justify-center items-center h-96">
-              No freelancers found for this category
+            <div className="col-span-full text-gray-500 flex justify-center items-center h-96 text-center">
+              <div>
+                <p className="text-lg font-medium mb-2">No freelancers found for this category</p>
+                <p className="text-sm">Try selecting a different category or check back later</p>
+              </div>
             </div>
           ) : (
             filteredFreelancers.map((freelancer) => (
               <div
                 key={freelancer.uid || freelancer.id}
-                className="snap-start flex-shrink-0"
+                className="w-full"
               >
                 <FreelancerCard
                   userId={freelancer.uid || freelancer.id}
@@ -131,6 +183,7 @@ export default function FreelancerHireSection() {
                     freelancer.profileImage ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(freelancer.fullName || "User")}`
                   }
+                  className="w-full max-w-[200px] mx-auto"
                 />
               </div>
             ))
