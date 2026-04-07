@@ -5,7 +5,6 @@ import Footer from '../components/Footer'
 import WhiteNavbar from '../components/navbar/WhiteNavbar'
 import WhyAfroTaskBoard from '../components/WhyAfroTaskBoard'
 import BlogCard from '../components/BlogCard'
-import staticBlogs from '../data/blogs.json'
 import { AuthContext } from '../context/AuthContext'
 import api from '../services/api'
 import { X, Trash2, Pencil } from 'lucide-react'
@@ -32,14 +31,14 @@ export default function WhyAfroTask() {
   const [searchTerm, setSearchTerm] = useState('')
   const [firestoreBlogs, setFirestoreBlogs] = useState([])
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showReadModal, setShowReadModal] = useState(null)
-  const [editBlog, setEditBlog] = useState(null) // blog being edited
+  const [editBlog, setEditBlog] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState(null) // { message, type }
+  const [toast, setToast] = useState(null)
   const [visibleCount, setVisibleCount] = useState(3)
+  const [inputFocused, setInputFocused] = useState(false)
 
   const suggestions = ["Freelancing in Nigeria", "Afro task freelancer", "Nigerian freelancer"]
 
@@ -76,14 +75,22 @@ export default function WhyAfroTask() {
       authorId: b.authorId,
       raw: b,
     }))
-    const stat = staticBlogs.map(b => ({ ...b, isFirestore: false }))
-    return [...dynamic, ...stat]
+    return [...dynamic]
   }, [firestoreBlogs])
 
   const filteredSuggestions = useMemo(() => {
-    if (!searchTerm) return suggestions
-    return suggestions.filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
-  }, [searchTerm])
+    if (!searchTerm.trim()) return []
+    
+    // Get unique blog titles that match the search term
+    const matchedBlogs = allBlogs.filter(blog =>
+      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      blog.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    
+    // Extract and deduplicate titles
+    const uniqueTitles = [...new Set(matchedBlogs.map(b => b.title))]
+    return uniqueTitles.slice(0, 6) // Show top 6 matching blogs
+  }, [searchTerm, allBlogs])
 
   const filteredBlogs = useMemo(() => {
     return allBlogs.filter(blog =>
@@ -129,13 +136,20 @@ export default function WhyAfroTask() {
       data.append('description', form.description.trim())
       data.append('content', form.content.trim())
       data.append('authorName', user.fullName || user.name || 'Anonymous')
-      if (imageFile) data.append('image', imageFile)
+      
+      if (imageFile) {
+        console.log('Image file being uploaded:', { name: imageFile.name, size: imageFile.size, type: imageFile.type })
+        data.append('image', imageFile)
+      } else {
+        console.log('No image file selected for upload')
+      }
 
       if (editBlog) {
         await api.put(`/profile/blogs/${editBlog.id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
         showToast('Blog updated successfully!')
       } else {
-        await api.post('/profile/blogs', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+        const res = await api.post('/profile/blogs', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+        console.log('Blog creation response:', res.data)
         showToast('Blog published successfully!')
       }
 
@@ -159,7 +173,7 @@ export default function WhyAfroTask() {
       await api.delete(`/profile/blogs/${blog.id}`)
       showToast('Blog deleted.')
       await fetchBlogs()
-      if (showReadModal?.id === blog.id) setShowReadModal(null)
+      // Modal removed
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to delete blog', 'error')
     }
@@ -173,7 +187,7 @@ export default function WhyAfroTask() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Search + Create button row */}
-      <div className='flex flex-col gap-4 justify-center items-center text-white my-8 px-4 sm:px-8'>
+      <div className='flex flex-col gap-4 justify-center items-center text-white my-8 px-4 sm:px-8 relative'>
         <div className="w-full max-w-2xl flex gap-3 items-center">
           <div className="relative flex-1">
             <IoSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-gray-400 pointer-events-none" />
@@ -182,6 +196,8 @@ export default function WhyAfroTask() {
               placeholder="Search blogs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setTimeout(() => setInputFocused(false), 200)}
               className='w-full bg-white pl-12 pr-12 text-gray-900 rounded-2xl text-xl py-4 border-2 border-gray-300 focus:border-green-500 focus:outline-none shadow-lg'
             />
             {searchTerm && (
@@ -198,19 +214,33 @@ export default function WhyAfroTask() {
           </button>
         </div>
 
-        {filteredSuggestions.length > 0 && (
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl">
-            {filteredSuggestions.map((sug, index) => (
-              <button
-                key={index}
-                onClick={() => setSearchTerm(sug)}
-                className='flex items-center py-4 px-6 text-lg text-gray-900 hover:bg-gray-50 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500 w-full text-left'
-              >
-                <IoSearch className="text-lg text-gray-400 mr-3 flex-shrink-0" />
-                {sug}
-              </button>
-            ))}
-          </div>
+        {inputFocused && (
+          <>
+            {filteredSuggestions.length > 0 && (
+              <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl absolute top-24 z-10 max-h-64 overflow-y-auto">
+                {filteredSuggestions.map((sug, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSearchTerm(sug)
+                      setInputFocused(false)
+                    }}
+                    className='flex items-center gap-3 py-3 px-6 text-base text-gray-900 hover:bg-gray-100 focus:outline-none transition-colors border-l-4 border-transparent hover:border-green-500 w-full text-left'
+                  >
+                    <IoSearch className="text-lg text-gray-400 flex-shrink-0" />
+                    <span className="truncate">{sug}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchTerm.trim() && filteredSuggestions.length === 0 && (
+              <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl absolute top-24 z-10">
+                <div className="py-4 px-6 text-gray-500 text-center">
+                  No blogs match &quot;{searchTerm}&quot;
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -225,7 +255,7 @@ export default function WhyAfroTask() {
                 author={blog.author}
                 date={blog.date}
                 link={blog.link}
-                onReadMore={blog.isFirestore ? () => setShowReadModal(blog) : undefined}
+                onReadMore={blog.isFirestore ? () => navigate(`/blogs/${blog.id}`) : undefined}
               />
               {/* Edit / Delete — only for the blog's author */}
               {blog.isFirestore && user && blog.authorId === user.id && (
@@ -319,7 +349,7 @@ export default function WhyAfroTask() {
         </div>
       )}
 
-      {/* ── Read More Modal ── */}
+      {/* ── Read More Modal ──
       {showReadModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -352,7 +382,7 @@ export default function WhyAfroTask() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   )
 }
