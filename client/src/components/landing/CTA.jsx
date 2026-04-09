@@ -40,12 +40,12 @@ export default function CTA() {
 
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center">
           <Link to="/signup/client">
-            <button className="bg-[#FB9E01] hover:bg-[#CC8102] text-white font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:scale-105 text-lg flex items-center gap-2">
+            <button className="bg-[#FB9E01] hover:bg-[#CC8102] text-white font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:scale-105 text-base md:text-lg flex items-center gap-2">
               Join as a Client <ArrowRight className="w-5 h-5" />
             </button>
           </Link>
           <Link to="/signup/freelancer">
-            <button className="border-2 border-white/40 hover:border-white text-white font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:bg-white/10 text-lg">
+            <button className="border-2 border-white/40 hover:border-white text-white font-semibold px-10 py-4 rounded-xl transition-all duration-300 hover:bg-white/10 text-base md:text-lg">
               Become a Freelancer
             </button>
           </Link>

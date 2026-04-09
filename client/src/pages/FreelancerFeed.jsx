@@ -176,10 +176,10 @@ const FreelancerFeed = () => {
                 </div>
               )}
               
-              <h1 className="lg:text-4xl text-2xl font-bold text-gray-900 mb-2">
+              <h1 className="lg:text-3xl md:text-2xl text-xl font-bold text-gray-900 mb-2">
                 Welcome back, {user?.fullName?.split(' ')[0]} 👋
               </h1>
-              <p className="text-gray-600">Here's what's happening with your freelance journey today.</p>
+              <p className="text-gray-600 lg:text-lg text-xs">Here's what's happening with your freelance journey today.</p>
             </motion.div>
 
             {/* Profile Completion Widget */}

@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
 import ReviewModal from "../components/ReviewModal";
+import EnhancedPostCard from "../components/EnhancedPostCard";
 import {
   MapPin,
   Briefcase,
@@ -542,7 +543,7 @@ const PublicProfilePage = () => {
               </div>
             </motion.div>
 
-            {isOwnProfile && profile && (
+            {isOwnProfile && (
               <ProfileCompletionWidget userRole={profile.role} />
             )}
 
@@ -1311,73 +1312,16 @@ const PublicProfilePage = () => {
                     {profile.posts && profile.posts.length > 0 ? (
                       <div className="space-y-4">
                         {profile.posts.map((post) => (
-                          <div
+                          <EnhancedPostCard
                             key={post.id}
-                            className="bg-white border border-gray-200 rounded-xl p-6 relative"
-                          >
-                            <div className="flex items-start gap-4 mb-4">
-                              <img
-                                src={
-                                  profile.profileImage ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.fullName)}`
-                                }
-                                alt={profile.fullName}
-                                className="w-12 h-12 rounded-full object-cover"
-                              />
-                              <div className="flex-1">
-                                <h5 className="font-semibold text-gray-900">
-                                  {profile.fullName}
-                                </h5>
-                                <p className="text-sm text-gray-500">
-                                  {new Date(
-                                    post.createdAt,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                              {isOwnProfile && (
-                                <button
-                                  onClick={() => {
-                                    setPostToDelete(post.id);
-                                    setShowDeleteModal(true);
-                                  }}
-                                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded transition"
-                                >
-                                  Delete
-                                </button>
-                              )}
-                            </div>
-
-                            {post.content && (
-                              <p className="text-gray-800 mb-4">
-                                {post.content}
-                              </p>
-                            )}
-
-                            {post.mediaUrl && (
-                              <div className="mb-4">
-                                {post.type === "video" ||
-                                post.mediaType === "video" ? (
-                                  <video
-                                    src={post.mediaUrl}
-                                    controls
-                                    className="w-full rounded-lg max-h-96"
-                                  />
-                                ) : (
-                                  <img
-                                    src={post.mediaUrl}
-                                    alt="Post media"
-                                    className="w-full rounded-lg"
-                                  />
-                                )}
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-6 text-sm text-gray-600">
-                              <span>❤️ {post.likes?.length || 0} likes</span>
-                              <span>💬 {post.commentsCount || 0} comments</span>
-                              <span>👁️ {post.views || 0} views</span>
-                            </div>
-                          </div>
+                            post={post}
+                            profile={profile}
+                            isOwnProfile={isOwnProfile}
+                            onDelete={(postId) => {
+                              setPostToDelete(postId);
+                              setShowDeleteModal(true);
+                            }}
+                          />
                         ))}
                       </div>
                     ) : (

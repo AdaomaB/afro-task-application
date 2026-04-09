@@ -165,7 +165,7 @@ export default function ServiceSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-xl md:text-3xl font-semibold flex justify-center items-center tracking-wider text-white mb-6 md:mb-10 text-center px-2"
+        className="text-xl md:text-2xl font-semibold flex justify-center items-center tracking-wider text-white mb-4 md:mb-6 text-center px-2"
       >
         Popular Services
       </motion.h1>

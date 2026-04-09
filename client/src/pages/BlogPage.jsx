@@ -7,6 +7,7 @@ import api from '../services/api'
 import { X, ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import WhiteNavbar from '../components/navbar/WhiteNavbar'
 import Footer from '../components/Footer'
+import { IoIosPerson, IoMdTime } from 'react-icons/io'
 
 const emptyForm = { title: '', description: '', content: '' }
 
@@ -297,23 +298,23 @@ export default function BlogPage() {
         Back to Blogs
       </button>
       
-      <div className="pt-32 pb-20 px-4 sm:px-8 lg:px-12 max-w-6xl mx-auto">
+      <div className="pt-32 pb-20 px-4 sm:px-8 lg:px-0 max-w-6xl mx-auto">
         {/* Blog Header */}
         <div className="mb-12">
+          <div className="flex-1  mb-2">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-2 leading-tight">{currentBlog.title}</h1>
+              <p className="text-sm md:text-lg text-gray-200 mb-6 flex items-center ">
+                Published by <IoIosPerson className='ml-2'/> {currentBlog.author} on <IoMdTime className='ml-2' /> {currentBlog.date}
+              </p>
+            </div>
           {currentBlog.link && (
             <img
               src={currentBlog.link}
               alt={currentBlog.title}
-              className="w-full h-auto object-cover rounded-2xl mb-6 shadow-2xl"
+              className="w-full max-h-96 object-cover rounded-2xl mb-6 shadow-2xl"
             />
           )}
-          <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8">
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">{currentBlog.title}</h1>
-              <p className="text-lg md:text-xl text-gray-200 mb-6 flex items-center">
-                {currentBlog.author} · {currentBlog.date}
-              </p>
-            </div>
+          <div className="flex flex-col lg:flex-row lg:items-start">
             {currentBlog.isFirestore && user && currentBlog.authorId === user.id && (
               <div className="flex gap-2 mt-4 lg:mt-0">
                 <button
@@ -337,15 +338,18 @@ export default function BlogPage() {
         </div>
 
         {/* Blog Content */}
-        <div className="prose prose-invert max-w-none mb-16">
-          <div className="text-lg md:text-xl leading-relaxed text-gray-100 whitespace-pre-wrap">
+        <div className="prose prose-invert max-w-none mb-12">
+          <div className="flex-1 mb-2">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">{currentBlog.title}</h1>
+            </div>
+          <div className="text-sm md:text-lg leading-relaxed text-gray-100 whitespace-pre-wrap">
             {currentBlog.content || currentBlog.raw?.content}
           </div>
         </div>
 
         {/* Comments Section */}
         <div className="mb-16 border-t border-gray-500 pt-12 ">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8">Comments ({comments.length})</h2>
+          <h2 className="text-xl md:text-2xl font-bold mb-8">Comments ({comments.length})</h2>
           
           {/* Comment Form */}
           <form onSubmit={handleSubmitComment} className="mb-10">

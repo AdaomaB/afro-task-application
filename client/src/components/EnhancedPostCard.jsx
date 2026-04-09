@@ -1,4 +1,6 @@
 import { useState, useEffect, useContext, useRef, memo } from 'react';
+import { MdMoreVert } from "react-icons/md";
+import { FiThumbsUp } from "react-icons/fi";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Share2, Bookmark, MoreVertical, Send, Smile, Play, X } from 'lucide-react';
@@ -7,6 +9,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { createPortal } from 'react-dom';
 import EmojiPicker from 'emoji-picker-react';
 
 const REACTIONS = [
@@ -106,6 +109,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   const [liked, setLiked] = useState(false);
   const [myReaction, setMyReaction] = useState(null);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
+  const [reactionCounts, setReactionCounts] = useState(post.reactions || {});
   const [bookmarked, setBookmarked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
@@ -113,12 +117,14 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [activeCommentMenu, setActiveCommentMenu] = useState(null);
   const [imageModal, setImageModal] = useState(false);
   const [videoModal, setVideoModal] = useState(false);
   const [following, setFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
   const [viewTracked, setViewTracked] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const reactionRef = useRef(null);
 
   const isOwner = user?.uid === post.authorId;
@@ -144,14 +150,20 @@ const EnhancedPostCard = ({ post, onDelete }) => {
         const data = snap.data();
         // Use functional updates so React batches these without re-animating
         setLikeCount(data.likes?.length || 0);
+        setReactionCounts(data.reactions || {});
+        if (data.userReactions && data.userReactions[user?.uid]) {
+          setMyReaction(data.userReactions[user.uid]);
+        }
       }
     });
     return () => unsub();
-  }, [post.id]);
+  }, [post.id, user?.uid]);
 
   useEffect(() => {
     if (post.likes && user?.id) setLiked(post.likes.includes(user.id));
-  }, [post.likes, user?.id]);
+    if (post.userReactions && user?.uid) setMyReaction(post.userReactions[user.uid] || null);
+    if (post.reactions) setReactionCounts(post.reactions);
+  }, [post.likes, post.userReactions, post.reactions, user?.id, user?.uid]);
 
   useEffect(() => {
     const track = async () => {
@@ -174,6 +186,10 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   useEffect(() => {
     if (showComments && post.id) fetchComments();
   }, [showComments, post.id]);
+
+  useEffect(() => {
+    if (showDetailModal && post.id) fetchComments();
+  }, [showDetailModal, post.id]);
 
   const fetchComments = async () => {
     try { const r = await api.get(`/posts/${post.id}/comments`); setComments(r.data.comments || []); }
@@ -204,15 +220,26 @@ const EnhancedPostCard = ({ post, onDelete }) => {
     }
   };
 
-  const handleReaction = (emoji) => {
-    const same = myReaction === emoji;
-    setMyReaction(same ? null : emoji);
-    if (!liked && !same) {
-      setLiked(true);
-      setLikeCount(p => p + 1);
-      api.post(`/posts/${post.id}/like`).catch(() => {});
+  const handleReaction = async (emoji) => {
+    try {
+      const same = myReaction === emoji;
+      const newReaction = same ? null : emoji;
+      
+      setMyReaction(newReaction);
+      
+      // Call the new reaction endpoint
+      if (newReaction) {
+        await api.post(`/posts/${post.id}/react`, { emoji: newReaction });
+      } else {
+        // If removing reaction, we need to handle this differently
+        // For now, let's just update the UI locally
+      }
+      
+      setShowReactions(false);
+    } catch (error) {
+      console.error('Failed to react:', error);
+      toast.error('Failed to react to post');
     }
-    setShowReactions(false);
   };
 
   const handleFollow = async () => {
@@ -271,19 +298,219 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   const topComments = comments.filter(c => !c.parentId);
   const getReplies = (id) => comments.filter(c => c.parentId === id);
 
+  // Get top 3 most used reactions
+  const getTopReactions = () => {
+    const reactionEntries = Object.entries(reactionCounts);
+    return reactionEntries
+      .sort(([, a], [, b]) => b.length - a.length)
+      .slice(0, 3)
+      .map(([emoji]) => emoji);
+  };
+
   return (
-    // Use layout="position" to prevent re-animation on state updates
+    <>
+    {/* Detail Modal */}
+    {showDetailModal && (
+      <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center md:p-4 p-0 overflow-y-auto">
+        <div className="bg-white max-w-2xl w-full my-8 h-[100vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
+            <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+            <div className="relative">
+              <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg transition">
+                <MoreVertical className="w-5 h-5 text-gray-600" />
+              </button>
+{activeCommentMenu === commentDetailId && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                            <button className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Comment</button>
+                            <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                          </div>
+                        )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            {/* Post Content */}
+            <div className="p-6 border-b border-gray-200">
+              {/* Author Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
+                  alt={postAuthor?.fullName}
+                  onClick={handleUserClick}
+                  className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
+                />
+                <div className="flex-1">
+                  <h3 onClick={handleUserClick} className="font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition">
+                    {postAuthor?.fullName || 'Unknown User'}
+                  </h3>
+                  <p className="text-sm text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+                </div>
+              </div>
+
+              {/* Content */}
+              {post.content && <p className="text-gray-800 mb-4 whitespace-pre-wrap leading-relaxed text-base">{post.content}</p>}
+
+              {/* Media */}
+              {hasVideo && post.mediaUrl && (
+                <div className="relative group cursor-pointer mb-4 rounded-xl overflow-hidden" onClick={(e) => { e.stopPropagation(); setVideoModal(true); }}>
+                  <video src={post.mediaUrl} className="w-full max-h-[400px] object-cover" muted playsInline />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-all">
+                    <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center">
+                      <Play className="w-10 h-10 text-gray-900 ml-1" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {hasImage && post.image && (
+                <img src={post.image} alt="Post" className="w-full max-h-[400px] object-cover rounded-xl mb-4 cursor-pointer hover:opacity-90 transition" onClick={(e) => { e.stopPropagation(); setImageModal(true); }} />
+              )}
+
+              {/* Hashtags */}
+              {post.hashtags?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {post.hashtags.map((tag, i) => (
+                    <span key={i} className="text-green-600 hover:text-green-700 cursor-pointer text-sm font-medium">#{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* Stats */}
+              <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+                <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
+                <span>{post.commentsCount || comments.length} comments</span>
+              </div>
+            </div>
+
+            {/* Comments Section */}
+            <div className="flex-1 p-4 space-y-4">
+              {topComments.length === 0 ? (
+                <p className="text-center text-gray-500 py-4 text-sm">No comments yet. Be the first!</p>
+              ) : topComments.map((comment) => (
+                <div key={comment.id} className="flex gap-3">
+                  <img
+                    src={comment.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.fullName || 'User')}`}
+                    alt={comment.user?.fullName}
+                    className="w-8 h-8 rounded-full object-cover cursor-pointer flex-shrink-0"
+                    onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}
+                  />
+                  <div className="flex-1">
+                    <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
+                      <div className="flex flex-row justify-between gap-4">
+                      <p className=" font-semibold text-sm text-gray-900 cursor-pointer hover:underline"
+                        onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}>
+                        {comment.user?.fullName || 'Anonymous'}
+                      </p>
+
+                      <div className="relative">
+                        <button onClick={() => setActiveCommentMenu(activeCommentMenu === commentDetailId ? null : commentDetailId)} className="p-2 hover:bg-gray-100 rounded-lg transition">
+                          <MdMoreVert className='text-xl text-gray-500' />
+                        </button>
+                        {showMenu && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                            {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
+                            <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                          </div>
+                        )}
+                      </div>
+                      </div>
+                      
+                      <p className="text-gray-800 text-sm mt-0.5 break-words">{comment.content}</p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 ml-1">
+                      <span className="text-xs text-gray-400">{fmt(comment.createdAt)}</span>
+                      <button className="text-xs font-medium text-gray-400 hover:text-red-400">❤️ {comment.likes?.length || 0}</button>
+                      <button className="text-xs font-semibold text-gray-400 hover:text-green-600">Reply</button>
+                    </div>
+                    {/* Nested replies */}
+                    {getReplies(comment.id).length > 0 && (
+                      <div className="mt-2 space-y-2 pl-2 border-l-2 border-gray-200">
+                        {getReplies(comment.id).map(reply => (
+                          <div key={reply.id} className="flex gap-2">
+                            <img
+                              src={reply.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user?.fullName || 'User')}`}
+                              className="w-6 h-6 rounded-full object-cover flex-shrink-0 cursor-pointer"
+                              onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}
+                              alt=""
+                            />
+                            <div className="flex-1">
+                              <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full">
+                                <p className="font-semibold text-xs text-gray-900 cursor-pointer hover:underline"
+                                  onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}>
+                                  {reply.user?.fullName || 'Anonymous'}
+                                </p>
+                                <p className="text-gray-800 text-xs mt-0.5 break-words">{reply.content}</p>
+                              </div>
+                              <span className="text-xs text-gray-400 ml-1 block mt-0.5">{fmt(reply.createdAt)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Comment Input - Fixed at bottom with z-20 */}
+          <form onSubmit={handleComment} className="border-t border-gray-200 bg-white p-4 relative z-20">
+            <div className="flex gap-3">
+              <img
+                src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
+                alt={user?.fullName}
+                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20">
+                  <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-1.5 hover:bg-gray-100 rounded-full transition">
+                    <Smile className="w-4 h-4 text-gray-500" />
+                  </button>
+                  <button type="submit" disabled={!newComment.trim()}
+                    className="p-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 rounded-full transition">
+                    <Send className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </div>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full right-0 mb-2 z-50">
+                    <EmojiPicker
+                      onEmojiClick={d => { setNewComment(p => p + d.emoji); setShowEmojiPicker(false); }}
+                      width={300} height={380}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {/* Main Card */}
+    {/* Use layout="position" to prevent re-animation on state updates */}
     
     <motion.div
       layout="position"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white lg:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible contain-content  min-sm:w-[100%] lg:w-[100%] w-full"
+      className="bg-white lg:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible contain-content  min-sm:w-[100%] lg:w-[100%] w-screen cursor-pointer"
     >
       {/* Header */}
-      <div className="p-6 pb-4">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="p-3 md:p-6 pb-4">
+        <div className="flex items-start justify-between mb-4"  >
+        {/* <div className="w-full bg-red-500 lg:h-12 h-10" > </div> */}
+          <div className="flex items-center  gap-3 w-full" onClick={() => setShowDetailModal(true)}>
             <div className="contain-content lg:w-12 w-10 lg:h-12 h-10">
             <img
               src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
@@ -292,14 +519,11 @@ const EnhancedPostCard = ({ post, onDelete }) => {
               className="w-full h-full rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
             />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 onClick={handleUserClick} className="font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition">
+              <div className="flex flex-col items-start gap-1">
+                <h3 onClick={handleUserClick} className="flex flex-row flex-nowrap w-full font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition md:text-lg text-sm">
                   {postAuthor?.fullName || 'Unknown User'}
                 </h3>
-                {/* {getTypeBadge()} */}
-              </div>
-              <p className="text-sm text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+              <p className="flex flex-row flex-nowrap md:text-sm text-xs text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
             </div>
           </div>
 
@@ -324,11 +548,11 @@ const EnhancedPostCard = ({ post, onDelete }) => {
           </div>
         </div>
 
-        {post.content && <p className="text-gray-800 mb-3 whitespace-pre-wrap leading-relaxed">{post.content}</p>}
+        {post.content && <p className="text-gray-800 mb-3 whitespace-pre-wrap leading-relaxed" onClick={() => setShowDetailModal(true)}>{post.content}</p>}
 
         {/* Video */}
         {hasVideo && post.mediaUrl && (
-          <div className={`relative group ${post.content ? 'mb-3' : 'mb-0'} cursor-pointer`} onClick={handleVideoClick}>
+          <div className={`relative group ${post.content ? 'mb-3' : 'mb-0'} cursor-pointer`} onClick={(e) => { e.stopPropagation(); setVideoModal(true); }}>
             <video src={post.mediaUrl} className="w-full max-h-[500px] object-cover rounded-xl" muted playsInline />
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-all rounded-xl">
               <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center">
@@ -341,7 +565,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
         {/* Image — memoized to prevent re-mount on state changes */}
         {hasImage && post.image && (
           <div className={post.content ? 'mb-3 overflow-hidden rounded-xl' : 'mb-0 overflow-hidden rounded-xl'}>
-            <PostImage src={post.image} onClick={() => setImageModal(true)} />
+            <PostImage src={post.image} onClick={(e) => { e.stopPropagation(); setImageModal(true); }} />
           </div>
         )}
 
@@ -356,22 +580,22 @@ const EnhancedPostCard = ({ post, onDelete }) => {
 
       {/* Stats */}
       <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
-        <span>{likeCount} {myReaction || '👍'} reactions</span>
+        <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
         <span>{post.commentsCount || 0} comments</span>
       </div>
 
       {/* Actions */}
-      <div className="lg:px-6 px-1 py-3 border-t border-gray-100 flex items-center justify-around">
+      <div className="lg:px-6 px-3 py-3 border-t border-gray-100 flex items-center justify-around" onClick={e => e.stopPropagation()}>
         {/* Reaction picker */}
         <div className="relative" ref={reactionRef}>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={handleLike}
+            onClick={(e) => { e.stopPropagation(); handleLike(); }}
             onMouseEnter={() => setShowReactions(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
           >
-            <span className="lg:text-lg leading-none">{myReaction || '👍'}</span>
-            <span className="font-medium text-sm">{myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}</span>
+            {myReaction ? <span className="lg:text-lg leading-none">{myReaction}</span> : <FiThumbsUp className="w-5 h-5" />}
+            <span className="font-medium text-xs md:text-sm">{myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}</span>
           </motion.button>
 
           <AnimatePresence>
@@ -382,10 +606,10 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                 exit={{ opacity: 0, y: 8, scale: 0.9 }}
                 transition={{ duration: 0.15 }}
                 onMouseLeave={() => setShowReactions(false)}
-                className="absolute bottom-full left-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 px-3 py-2 flex gap-1 z-20 whitespace-nowrap"
+                className="absolute bottom-full left-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 md:px-3 p-2 flex gap-1 z-20 whitespace-nowrap"
               >
                 {REACTIONS.map((r) => (
-                  <button key={r.emoji} onClick={() => handleReaction(r.emoji)} title={r.label}
+                  <button key={r.emoji} onClick={(e) => { e.stopPropagation(); handleReaction(r.emoji); }} title={r.label}
                     className={`lg:text-2xl hover:scale-125 transition-transform p-1 rounded-full ${myReaction === r.emoji ? 'bg-blue-50 scale-125' : ''}`}>
                     {r.emoji}
                   </button>
@@ -395,36 +619,40 @@ const EnhancedPostCard = ({ post, onDelete }) => {
           </AnimatePresence>
         </div>
 
-        <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+        <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }}
+          className="flex items-center gap-2 md:px-4 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
           <MessageCircle className="lg:w-5 w-4 h-4 lg:h-5" />
-          <span className="font-medium text-sm">Comment</span>
+          <span className="font-medium text-xs md:text-sm">Comment</span>
         </motion.button>
 
-        <motion.button whileTap={{ scale: 0.95 }} onClick={handleShare}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+        <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); handleShare(); }}
+          className="flex items-center gap-2 md:px-4 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
           <Share2 className="lg:w-5 w-4 h-4 lg:h-5" />
-          <span className="font-medium text-sm">Share</span>
+          <span className="font-medium text-xs md:text-sm">Share</span>
         </motion.button>
 
-        <motion.button whileTap={{ scale: 0.95 }} onClick={() => setBookmarked(!bookmarked)}
+        <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setBookmarked(!bookmarked); }}
           className={`p-2 rounded-lg transition ${bookmarked ? 'text-green-600' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
         </motion.button>
       </div>
 
-      {/* Comments */}
-      <AnimatePresence>
-        {showComments && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-gray-100 bg-gray-50 overflow-hidden"
-          >
-            <div className="p-5 max-h-[480px] overflow-y-auto space-y-4">
+      {/* Comments Modal */}
+      {showComments && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-40 flex lg:items-center items-end justify-center md:p-4 p-0 overflow-y-auto" onClick={() => setShowComments(false)}>
+          <div className="bg-white max-w-2xl w-full lg:my-8 h-[90vh] overflow-hidden flex flex-col lg:rounded-2xl" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Comments</h2>
+              <button onClick={() => setShowComments(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Comments List */}
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
               {topComments.length === 0 ? (
-                <p className="text-center text-gray-500 py-4 text-sm">No comments yet. Be the first!</p>
+                <p className="text-center text-gray-500 py-8 text-sm">No comments yet. Be the first!</p>
               ) : topComments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <img
@@ -435,11 +663,25 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                   />
                   <div className="flex-1 min-w-0">
                     {/* Comment bubble */}
-                    <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm inline-block max-w-full">
-                      <p className="font-semibold text-sm text-gray-900 cursor-pointer hover:underline leading-tight"
-                        onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}>
-                        {comment.user?.fullName || 'Anonymous'}
-                      </p>
+                    <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-sm text-gray-900 cursor-pointer hover:underline leading-tight"
+                          onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}>
+                          {comment.user?.fullName || 'Anonymous'}
+                          
+                        </p>
+                        <div className="relative">
+                          <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 bg-white/80 text-gray-600 hover:bg-gray-100 rounded-full transition shadow-sm">
+                            <MoreVertical className="w-5 h-5 text-gray-600 " />
+                          </button>
+                          {activeCommentMenu === comment.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                              {isOwner && <button onClick={() => { handleDelete(); setActiveCommentMenu(null); }} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Comment</button>}
+                              <button onClick={() => setActiveCommentMenu(null)} className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <p className="text-gray-800 text-sm mt-0.5 break-words">{comment.content}</p>
                     </div>
 
@@ -475,7 +717,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
 
                     {/* Nested replies — indented under parent */}
                     {getReplies(comment.id).length > 0 && (
-                      <div className="mt-2 space-y-2 pl-2 border-l-2 border-gray-200">
+                      <div className="mt-2 space-y-3 pl-5 ml-2 border-l-2 border-gray-200">
                         {getReplies(comment.id).map(reply => (
                           <div key={reply.id} className="flex gap-2">
                             <img
@@ -485,7 +727,8 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                               alt=""
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="bg-white rounded-2xl px-3 py-2 shadow-sm inline-block max-w-full">
+                              <div className="bg-gray-50 rounded-2xl px-3 py-2 shadow-sm inline-block max-w-full">
+                                <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-1">Reply</p>
                                 <p className="font-semibold text-xs text-gray-900 cursor-pointer hover:underline leading-tight"
                                   onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}>
                                   {reply.user?.fullName || 'Anonymous'}
@@ -505,7 +748,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
 
             {/* Main comment input */}
             <form onSubmit={handleComment} className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex gap-3">
+              <div className="flex gap-3 relative z-20">
                 <img
                   src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
                   alt={user?.fullName}
@@ -530,7 +773,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                     </button>
                   </div>
                   {showEmojiPicker && (
-                    <div className="absolute bottom-full right-0 mb-2 z-20">
+                    <div className="absolute bottom-full right-0 mb-2 z-50">
                       <EmojiPicker
                         onEmojiClick={d => { setNewComment(p => p + d.emoji); setShowEmojiPicker(false); }}
                         width={300} height={380}
@@ -540,30 +783,57 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                 </div>
               </div>
             </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Video Modal */}
-      {videoModal && (
-        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center" onClick={() => setVideoModal(false)}>
-          <button onClick={() => setVideoModal(false)} className="absolute top-4 right-4 text-white z-10"><X className="w-8 h-8" /></button>
-          <video src={post.mediaUrl} controls autoPlay className="max-w-full max-h-full" onClick={e => e.stopPropagation()} />
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
 
-      {/* Image Modal — plain img, no Framer Motion to prevent flicker */}
-      {imageModal && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setImageModal(false)}>
-          <button onClick={() => setImageModal(false)} className="absolute top-4 right-4 text-white z-10"><X className="w-8 h-8" /></button>
-          <img
-            src={post.image}
-            alt="Post"
-            className="max-w-full max-h-full rounded-lg object-contain"
-            onClick={e => e.stopPropagation()}
-            style={{ animation: 'imgFadeIn 0.18s ease forwards' }}
-          />
-        </div>
+      {/* Video Modal */}
+      {videoModal && createPortal(
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center w-screen h-screen" onClick={() => setVideoModal(false)}>
+          {/* Cancel button */}
+          <button
+            onClick={() => setVideoModal(false)}
+            className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Video container */}
+          <div className="relative flex items-center justify-center w-full h-full p-4" onClick={e => e.stopPropagation()}>
+            <video
+              src={post.mediaUrl}
+              controls
+              autoPlay
+              className="h-screen w-auto max-w-none object-contain"
+            />
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Image Modal — Full screen with cancel button */}
+      {imageModal && createPortal(
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center w-screen h-screen" onClick={() => setImageModal(false)}>
+          {/* Cancel button */}
+          <button
+            onClick={() => setImageModal(false)}
+            className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Image container */}
+          <div className="relative flex items-center justify-center w-full h-full p-4" onClick={e => e.stopPropagation()}>
+            <img
+              src={post.image}
+              alt="Post"
+              className="h-screen w-auto max-w-none object-contain"
+              style={{ animation: 'imgFadeIn 0.2s ease forwards' }}
+            />
+          </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
@@ -573,6 +843,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
         }
       `}</style>
     </motion.div>
+    </>
   );
   
 };

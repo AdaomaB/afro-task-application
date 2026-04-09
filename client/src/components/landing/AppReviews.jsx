@@ -481,25 +481,25 @@ export default function AppReviews() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center mb-14"
         >
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900 mb-2 md:mb-4">
             Trusted by freelancers and clients worldwide
           </h2>
-          <p className="text-gray-500 text-sm max-w-xl mx-auto mb-6">
+          <p className="text-gray-500 text-xs lg:text-sm max-w-xl mx-auto mb-3 md:mb-6">
             Real stories from real people building their future with AfroTask.
           </p>
 
           {/* Aggregate rating badge */}
-          <div className="inline-flex items-center gap-3 bg-white rounded-2xl px-6 py-3 shadow-md border border-gray-100">
+          <div className="inline-flex items-center gap-3 bg-white rounded-2xl md:px-6 p-3 md:py-3 shadow-md border border-gray-100">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
                   key={s}
-                  className="w-5 h-5 text-[#FB9E01] fill-[#FB9E01]"
+                  className="md:w-5 w-3 h-3 md:h-5 text-[#FB9E01] fill-[#FB9E01]"
                 />
               ))}
             </div>
-            <span className="font-bold text-gray-900 text-lg">{avgRating}</span>
-            <span className="text-gray-400 text-sm">
+            <span className="font-bold text-gray-900 text-sm md:text-lg">{avgRating}</span>
+            <span className="text-gray-400 text-xs md:text-sm">
               / 5 · {reviews.length} reviews
             </span>
           </div>

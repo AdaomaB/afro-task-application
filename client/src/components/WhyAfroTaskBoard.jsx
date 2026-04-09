@@ -35,13 +35,13 @@ export default function WhyAfroTaskBoard() {
   }, [current]);
 
   return (
-    <div className="bg-white h-auto p-6 sm:p-12 mx-4 mt-4 lg:mx-8 py-12 lg:py-24 m-2 lg:m-12 flex flex-col justify-center lg:flex-row items-center rounded-2xl md:rounded-3xl gap-6 overflow-visible relative">
+    <div className="bg-white h-auto p-6 sm:p-12 mx-4 mt-4 lg:mx-8 py-6 lg:py-12 m-2 lg:m-12 flex flex-col lg:justify-between lg:flex-row items-center rounded-2xl md:rounded-3xl gap-6 overflow-visible relative">
       {/* Text */}
-      <div className="w-full gap-6 md:gap-12 flex flex-col z-10 text-center md:text-left md:justify-start md:items-start lg:w-4/5">
-        <h1 className="text-xl md:text-3xl lg:text-5xl font-semibold">
+      <div className="w-full gap-6 md:gap-12 flex flex-col z-10 text-center md:text-left md:justify-start md:items-start lg:w-1/2">
+        <h1 className="text-sm md:text-lg lg:text-xl font-semibold">
           Why Afro Task is Changing Freelancing in Africa
         </h1>
-        <p className="text-base md:text-2xl lg:text-3xl">
+        <p className="text-xs md:text-sm lg:text-lg">
           Freelancing is no longer just a side hustle — it's becoming the
           future of work in Africa. With young, talented professionals
           looking for opportunities beyond traditional office jobs, Afro
@@ -51,7 +51,7 @@ export default function WhyAfroTaskBoard() {
       </div>
 
       {/* Carousel */}
-      <div className="flex flex-col items-center gap-4 w-full lg:w-3/5 relative z-0 mt-6 md:mt-0">
+      <div className="flex flex-col items-center gap-4 w-full lg:w-2/5 relative z-0 mt-6 md:mt-0">
         <div className="relative w-full overflow-hidden rounded-2xl shadow-xl aspect-video bg-black">
           {slides.map((slide, i) => (
             <div

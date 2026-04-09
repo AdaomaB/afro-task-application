@@ -144,7 +144,7 @@ const Navbar = () => {
         )}
         
         {user ? (
-          <div className="flex items-center justify-end gap-6 ml-12">
+          <div className="flex items-center justify-end gap-2 md:gap-6 md:ml-12">
             {/* Notifications Icon */}
             <div className="relative">
               <button

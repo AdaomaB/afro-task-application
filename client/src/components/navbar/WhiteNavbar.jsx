@@ -307,7 +307,7 @@ const WhiteNavbar = () => {
                 Contact Us
               </button>
               <button
-                onClick={() => { navigate(user ? "/post-project" : "/login"); setShowMobileMenu(false); }}
+                onClick={() => { navigate("/blogs"); setShowMobileMenu(false); }}
                 className={`w-full text-left py-3 px-4 rounded-lg transition ${pathname === "/post-project" ? "text-[#00564C] bg-gray-200" : "hover:bg-gray-100"}`}
               >
                 Blogs
@@ -334,7 +334,7 @@ const WhiteNavbar = () => {
               ) : (
                 <>
                   <button
-                    onClick={() => { navigate("/post-project"); setShowMobileMenu(false); }}
+                    onClick={() => { navigate(user ? "/post-project" : "/login"); setShowMobileMenu(false); }}
                     className="w-full bg-[#00564C] hover:bg-[#027568] text-white py-3 px-4 rounded-lg transition font-medium"
                   >
                     Post Project
