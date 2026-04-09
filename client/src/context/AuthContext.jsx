@@ -1,9 +1,11 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import LoadingScreen from '../components/LoadingScreen';
 
 export const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -25,21 +27,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (token, userData) => {
     localStorage.setItem('token', token);
     setUser(userData);
-    
-    // Check if profile is completed
-    try {
-      const response = await api.get('/onboarding/status');
-      if (!response.data.profileCompleted) {
-        // Redirect to onboarding
-        navigate(`/${userData.role}/onboarding`);
-      } else {
-        // Redirect to dashboard
-        navigate(`/${userData.role}/dashboard`);
-      }
-    } catch (error) {
-      // If check fails, go to dashboard anyway
-      navigate(`/${userData.role}/dashboard`);
-    }
+    // Always go to dashboard — ProfileCompletionWidget will remind user to complete profile
+    navigate(`/${userData.role}/dashboard`);
   };
 
   const logout = () => {

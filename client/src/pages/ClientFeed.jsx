@@ -150,13 +150,13 @@ const ClientFeed = () => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 dashboard-page">
       <Sidebar />
       
       <div className="flex-1 lg:ml-64">
         <Navbar />
         
-        <div className="p-8">
+        <div className="lg:p-8 p-4">
           <div className="max-w-7xl mx-auto">
             {/* Welcome Header */}
             <motion.div
@@ -164,7 +164,7 @@ const ClientFeed = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="lg:text-4xl text-2xl font-bold text-gray-900 mb-2">
                 Good day, {user?.fullName?.split(' ')[0]} 👋
               </h1>
               <p className="text-gray-600">Here's what's happening with your projects today</p>
@@ -177,47 +177,58 @@ const ClientFeed = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Feed Section - 2 columns */}
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Activity Feed</h2>
-                  
-                  {loading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 px-6 lg:p-0">Activity Feed</h2>
+                
+                <div className="md:mx-12 lg:mx-0">
+                {loading ? (
+                  <div className="space-y-6">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="bg-white rounded-2xl p-6 animate-pulse">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-6">
-                        {posts.map(post => (
-                          <EnhancedPostCard 
-                            key={post.id} 
-                            post={post}
-                            onDelete={handleDeletePost}
-                          />
-                        ))}
-                        {posts.length === 0 && (
-                          <p className="text-center text-gray-500 py-8">No posts yet</p>
-                        )}
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded"></div>
+                          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                        </div>
                       </div>
-                      
-                      {hasMore && posts.length > 0 && (
-                        <div className="mt-6 text-center">
-                          <button
-                            onClick={handleLoadMore}
-                            disabled={loadingMore}
-                            className="px-8 py-3 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white rounded-xl font-medium transition disabled:opacity-50 shadow-lg"
-                          >
-                            {loadingMore ? 'Loading...' : 'Load More'}
-                          </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-6">
+                      {posts.map(post => (
+                        <EnhancedPostCard 
+                          key={post.id} 
+                          post={post}
+                          onDelete={handleDeletePost}
+                        />
+                      ))}
+                      {posts.length === 0 && !loading && (
+                        <div className="text-center py-12 bg-white rounded-2xl shadow-lg">
+                          <p className="text-gray-500 text-lg">No posts yet. Start following freelancers!</p>
                         </div>
                       )}
-                    </>
-                  )}
-                </div>
+                    </div>
+
+                    {posts.length > 0 && (
+                      <div className="mt-8 text-center">
+                        <button
+                          onClick={handleLoadMore}
+                          disabled={loadingMore}
+                          className="px-8 py-3 bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white rounded-xl font-medium transition disabled:opacity-50 shadow-lg"
+                        >
+                          {loadingMore ? 'Loading...' : 'Load More'}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
               </div>
 
               {/* Sidebar - 1 column */}

@@ -9,7 +9,7 @@ const TopFreelancers = ({ limit = 10 }) => {
   const [freelancers, setFreelancers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [followingStatus, setFollowingStatus] = useState({});
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,11 +22,11 @@ const TopFreelancers = ({ limit = 10 }) => {
       setFreelancers(response.data.freelancers || []);
       
       // Check following status for each freelancer
-      if (currentUser) {
+      if (user) {
         const statusMap = {};
         for (const freelancer of response.data.freelancers || []) {
           const followDoc = await getDoc(
-            doc(db, 'followers', `${currentUser.uid}_${freelancer.id}`)
+            doc(db, 'follows', `${user.id}_${freelancer.id}`)
           );
           statusMap[freelancer.id] = followDoc.exists();
         }
@@ -40,21 +40,21 @@ const TopFreelancers = ({ limit = 10 }) => {
   };
 
   const handleFollow = async (freelancerId) => {
-    if (!currentUser) {
+    if (!user) {
       navigate('/login');
       return;
     }
 
     try {
-      const followId = `${currentUser.uid}_${freelancerId}`;
+      const followId = `${user.id}_${freelancerId}`;
       const isFollowing = followingStatus[freelancerId];
 
       if (isFollowing) {
-        await deleteDoc(doc(db, 'followers', followId));
+        await deleteDoc(doc(db, 'follows', followId));
         setFollowingStatus(prev => ({ ...prev, [freelancerId]: false }));
       } else {
-        await setDoc(doc(db, 'followers', followId), {
-          followerId: currentUser.uid,
+        await setDoc(doc(db, 'follows', followId), {
+          followerId: user.id,
           followingId: freelancerId,
           createdAt: new Date().toISOString()
         });
@@ -119,7 +119,7 @@ const TopFreelancers = ({ limit = 10 }) => {
                     </div>
                     
                     {/* Follow Button */}
-                    {currentUser?.uid !== freelancer.id && (
+                    {user?.id !== freelancer.id && (
                       <button
                         onClick={() => handleFollow(freelancer.id)}
                         className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${

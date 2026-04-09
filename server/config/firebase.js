@@ -49,6 +49,7 @@ try {
     throw new Error('Firebase credentials not found. Set FIREBASE_BASE64_CREDENTIALS (recommended for Hostinger), or FIREBASE_PRIVATE_KEY + FIREBASE_CLIENT_EMAIL + FIREBASE_PROJECT_ID, or FIREBASE_SERVICE_ACCOUNT_PATH.');
   }
 
+  // Initialize Firebase
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET
@@ -56,13 +57,24 @@ try {
 
   db = admin.firestore();
   bucket = admin.storage().bucket();
-  console.log('✅ Firebase Firestore Connected');
+
+  // Connect to Firestore emulator ONLY when USE_EMULATOR=true
+  if (process.env.USE_EMULATOR === 'true') {
+    db.settings({ host: 'localhost:8080', ssl: false });
+    console.log('🔧 Firestore connected to LOCAL EMULATOR (localhost:8080)');
+  } else {
+    // 👇 ADDED THIS LINE TO FORCE HTTP/REST AND BYPASS gRPC SSL ERRORS 👇
+    db.settings({ preferRest: true });
+    
+    console.log('✅ Firebase Firestore Connected (production)');
+  }
+
   console.log('✅ Firebase Storage Connected');
 } catch (error) {
   console.error('❌ Firebase Initialization Error:', error.message);
   console.error('Stack:', error.stack);
   
-  // Log what we have for debugging
+  // Cleaned up debug info
   console.log('Debug Info:');
   console.log('- FIREBASE_BASE64_CREDENTIALS:', process.env.FIREBASE_BASE64_CREDENTIALS ? 'Set' : 'Missing');
   console.log('- FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID ? 'Set' : 'Missing');

@@ -25,11 +25,8 @@ const PostCard = ({ post, onLike }) => {
       className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition"
     >
       <div className="flex items-start gap-4">
-        <img
-          src={post.author?.profileImage || '/default-avatar.png'}
-          alt={post.author?.fullName}
-          className="w-12 h-12 rounded-full object-cover"
-        />
+        
+
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-gray-800">{post.author?.fullName}</h3>
@@ -38,9 +35,10 @@ const PostCard = ({ post, onLike }) => {
                 ? 'bg-green-100 text-green-700'
                 : 'bg-yellow-100 text-yellow-700'
             }`}>
-              {post.authorRole}
+              {post.authorRole === 'freelancer' ? 'Freelancer' : 'Client'}
             </span>
           </div>
+          
           <p className="text-sm text-gray-500">
             {new Date(post.createdAt).toLocaleDateString()}
           </p>

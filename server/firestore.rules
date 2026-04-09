@@ -78,17 +78,19 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.freelancerId == request.auth.uid;
     }
     
-    // Projects collection
+    // Projects collection (showcase projects - uses JWT auth, not Firebase Auth)
     match /projects/{projectId} {
-      allow read: if isSignedIn() && (
-        resource.data.clientId == request.auth.uid || 
-        resource.data.freelancerId == request.auth.uid
-      );
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        resource.data.clientId == request.auth.uid || 
-        resource.data.freelancerId == request.auth.uid
-      );
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    // Blogs collection
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
     }
     
     // Pre-project chats

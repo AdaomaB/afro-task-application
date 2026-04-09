@@ -327,6 +327,12 @@ export const acceptApplication = async (req, res) => {
       }
     }
 
+    // Notify accepted freelancer
+    await createNotification(appData.freelancerId, req.user.userId, 'application_accepted', {
+      jobId: appData.jobId,
+      jobTitle: jobData.title
+    });
+
     res.json({ 
       success: true, 
       projectId: projectRef.id,
@@ -359,6 +365,11 @@ export const rejectApplication = async (req, res) => {
       status: 'rejected',
       rejectedAt: new Date().toISOString(),
       rejectionReason: reason || 'Not selected'
+    });
+
+    // Notify rejected freelancer
+    await createNotification(appData.freelancerId, req.user.userId, 'application_rejected', {
+      jobId: appData.jobId
     });
 
     // If there was a pre-project chat, deactivate it

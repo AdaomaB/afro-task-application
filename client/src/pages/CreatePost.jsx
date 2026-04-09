@@ -78,7 +78,7 @@ const CreatePost = () => {
       
       <div className="flex-1 lg:ml-64">
         {/* Simple Header */}
-        <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
+        <div className="bg-white border-b text-center lg:text-start border-gray-200 px-4 md:px-8 py-4">
           <h2 className="text-xl font-bold text-gray-900">Create Post</h2>
         </div>
         

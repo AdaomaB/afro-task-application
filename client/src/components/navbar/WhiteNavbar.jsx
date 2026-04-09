@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Bell, Briefcase, MessageCircle, Home } from "lucide-react";
 import api from "../../services/api";
@@ -11,6 +11,7 @@ const WhiteNavbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -97,20 +98,8 @@ const WhiteNavbar = () => {
     }
   };
 
-  return (
-    <nav className="bg-white text-black py-4 px-6 shadow-lg">
-      <div className="w-full max-w-7xl mx-auto grid grid-cols-3 items-center">
-        {/* Left: Logo */}
-        <div
-          className="flex items-center gap-3 cursor-pointer"
-          onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
-        >
-          <img
-            src="/img/afro-task-logo.png"
-            alt="Afro Task"
-            className="h-10 w-auto"
-          />
-        </div>
+  const location = useLocation();
+  const pathname = location.pathname;
 
         {/* Center: Post Project & Home (hidden on mobile) */}
         <div className="flex items-center gap-3 justify-center col-start-2 col-end-3 invisible md:visible md:flex">
@@ -125,7 +114,18 @@ const WhiteNavbar = () => {
             onClick={() => navigate(user ? "/post-project" : "/login")}
             className="bg-[#00564C] text-white hover:bg-[#027568] px-4 py-2 rounded-lg transition"
           >
-            Post Project
+            <img
+              src="/img/afro-task-logo.png"
+              alt="Afro Task"
+              className="h-10 w-auto"
+            />
+          </div>
+          
+          <button
+            onClick={() => navigate("/")}
+            className={pathname === "/" ? "text-[#00564C]" :"hover:text-green-700 transition"}
+          >
+            Home
           </button>
         </div>
 
@@ -133,45 +133,37 @@ const WhiteNavbar = () => {
         <div className="flex items-center justify-end gap-6">
           {user ? (
             <>
-              {/* Notifications Icon */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 hover:bg-white/10 rounded-lg transition"
-                >
-                  <Bell className="w-6 h-6" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                {/* Notifications Dropdown */}
-                <AnimatePresence>
-                  {showNotifications && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
-                    >
-                      {/* ...notifications content... */}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
               <span className="text-black/90">Welcome, {user.fullName}</span>
+              {user.profileImage ? (
+                <img 
+                  src={user.profileImage} 
+                  alt={user.fullName}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+              ) : null}
+              <IoPersonCircleOutline 
+                className="w-8 h-8 text-gray-400" 
+                style={{ display: user.profileImage ? 'none' : 'block' }}
+              />
               <button
-                onClick={logout}
-                className="bg-red-500 hover:bg-red-600 px-6 py-2 rounded-lg transition"
+                onClick={() => navigate("/freelancer/feed")}
+                className="bg-[#00564C] hover:bg-[#027568] text-white px-6 py-2 rounded-lg transition "
               >
-                Logout
+                View Feeds
               </button>
             </>
           ) : (
             <>
+            <button
+            onClick={() => navigate(user ? "/post-project" : "/login")}
+            className={pathname === "/post-project" ? "text-[#00564C]" :"hover:text-green-700 transition "}
+          >
+            Post Project
+          </button>
               <button
                 onClick={() => navigate("/")}
                 className="hover:text-green-700 transition font-medium"
@@ -184,9 +176,10 @@ const WhiteNavbar = () => {
               >
                 Contact Us
               </button>
+
               <button
                 onClick={() => navigate("/login")}
-                className="hover:text-green-700 transition font-medium"
+            className={pathname === "/login" ? "text-[#00564C]" :"hover:text-green-700 transition "}
               >
                 Log in
               </button>
@@ -200,6 +193,165 @@ const WhiteNavbar = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Navbar */}
+      <div className="md:hidden flex w-full mx-auto flex-row justify-between text-sm font-medium items-center">
+        {/* Left: Logo + Hamburger */}
+        <div className="flex flex-row justify-start items-center gap-4">
+          <GiHamburgerMenu 
+            className="text-2xl cursor-pointer text-gray-600 hover:text-black transition" 
+            onClick={() => setShowMobileMenu(true)}
+          />
+          <div
+            className="flex items-center cursor-pointer"
+            onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
+          >
+            <img
+              src="/img/afro-task-logo.png"
+              alt="Afro Task"
+              className="h-10 w-auto"
+            />
+          </div>
+        </div>
+
+        {/* Right: User / Auth (compact for mobile) */}
+        <div className="flex items-center gap-2">
+          {user ? (
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(`/${user.role}/profile`)}>
+              <span className="text-sm text-black/90 truncate max-w-[120px]">{user.fullName}</span>
+              {user.profileImage ? (
+                <img 
+                  src={user.profileImage} 
+                  alt={user.fullName}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+              ) : null}
+              <IoPersonCircleOutline 
+                className="w-8 h-8 text-gray-400" 
+                style={{ display: user.profileImage ? 'none' : 'block' }}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="text-sm bg-[#00564C] text-white px-4 py-1 rounded-lg hover:bg-[#027568] transition"
+            >
+              Login
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setShowMobileMenu(false)}
+          />
+          
+          {/* Mobile Menu */}
+          <div className="md:hidden fixed top-0 left-0 w-full h-full bg-white z-50 shadow-2xl flex flex-col overflow-y-auto">
+            {/* Header with close button */}
+            <div className="p-6 border-b flex items-center justify-between">
+              <div
+                className="flex items-center cursor-pointer"
+                onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
+              >
+                <img
+                  src="/img/afro-task-logo.png"
+                  alt="Afro Task"
+                  className="h-10 w-auto"
+                />
+              </div>
+              <IoClose
+                className="text-2xl cursor-pointer text-gray-600 hover:text-black transition" 
+                onClick={() => setShowMobileMenu(false)}
+              />
+            </div>
+
+            {/* Nav Links */}
+            <div className="flex-1 p-6 pt-4 space-y-4">
+              <button
+                onClick={() => { navigate("/"); setShowMobileMenu(false); }}
+                className={`w-full text-left py-3 px-4 rounded-lg transition ${pathname === "/" ? "text-[#00564C] bg-gray-200" : "hover:bg-gray-100"}`}
+              >
+                Home
+              </button>
+              <button
+                onClick={() => { navigate("/about"); setShowMobileMenu(false); }}
+                className={`w-full text-left py-3 px-4 rounded-lg transition ${pathname === "/about" ? "text-[#00564C] bg-gray-200" : "hover:bg-gray-100"}`}
+              >
+                About Us
+              </button>
+              <button
+                onClick={() => { navigate("/contact"); setShowMobileMenu(false); }}
+                className={`w-full text-left py-3 px-4 rounded-lg transition ${pathname === "/contact" ? "text-[#00564C] bg-gray-200" : "hover:bg-gray-100"}`}
+              >
+                Contact Us
+              </button>
+              <button
+                onClick={() => { navigate(user ? "/post-project" : "/login"); setShowMobileMenu(false); }}
+                className={`w-full text-left py-3 px-4 rounded-lg transition ${pathname === "/post-project" ? "text-[#00564C] bg-gray-200" : "hover:bg-gray-100"}`}
+              >
+                Blogs
+              </button>
+            </div>
+
+            {/* User/Auth Section */}
+            <div className="p-6 border-t space-y-3">
+              {user ? (
+                <>
+                  <button
+                    onClick={() => { navigate("/freelancer/feed"); setShowMobileMenu(false); }}
+                    className="w-full bg-[#00564C] hover:bg-[#027568] text-white py-3 px-4 rounded-lg transition font-medium"
+                  >
+                    View Feeds
+                  </button>
+                  <button
+                    onClick={logout}
+                    className="w-full bg-gray-200 hover:bg-gray-300 text-black py-3 px-4 rounded-lg transition font-medium"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { navigate("/post-project"); setShowMobileMenu(false); }}
+                    className="w-full bg-[#00564C] hover:bg-[#027568] text-white py-3 px-4 rounded-lg transition font-medium"
+                  >
+                    Post Project
+                  </button>
+                  <button
+                    onClick={() => { navigate("/explore-projects"); setShowMobileMenu(false); }}
+                    className="w-full text-black hover:bg-gray-100 py-3 px-4 rounded-lg transition font-medium border"
+                  >
+                    Explore Projects
+                  </button>
+                  <button
+                    onClick={() => { navigate("/login"); setShowMobileMenu(false); }}
+                    className="w-full bg-gray-200 hover:bg-gray-300 text-black py-3 px-4 rounded-lg transition font-medium"
+                  >
+                    Log in
+                  </button>
+                  <button
+                    onClick={() => { navigate("/welcome"); setShowMobileMenu(false); }}
+                    className="w-full bg-[#00564C] hover:bg-[#027568] text-white py-3 px-4 rounded-lg transition font-medium"
+                  >
+                    Sign up
+                  </button>
+                </>
+          )}
+            </div>
+          </div>
+        </>
+      )}
     </nav>
   );
 };

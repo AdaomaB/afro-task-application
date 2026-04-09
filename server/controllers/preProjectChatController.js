@@ -262,8 +262,12 @@ export const getMyPreProjectChats = async (req, res) => {
     }
     const chats = await Promise.all(chatsSnapshot.docs.map(async (doc) => {
       const chatData = { id: doc.id, ...doc.data() };
-      const jobDoc = await db.collection('jobs').doc(chatData.jobId).get();
-      chatData.job = jobDoc.exists ? jobDoc.data() : null;
+      if (chatData.jobId && chatData.jobId !== 'direct') {
+        const jobDoc = await db.collection('jobs').doc(chatData.jobId).get();
+        chatData.job = jobDoc.exists ? jobDoc.data() : null;
+      } else {
+        chatData.job = null;
+      }
       const otherUserId = userId === chatData.clientId ? chatData.freelancerId : chatData.clientId;
       const otherUserDoc = await db.collection('users').doc(otherUserId).get();
       chatData.otherUser = otherUserDoc.exists ? {
@@ -304,5 +308,57 @@ export const getMyPreProjectChats = async (req, res) => {
   } catch (error) {
     console.error('Get my pre-project chats error:', error);
     res.status(500).json({ message: 'Failed to fetch chats' });
+  }
+};
+
+export const createDirectChat = async (req, res) => {
+  try {
+    const { otherUserId } = req.body;
+    const userId = req.user.userId;
+
+    if (!otherUserId) {
+      return res.status(400).json({ message: 'otherUserId is required' });
+    }
+
+    // Determine clientId / freelancerId based on roles
+    const currentUserDoc = await db.collection('users').doc(userId).get();
+    const otherUserDoc = await db.collection('users').doc(otherUserId).get();
+
+    if (!currentUserDoc.exists || !otherUserDoc.exists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const currentRole = currentUserDoc.data().role;
+    const clientId = currentRole === 'client' ? userId : otherUserId;
+    const freelancerId = currentRole === 'freelancer' ? userId : otherUserId;
+
+    // Check if a direct chat already exists between these two users
+    const existing = await db.collection('preProjectChats')
+      .where('clientId', '==', clientId)
+      .where('freelancerId', '==', freelancerId)
+      .where('direct', '==', true)
+      .where('active', '==', true)
+      .get();
+
+    if (!existing.empty) {
+      return res.json({ success: true, chatId: existing.docs[0].id });
+    }
+
+    // Create new direct chat
+    const chatRef = await db.collection('preProjectChats').add({
+      clientId,
+      freelancerId,
+      jobId: 'direct',
+      applicationId: null,
+      direct: true,
+      active: true,
+      createdAt: new Date().toISOString(),
+      lastMessageAt: new Date().toISOString(),
+    });
+
+    res.status(201).json({ success: true, chatId: chatRef.id });
+  } catch (error) {
+    console.error('Create direct chat error:', error);
+    res.status(500).json({ message: 'Failed to create chat' });
   }
 };

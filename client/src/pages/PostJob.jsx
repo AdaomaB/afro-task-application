@@ -62,10 +62,10 @@ const PostJob = () => {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="flex-1 lg:ml-64">
+      <div className="w-screen lg:flex-1 lg:ml-64">
         <Navbar />
         
-        <div className="p-8">
+        <div className="lg:p-8 p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,7 +73,7 @@ const PostJob = () => {
         >
           <h1 className="text-3xl font-bold text-gray-800 mb-8">Post a Project</h1>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg lg:p-8 p-4">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Project Title</label>

@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import { DarkModeProvider } from './context/DarkModeContext';
 import PrivateRoute from './components/PrivateRoute';
+import ScrollToTop from './components/ScrollToTop';
 import WelcomePage from './pages/WelcomePage';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
@@ -21,19 +23,24 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import MessagesPage from './pages/MessagesPage';
 import PreProjectChat from './pages/PreProjectChat';
 import FreelancerOnboarding from './pages/FreelancerOnboarding';
+import FreelancerDashboard from './pages/FreelancerDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import ProjectWorkspace from './pages/ProjectWorkspace';
 import LandingPage from './pages/LandingPage';
 import WhyAfroTask from './pages/WhyAfroTask';
 import ContactPage from './pages/ContactPage';
 import NotFound from './pages/NotFound';
+import WhatsAppBubble from './components/WhatsAppBubble';
 
 function App() {
   return (
     <div className='overflow-x-hidden'>
     <Router>
+      <DarkModeProvider>
       <AuthProvider>
+        <ScrollToTop />
         <Toaster position="top-right" />
+        <WhatsAppBubble />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/welcome" element={<WelcomePage />} />
@@ -174,6 +181,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
+      </DarkModeProvider>
     </Router>
     </div>
   );

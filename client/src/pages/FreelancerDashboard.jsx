@@ -9,7 +9,21 @@ import FreelancerAnalytics from '../components/FreelancerAnalytics';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import {
+  collection, query, where, onSnapshot, orderBy,
+  updateDoc, deleteDoc, doc
+} from 'firebase/firestore';
+
+const PROJECT_CATEGORIES = [
+  'Web Development', 'Mobile Development', 'UI/UX Design', 'Graphic Design',
+  'Video Editing', 'Digital Marketing', 'Writing', 'Data Science',
+  'AI / Machine Learning', 'Cybersecurity', 'DevOps', 'Game Development', 'Others'
+];
+
+const emptyProjectForm = {
+  title: '', description: '', category: '', customCategory: '',
+  projectLink: '', technologies: '', completionDate: '', image: null
+};
 
 const PROJECT_CATEGORIES = [
   'Web Development','Mobile Development','UI/UX Design','Graphic Design',
@@ -451,6 +465,32 @@ export default function FreelancerDashboard() {
                 <input type="date" value={projectForm.completionDate}
                   onChange={e => setProjectForm(f => ({ ...f, completionDate: e.target.value }))}
                   className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
+              </div>
+
+              {/* Project Link */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Link</label>
+                <input type="url" value={projectForm.projectLink}
+                  onChange={e => setProjectForm(f => ({ ...f, projectLink: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="https://github.com/... or live URL" />
+              </div>
+
+              {/* Technologies */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Technologies Used</label>
+                <input type="text" value={projectForm.technologies}
+                  onChange={e => setProjectForm(f => ({ ...f, technologies: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="React, Node.js, MongoDB (comma separated)" />
+              </div>
+
+              {/* Completion Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Completion Date</label>
+                <input type="date" value={projectForm.completionDate}
+                  onChange={e => setProjectForm(f => ({ ...f, completionDate: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
               </div>
             </div>
             <div className="p-6 border-t flex gap-3 justify-end">

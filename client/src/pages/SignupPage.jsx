@@ -1,16 +1,23 @@
 import { useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import { ArrowLeft, Eye, EyeOff, Mail } from 'lucide-react';
+import { auth, createUserWithEmailAndPassword, sendEmailVerification, signOut, signInWithEmailAndPassword, googleProvider, signInWithPopup } from '../config/firebase';
 
 const SignupPage = () => {
   const { role } = useParams();
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -37,6 +44,32 @@ const SignupPage = () => {
   const validatePassword = (password) => {
     const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return regex.test(password);
+  };
+
+  const handleGoogleSignup = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const { user } = result;
+      await signOut(auth); // sign out Firebase session; app uses custom tokens
+
+      const response = await api.post('/auth/google', {
+        email: user.email,
+        fullName: user.displayName,
+        profileImage: user.photoURL,
+        googleUid: user.uid,
+        role, // from URL param — freelancer or client
+      });
+
+      toast.success('Account created with Google!');
+      login(response.data.token, response.data.user);
+    } catch (err) {
+      if (err.code === 'auth/popup-closed-by-user') return;
+      toast.error('Google sign-up failed. Please try again.');
+      console.error('Google signup error:', err);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -68,8 +101,40 @@ const SignupPage = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success('Registration successful!');
-      login(response.data.token, response.data.user);
+      // Step 2: Create Firebase Auth user and send verification email
+      // This must happen AFTER backend registration succeeds
+      try {
+        const fbUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        await sendEmailVerification(fbUser.user);
+        // Sign out of Firebase email/password session — the app uses custom tokens for
+        // Firestore/Storage, so we don't want to keep this session active
+        await signOut(auth);
+      } catch (fbErr) {
+        if (fbErr.code === 'auth/email-already-in-use') {
+          // Firebase user already exists (e.g. user retried after a partial failure).
+          // Sign in and resend verification if not yet verified.
+          try {
+            const existing = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+            if (!existing.user.emailVerified) {
+              await sendEmailVerification(existing.user);
+            }
+            await signOut(auth);
+          } catch (resendErr) {
+            console.warn('Could not resend verification:', resendErr?.message);
+          }
+        } else {
+          // Non-critical — backend registration succeeded, but Firebase user creation failed.
+          // Log it but don't block the user.
+          console.error('Firebase user creation failed:', fbErr.code, fbErr.message);
+          toast.error('Account created but verification email could not be sent. Please contact support.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      setRegisteredEmail(formData.email);
+      setEmailSent(true);
+      toast.success('Account created! Please verify your email before logging in.');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
@@ -79,7 +144,42 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="flex-1 flex items-center justify-center py-12 px-6 lg:px-12">
+      <div className="p-4">
+        <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition font-medium text-sm">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+      </div>
+
+      {/* Email verification sent screen */}
+      {emailSent ? (
+        <div className="flex-1 flex items-center justify-center px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-md bg-white rounded-2xl shadow-xl p-10 text-center"
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Mail className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Check your email</h2>
+            <p className="text-gray-600 text-sm mb-2">
+              We sent a verification link to:
+            </p>
+            <p className="font-semibold text-gray-800 mb-5">{registeredEmail}</p>
+            <p className="text-gray-500 text-sm mb-8">
+              Click the link in the email to verify your account, then come back to log in.
+            </p>
+            <Link
+              to="/login"
+              className="inline-block w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition text-center"
+            >
+              Go to Login
+            </Link>
+          </motion.div>
+        </div>
+      ) : (
+      <div className="flex-1 flex items-center justify-center py-6 px-6 lg:px-12">
         <div className="w-full max-w-6xl flex gap-8 lg:gap-12">
           <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
             <motion.div
@@ -277,26 +377,44 @@ const SignupPage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 pr-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(p => !p)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -319,7 +437,30 @@ const SignupPage = () => {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-gray-600 text-sm">
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-gray-400 font-medium">OR</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* Google Sign-Up */}
+            <button
+              type="button"
+              onClick={handleGoogleSignup}
+              disabled={googleLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 disabled:opacity-50"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              {googleLoading ? 'Signing up...' : 'Sign up with Google'}
+            </button>
+
+            <p className="mt-5 text-center text-gray-600 text-sm">
               Already have an account?{' '}
               <button
                 onClick={() => navigate('/login')}
@@ -332,6 +473,7 @@ const SignupPage = () => {
         </div>
         </div>
       </div>
+      )}
 
       <Footer />
     </div>

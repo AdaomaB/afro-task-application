@@ -141,19 +141,19 @@ const FreelancerFeed = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 dashboard-page">
       <Sidebar />
       
       <div className="flex-1 lg:ml-64">
         <Navbar />
         
-        <div className="p-8">
+        <div className="lg:p-8">
           <div className="max-w-6xl mx-auto">
             {/* Welcome Section */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
+              className="mb-8 p-6 lg:p-0"
             >
               {/* Show search/filter info if active */}
               {(searchQuery || categoryFilter) && (
@@ -176,7 +176,7 @@ const FreelancerFeed = () => {
                 </div>
               )}
               
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="lg:text-4xl text-2xl font-bold text-gray-900 mb-2">
                 Welcome back, {user?.fullName?.split(' ')[0]} 👋
               </h1>
               <p className="text-gray-600">Here's what's happening with your freelance journey today.</p>
@@ -189,8 +189,9 @@ const FreelancerFeed = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Main Feed */}
               <div className="lg:col-span-2">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Feed</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6 px-6 lg:p-0">Feed</h2>
                 
+                <div className="md:mx-12 lg:mx-0">
                 {loading && page === 1 ? (
                   <div className="space-y-6">
                     {[...Array(3)].map((_, i) => (
@@ -241,6 +242,7 @@ const FreelancerFeed = () => {
                   </>
                 )}
               </div>
+              </div>
 
               {/* Sidebar - Recommended Jobs */}
               <div className="lg:col-span-1">
@@ -272,7 +274,7 @@ const FreelancerFeed = () => {
                           <p className="text-sm text-gray-600 mb-1">{job.budgetRange}</p>
                           <p className="text-xs text-gray-500 mb-3">{job.projectType}</p>
                           <button 
-                            onClick={() => window.location.href = '/freelancer/explore-jobs'}
+                            onClick={() => window.location.href = '/freelancer/jobs'}
                             className={`w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition ${
                               index === 0 ? 'bg-green-600 hover:bg-green-700' :
                               index === 1 ? 'bg-teal-600 hover:bg-teal-700' :
