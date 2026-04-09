@@ -1,784 +1,486 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Briefcase, DollarSign, Clock, Video, ExternalLink, MessageSquare, Heart, Trash2, Eye } from 'lucide-react';
-import Button from '../components/Button';
+import {
+  Briefcase, DollarSign, Clock, ExternalLink, Heart, Trash2, Eye, Edit2, X, Plus,
+  Upload, Image as ImageIcon, Star, ChevronRight, LogOut, User, BarChart2, FolderOpen
+} from 'lucide-react';
 import FreelancerAnalytics from '../components/FreelancerAnalytics';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { db } from '../config/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 
-const FreelancerDashboard = () => {
+const PROJECT_CATEGORIES = [
+  'Web Development','Mobile Development','UI/UX Design','Graphic Design',
+  'Video Editing','Digital Marketing','Writing','Data Science',
+  'AI / Machine Learning','Cybersecurity','DevOps','Game Development','Others',
+];
+
+const EMPTY_FORM = {
+  projectTitle:'', projectDescription:'', category:'', customCategory:'',
+  projectLink:'', technologies:'', completionDate:'', image: null,
+};
+
+export default function FreelancerDashboard() {
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview');
   const [profileData, setProfileData] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
-  const [portfolioForm, setPortfolioForm] = useState({
-    title: '', description: '', link: '', image: null
-  });
-  const [portfolioImagePreview, setPortfolioImagePreview] = useState(null);
-  
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [serviceForm, setServiceForm] = useState({
-    title: '', description: '', price: ''
-  });
+  const [workProjects, setWorkProjects] = useState([]);
+  const [showcaseProjects, setShowcaseProjects] = useState([]);
+  const [loadingWork, setLoadingWork] = useState(true);
+  const [loadingShowcase, setLoadingShowcase] = useState(true);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [projectForm, setProjectForm] = useState(EMPTY_FORM);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const imageRef = useRef(null);
 
+  // Fetch profile
   useEffect(() => {
-    if (user?.id) {
-      fetchProfileData();
-      fetchProjects();
-      setupRealTimeListeners();
-    }
-  }, [user?.id]);
+    if (!user) return;
+    api.get('/profile/me').then(r => setProfileData(r.data.profile)).catch(() => {});
+  }, [user]);
 
-  const setupRealTimeListeners = () => {
+  // Real-time showcase projects from Firestore
+  useEffect(() => {
     if (!user?.id) return;
-
-    // Real-time listener for posts
-    const postsQuery = query(
-      collection(db, 'posts'),
-      where('authorId', '==', user.id),
+    setLoadingShowcase(true);
+    const q = query(
+      collection(db, 'freelancer_projects'),
+      where('freelancerId', '==', user.id),
       orderBy('createdAt', 'desc')
     );
+    const unsub = onSnapshot(q, snap => {
+      setShowcaseProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoadingShowcase(false);
+    }, () => setLoadingShowcase(false));
+    return () => unsub();
+  }, [user?.id]);
 
-    const unsubscribePosts = onSnapshot(postsQuery, (snapshot) => {
-      const postsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPosts(postsData);
-      setLoadingPosts(false);
+  // Fetch work projects (client-assigned)
+  useEffect(() => {
+    if (!user) return;
+    setLoadingWork(true);
+    api.get('/projects/my-projects').then(r => {
+      setWorkProjects(r.data.projects || []);
+    }).catch(() => {}).finally(() => setLoadingWork(false));
+  }, [user]);
+
+  const openCreate = () => {
+    setEditingProject(null);
+    setProjectForm(EMPTY_FORM);
+    setImagePreview(null);
+    setShowProjectModal(true);
+  };
+
+  const openEdit = (project) => {
+    setEditingProject(project);
+    setProjectForm({
+      projectTitle: project.projectTitle || '',
+      projectDescription: project.projectDescription || '',
+      category: PROJECT_CATEGORIES.includes(project.category) ? project.category : 'Others',
+      customCategory: PROJECT_CATEGORIES.includes(project.category) ? '' : project.category,
+      projectLink: project.projectLink || '',
+      technologies: (project.technologies || []).join(', '),
+      completionDate: project.completionDate || '',
+      image: null,
     });
-
-    return () => {
-      unsubscribePosts();
-    };
+    setImagePreview(project.projectImage || null);
+    setShowProjectModal(true);
   };
 
-  const fetchProfileData = async () => {
-    try {
-      const response = await api.get(`/profile/public/${user.id}`);
-      if (response.data.success) {
-        setProfileData(response.data.profile);
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      toast.error('Failed to load profile data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects');
-      setProjects(response.data.projects || []);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
-
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
-    
-    try {
-      await api.delete(`/posts/${postId}`);
-      toast.success('Post deleted');
-    } catch (error) {
-      toast.error('Failed to delete post');
-    }
-  };
-
-  const handleLikePost = async (postId) => {
-    try {
-      await api.post(`/posts/${postId}/like`);
-    } catch (error) {
-      toast.error('Failed to like post');
-    }
-  };
-
-  const handlePortfolioImageChange = (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setPortfolioForm({ ...portfolioForm, image: file });
-      setPortfolioImagePreview(URL.createObjectURL(file));
-    }
+    if (!file) return;
+    setProjectForm(f => ({ ...f, image: file }));
+    setImagePreview(URL.createObjectURL(file));
   };
 
-  const openAddPortfolioModal = () => {
-    setPortfolioForm({ title: '', description: '', link: '', image: null });
-    setPortfolioImagePreview(null);
-    setShowPortfolioModal(true);
-  };
-
-  const handleSavePortfolio = async () => {
-    if (!portfolioForm.title?.trim() || !portfolioForm.description?.trim()) {
-      toast.error('Please fill in title and description');
+  const handleSaveProject = async () => {
+    if (!projectForm.projectTitle || !projectForm.projectDescription || !projectForm.category) {
+      toast.error('Title, description, and category are required');
       return;
     }
-
+    setSaving(true);
     try {
-      let imageUrl = '';
+      const fd = new FormData();
+      fd.append('projectTitle', projectForm.projectTitle);
+      fd.append('projectDescription', projectForm.projectDescription);
+      fd.append('category', projectForm.category);
+      fd.append('customCategory', projectForm.customCategory);
+      fd.append('projectLink', projectForm.projectLink);
+      fd.append('technologies', projectForm.technologies);
+      fd.append('completionDate', projectForm.completionDate);
+      if (projectForm.image) fd.append('projectImage', projectForm.image);
 
-      // Upload image if selected
-      if (portfolioForm.image instanceof File) {
-        console.log('Uploading portfolio image...');
-        const formData = new FormData();
-        formData.append('image', portfolioForm.image);
-        const uploadResponse = await api.post('/profile/upload-image', formData);
-        imageUrl = uploadResponse.data.imageUrl;
-        console.log('Image uploaded successfully:', imageUrl);
+      if (editingProject) {
+        await api.put(`/freelancer-projects/${editingProject.id}`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        toast.success('Project updated');
       } else {
-        console.log('No image file selected');
+        await api.post('/freelancer-projects', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        toast.success('Project created and live on Explore page');
       }
-
-      const portfolioItem = {
-        title: portfolioForm.title.trim(),
-        description: portfolioForm.description.trim(),
-        link: portfolioForm.link?.trim() || '',
-        image: imageUrl
-      };
-
-      console.log('Saving portfolio item:', portfolioItem);
-
-      // Use the dedicated portfolio endpoint
-      await api.post('/profile/portfolio', portfolioItem);
-      toast.success('Portfolio added!');
-      
-      // Reset and close
-      setShowPortfolioModal(false);
-      setPortfolioForm({ title: '', description: '', link: '', image: null });
-      setPortfolioImagePreview(null);
-      
-      // Refresh
-      await fetchProfileData();
-    } catch (error) {
-      console.error('Portfolio save error:', error);
-      toast.error(error.response?.data?.message || 'Failed to save portfolio');
+      setShowProjectModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save project');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeletePortfolio = async (index) => {
-    if (!window.confirm('Delete this portfolio item?')) return;
-
+  const handleDeleteProject = async (projectId) => {
     try {
-      const portfolio = [...(profileData?.portfolio || [])];
-      portfolio.splice(index, 1);
-      await api.put(`/profile/${user.id}`, { portfolio });
-      toast.success('Portfolio deleted!');
-      await fetchProfileData();
-    } catch (error) {
-      toast.error('Failed to delete portfolio');
+      await api.delete(`/freelancer-projects/${projectId}`);
+      toast.success('Project deleted');
+      setDeleteConfirm(null);
+    } catch {
+      toast.error('Failed to delete project');
     }
   };
 
-  const openAddServiceModal = () => {
-    setServiceForm({ title: '', description: '', price: '' });
-    setShowServiceModal(true);
+  const stats = {
+    projects: showcaseProjects.length,
+    views: showcaseProjects.reduce((s, p) => s + (p.views || 0), 0),
+    likes: showcaseProjects.reduce((s, p) => s + (p.likes?.length || 0), 0),
+    workProjects: workProjects.length,
   };
-
-  const handleSaveService = async () => {
-    if (!serviceForm.title?.trim() || !serviceForm.description?.trim()) {
-      toast.error('Please fill in title and description');
-      return;
-    }
-
-    try {
-      const serviceItem = {
-        title: serviceForm.title.trim(),
-        description: serviceForm.description.trim(),
-        price: serviceForm.price?.trim() || ''
-      };
-
-      // Get current services and add new item
-      const currentServices = profileData?.services || [];
-      const updatedServices = [...currentServices, serviceItem];
-
-      await api.put(`/profile/${user.id}`, { services: updatedServices });
-      toast.success('Service added!');
-      
-      // Reset and close
-      setShowServiceModal(false);
-      setServiceForm({ title: '', description: '', price: '' });
-      
-      // Refresh
-      await fetchProfileData();
-    } catch (error) {
-      console.error('Service save error:', error);
-      toast.error(error.response?.data?.message || 'Failed to save service');
-    }
-  };
-
-  const handleDeleteService = async (index) => {
-    if (!window.confirm('Delete this service?')) return;
-
-    try {
-      const services = [...(profileData?.services || [])];
-      services.splice(index, 1);
-      await api.put(`/profile/${user.id}`, { services });
-      toast.success('Service deleted!');
-      await fetchProfileData();
-    } catch (error) {
-      toast.error('Failed to delete service');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-500 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-700 to-green-500">
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Afro Task</h1>
-          <Button onClick={logout} variant="outline">Logout</Button>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto p-8">
-        {/* Profile Header */}
-        <div className="glass rounded-3xl p-8 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            {profileData?.profileImage ? (
-              <img
-                src={profileData.profileImage}
-                alt={profileData?.fullName}
-                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.fullName || 'User')}&size=200&background=10b981&color=fff`;
-                }}
-              />
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#00564C] text-white flex flex-col fixed h-full z-20 hidden lg:flex">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            {user?.profileImage ? (
+              <img src={user.profileImage} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-green-500 border-4 border-white flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                {profileData?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">
+                {(user?.fullName || 'F')[0]}
               </div>
             )}
-            <div className="flex-1">
-              <h2 className="text-3xl font-bold text-white mb-1">{profileData?.fullName || 'User'}</h2>
-              <p className="text-white/90 text-xl mb-2">{profileData?.professionalTitle || 'Freelancer'}</p>
-              <p className="text-white/80 text-sm mb-3">{profileData?.email}</p>
-              
-              <div className="flex flex-wrap gap-3 mb-4">
-                {profileData?.yearsOfExperience && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
-                    <Briefcase className="w-4 h-4" />
-                    {profileData.yearsOfExperience} years exp
-                  </span>
-                )}
-                {profileData?.availability && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
-                    <Clock className="w-4 h-4" />
-                    {profileData.availability}
-                  </span>
-                )}
-                {profileData?.hourlyRate && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
-                    <DollarSign className="w-4 h-4" />
-                    ${profileData.hourlyRate}/hr
-                  </span>
-                )}
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{user?.fullName || 'Freelancer'}</p>
+              <p className="text-xs text-green-200">Freelancer</p>
+            </div>
+          </div>
+        </div>
+        <nav className="flex-1 p-4 space-y-1">
+          {[
+            { id: 'overview', icon: BarChart2, label: 'Overview' },
+            { id: 'projects', icon: FolderOpen, label: 'My Projects' },
+            { id: 'work', icon: Briefcase, label: 'Work Projects' },
+            { id: 'analytics', icon: BarChart2, label: 'Analytics' },
+          ].map(({ id, icon: Icon, label }) => (
+            <button key={id} onClick={() => setActiveTab(id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium ${
+                activeTab === id ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
+              }`}>
+              <Icon className="w-5 h-5" />{label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-white/10 space-y-1">
+          <button onClick={() => navigate(`/profile/${user?.id}`)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition text-sm">
+            <User className="w-5 h-5" />View Profile
+          </button>
+          <button onClick={() => navigate('/explore-projects')}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition text-sm">
+            <ExternalLink className="w-5 h-5" />Explore Projects
+          </button>
+          <button onClick={logout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition text-sm">
+            <LogOut className="w-5 h-5" />Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-64 p-4 md:p-8">
+        {/* Mobile Tab Bar */}
+        <div className="lg:hidden flex gap-2 overflow-x-auto mb-6 pb-1">
+          {['overview','projects','work','analytics'].map(t => (
+            <button key={t} onClick={() => setActiveTab(t)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
+                activeTab === t ? 'bg-[#00564C] text-white' : 'bg-white text-gray-600 border'
+              }`}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Welcome back, {user?.fullName?.split(' ')[0]} 👋</h1>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: 'Showcase Projects', value: stats.projects, icon: FolderOpen, color: 'bg-green-50 text-green-700' },
+                { label: 'Total Views', value: stats.views, icon: Eye, color: 'bg-blue-50 text-blue-700' },
+                { label: 'Total Likes', value: stats.likes, icon: Heart, color: 'bg-pink-50 text-pink-700' },
+                { label: 'Work Projects', value: stats.workProjects, icon: Briefcase, color: 'bg-purple-50 text-purple-700' },
+              ].map(({ label, value, icon: Icon, color }) => (
+                <div key={label} className="bg-white rounded-2xl p-5 shadow-sm">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{value}</p>
+                  <p className="text-sm text-gray-500">{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Recent Projects</h2>
+                <button onClick={() => setActiveTab('projects')}
+                  className="text-[#00564C] text-sm font-medium flex items-center gap-1 hover:underline">
+                  View all <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
-
-              {profileData?.bio && (
-                <p className="text-white/90 text-sm leading-relaxed mb-4">{profileData.bio}</p>
-              )}
-
-              {/* Social Links */}
-              {profileData?.socialLinks && (
-                <div className="flex flex-wrap gap-2">
-                  {profileData.socialLinks.linkedin && (
-                    <a
-                      href={profileData.socialLinks.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      LinkedIn
-                    </a>
-                  )}
-                  {profileData.socialLinks.github && (
-                    <a
-                      href={profileData.socialLinks.github}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-sm transition"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      GitHub
-                    </a>
-                  )}
-                  {profileData.socialLinks.portfolio && (
-                    <a
-                      href={profileData.socialLinks.portfolio}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm transition"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Portfolio
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Analytics Section */}
-        <div className="mb-6">
-          <FreelancerAnalytics userId={user?.id} />
-        </div>
-
-        {/* Skills Section */}
-        {profileData?.skills && profileData.skills.length > 0 && (
-          <div className="glass rounded-2xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {profileData.skills.map((skill, index) => (
-                <span
-                  key={index}
-                  className="px-4 py-2 bg-white/20 text-white rounded-full text-sm font-medium"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Languages Section */}
-        {profileData?.languages && profileData.languages.length > 0 && (
-          <div className="glass rounded-2xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Languages</h3>
-            <div className="flex flex-wrap gap-2">
-              {profileData.languages.map((language, index) => (
-                <span
-                  key={index}
-                  className="px-4 py-2 bg-white/20 text-white rounded-full text-sm"
-                >
-                  {language}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Intro Video Section */}
-        {profileData?.introVideoUrl && (
-          <div className="glass rounded-2xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Video className="w-6 h-6" />
-              Introduction Video
-            </h3>
-            <video
-              src={profileData.introVideoUrl}
-              controls
-              className="w-full max-h-96 rounded-lg"
-            />
-          </div>
-        )}
-
-        {/* Portfolio Section */}
-        <div className="glass rounded-2xl p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">Portfolio</h3>
-            <button
-              onClick={openAddPortfolioModal}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm transition"
-            >
-              + Add Project
-            </button>
-          </div>
-          {profileData?.portfolio && profileData.portfolio.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profileData.portfolio.map((item, index) => {
-                console.log(`Portfolio item ${index}:`, item);
-                console.log(`Image URL:`, item.image);
-                return (
-                <div key={index} className="bg-white/10 rounded-xl overflow-hidden">
-                  {item.image ? (
-                    <div className="w-full h-48 bg-green-200">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('Image failed to load:', item.image);
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-green-200 flex items-center justify-center">
-                      <svg className="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <h4 className="font-semibold text-white mb-2">{item.title}</h4>
-                    <p className="text-white/80 text-sm mb-3">{item.description}</p>
-                    {item.link && (
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white/90 text-sm hover:underline flex items-center gap-1 mb-3"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        View Project
-                      </a>
-                    )}
-                    <button
-                      onClick={() => handleDeletePortfolio(index)}
-                      className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition"
-                    >
-                      Delete Project
-                    </button>
-                  </div>
-                </div>
-              )})}
-            </div>
-          ) : (
-            <p className="text-white/70 text-center py-4">No portfolio items yet. Add your first project!</p>
-          )}
-        </div>
-
-        {/* Services Section */}
-        <div className="glass rounded-2xl p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">Services</h3>
-            <button
-              onClick={openAddServiceModal}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm transition"
-            >
-              + Add Service
-            </button>
-          </div>
-          {profileData?.services && profileData.services.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {profileData.services.map((service, index) => (
-                <div key={index} className="bg-white/10 rounded-xl p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-white">{service.title}</h4>
-                    {service.price && (
-                      <span className="text-white/90 font-medium">{service.price}</span>
-                    )}
-                  </div>
-                  <p className="text-white/80 text-sm mb-3">{service.description}</p>
-                  <button
-                    onClick={() => handleDeleteService(index)}
-                    className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition"
-                  >
-                    Delete Service
+              {showcaseProjects.slice(0, 3).length === 0 ? (
+                <div className="text-center py-8">
+                  <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 mb-4">No projects yet. Create your first project to showcase your work.</p>
+                  <button onClick={openCreate}
+                    className="px-6 py-2 bg-[#00564C] text-white rounded-xl hover:bg-[#027568] transition text-sm font-medium">
+                    Create Project
                   </button>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-white/70 text-center py-4">No services listed yet. Add your first service!</p>
-          )}
-        </div>
-
-        {/* Projects Section */}
-        <div className="glass rounded-2xl p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">My Projects</h3>
-          </div>
-          {loadingProjects ? (
-            <p className="text-white/70 text-center py-8">Loading projects...</p>
-          ) : projects.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-white/70 mb-4">No projects yet. Start applying to jobs!</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {projects.map((project) => (
-                <div key={project.id} className="bg-white/10 rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-white mb-1">{project.job?.title || 'Project'}</h4>
-                      <p className="text-white/70 text-sm line-clamp-2">{project.job?.description}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${
-                      project.status === 'completed' 
-                        ? 'bg-green-500/20 text-green-300'
-                        : project.status === 'awaiting_confirmation'
-                        ? 'bg-yellow-500/20 text-yellow-300'
-                        : 'bg-blue-500/20 text-blue-300'
-                    }`}>
-                      {project.status === 'awaiting_confirmation' ? 'Pending' : project.status}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 text-sm text-white/60 mb-3">
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
-                      <span>{project.job?.budget || project.job?.budgetRange || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{new Date(project.startedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-3 border-t border-white/10">
-                    <img
-                      src={project.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.client?.fullName || 'Client')}`}
-                      alt={project.client?.fullName}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{project.client?.fullName}</p>
-                      <p className="text-white/60 text-xs">{project.client?.companyName || 'Client'}</p>
-                    </div>
-                    <button
-                      onClick={() => window.location.href = `/project/${project.id}`}
-                      className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-sm rounded transition"
-                    >
-                      View
-                    </button>
-                  </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {showcaseProjects.slice(0, 3).map(p => (
+                    <ProjectCard key={p.id} project={p} onEdit={openEdit} onDelete={setDeleteConfirm} />
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Posts Section */}
-        <div className="glass rounded-2xl p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white">Posts</h3>
           </div>
-          {loadingPosts ? (
-            <p className="text-white/70 text-center py-8">Loading posts...</p>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-white/70 mb-4">No posts yet. Share your thoughts!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <div key={post.id} className="bg-white/10 rounded-xl p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <img
-                      src={post.author?.profileImage || `https://ui-avatars.com/api/?name=${post.author?.fullName}`}
-                      alt={post.author?.fullName}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{post.author?.fullName}</p>
-                      <p className="text-white/60 text-xs">
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDeletePost(post.id)}
-                      className="text-red-400 hover:text-red-300 transition"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                  
-                  {post.content && (
-                    <p className="text-white mb-3">{post.content}</p>
-                  )}
-                  
-                  {post.mediaUrl && (
-                    <div className="mb-3">
-                      {post.type === 'video' || post.mediaType === 'video' ? (
-                        <video
-                          src={post.mediaUrl}
-                          controls
-                          className="w-full rounded-lg max-h-96"
-                        />
-                      ) : (
-                        <img
-                          src={post.mediaUrl}
-                          alt="Post media"
-                          className="w-full rounded-lg"
-                        />
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center gap-4 text-white/70 text-sm">
-                    <button
-                      onClick={() => handleLikePost(post.id)}
-                      className={`flex items-center gap-1 hover:text-white transition ${
-                        post.likes?.includes(user.id) ? 'text-red-400' : ''
-                      }`}
-                    >
-                      <Heart className="w-5 h-5" fill={post.likes?.includes(user.id) ? 'currentColor' : 'none'} />
-                      <span>{post.likes?.length || 0}</span>
-                    </button>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-5 h-5" />
-                      <span>{post.commentsCount || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-5 h-5" />
-                      <span>{post.views || 0} views</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+        )}
 
-      {/* Portfolio Modal */}
-      {showPortfolioModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Add Portfolio Project</h3>
-            
-            <div className="space-y-4">
+        {/* Projects Tab */}
+        {activeTab === 'projects' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
-                <input
-                  type="text"
-                  value={portfolioForm.title}
-                  onChange={(e) => setPortfolioForm({ ...portfolioForm, title: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="e.g., E-commerce Website"
-                />
+                <h1 className="text-2xl font-bold text-gray-900">My Projects</h1>
+                <p className="text-gray-500 text-sm mt-1">Projects you create here appear on the public Explore Projects page</p>
+              </div>
+              <button onClick={openCreate}
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#00564C] text-white rounded-xl hover:bg-[#027568] transition font-medium text-sm">
+                <Plus className="w-4 h-4" />Create Project
+              </button>
+            </div>
+            {loadingShowcase ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1,2,3].map(i => (
+                  <div key={i} className="bg-white rounded-2xl overflow-hidden shadow animate-pulse">
+                    <div className="h-48 bg-gray-200" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : showcaseProjects.length === 0 ? (
+              <div className="bg-white rounded-2xl p-16 text-center shadow-sm">
+                <FolderOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No projects yet</h3>
+                <p className="text-gray-500 mb-6">Create your first project to showcase your work to clients worldwide.</p>
+                <button onClick={openCreate}
+                  className="px-8 py-3 bg-[#00564C] text-white rounded-xl hover:bg-[#027568] transition font-medium">
+                  Create Your First Project
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {showcaseProjects.map(p => (
+                  <ProjectCard key={p.id} project={p} onEdit={openEdit} onDelete={setDeleteConfirm} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Work Projects Tab */}
+        {activeTab === 'work' && (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Work Projects</h1>
+            {loadingWork ? (
+              <div className="space-y-4">
+                {[1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse shadow-sm" />)}
+              </div>
+            ) : workProjects.length === 0 ? (
+              <div className="bg-white rounded-2xl p-16 text-center shadow-sm">
+                <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No work projects yet</h3>
+                <p className="text-gray-500">Projects assigned by clients will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {workProjects.map(p => (
+                  <div key={p.id} className="bg-white rounded-2xl p-5 shadow-sm flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{p.title || p.projectTitle}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{p.status}</p>
+                    </div>
+                    <button onClick={() => navigate(`/freelancer/workspace/${p.id}`)}
+                      className="px-4 py-2 bg-[#00564C] text-white rounded-lg text-sm hover:bg-[#027568] transition">
+                      Open
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Analytics</h1>
+            <FreelancerAnalytics />
+          </div>
+        )}
+      </main>
+
+      {/* Create / Edit Project Modal */}
+      {showProjectModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowProjectModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">{editingProject ? 'Edit Project' : 'Create Project'}</h2>
+              <button onClick={() => setShowProjectModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Project Image <span className="text-red-500">*</span></label>
+                <div
+                  onClick={() => imageRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-pointer hover:border-[#00564C] transition relative"
+                  style={{ minHeight: '180px' }}>
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="preview" className="w-full h-48 object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                      <Upload className="w-10 h-10 mb-2" />
+                      <p className="text-sm font-medium">Click to upload project image</p>
+                      <p className="text-xs mt-1">Screenshot, design preview, or work sample</p>
+                    </div>
+                  )}
+                  {imagePreview && (
+                    <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition flex items-center justify-center">
+                      <p className="text-white text-sm font-medium flex items-center gap-2"><ImageIcon className="w-4 h-4" />Change Image</p>
+                    </div>
+                  )}
+                </div>
+                <input ref={imageRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               </div>
 
+              {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                <textarea
-                  value={portfolioForm.description}
-                  onChange={(e) => setPortfolioForm({ ...portfolioForm, description: e.target.value })}
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Project Title <span className="text-red-500">*</span></label>
+                <input type="text" value={projectForm.projectTitle}
+                  onChange={e => setProjectForm(f => ({ ...f, projectTitle: e.target.value }))}
+                  placeholder="e.g. E-commerce Website for Fashion Brand"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Project Description <span className="text-red-500">*</span></label>
+                <textarea value={projectForm.projectDescription}
+                  onChange={e => setProjectForm(f => ({ ...f, projectDescription: e.target.value }))}
+                  placeholder="Describe what you built, the problem it solves, and your role..."
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Describe the project..."
-                />
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C] resize-none" />
               </div>
 
+              {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Link</label>
-                <input
-                  type="url"
-                  value={portfolioForm.link}
-                  onChange={(e) => setPortfolioForm({ ...portfolioForm, link: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="https://example.com"
-                />
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
+                <select value={projectForm.category}
+                  onChange={e => setProjectForm(f => ({ ...f, category: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C] bg-white">
+                  <option value="">Select a category</option>
+                  {PROJECT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {projectForm.category === 'Others' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Custom Category</label>
+                  <input type="text" value={projectForm.customCategory}
+                    onChange={e => setProjectForm(f => ({ ...f, customCategory: e.target.value }))}
+                    placeholder="e.g. 3D Animation"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
+                </div>
+              )}
+
+              {/* Project Link */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Project Link</label>
+                <input type="url" value={projectForm.projectLink}
+                  onChange={e => setProjectForm(f => ({ ...f, projectLink: e.target.value }))}
+                  placeholder="https://github.com/... or https://live-demo.com"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
               </div>
 
+              {/* Technologies */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePortfolioImageChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                {portfolioImagePreview && (
-                  <div className="mt-3">
-                    <img
-                      src={portfolioImagePreview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Technologies Used</label>
+                <input type="text" value={projectForm.technologies}
+                  onChange={e => setProjectForm(f => ({ ...f, technologies: e.target.value }))}
+                  placeholder="React, Node.js, MongoDB (comma separated)"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
+              </div>
+
+              {/* Completion Date */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Completion Date</label>
+                <input type="date" value={projectForm.completionDate}
+                  onChange={e => setProjectForm(f => ({ ...f, completionDate: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00564C]" />
               </div>
             </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowPortfolioModal(false);
-                  setPortfolioForm({ title: '', description: '', link: '', image: null });
-                  setPortfolioImagePreview(null);
-                }}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              >
+            <div className="p-6 border-t flex gap-3 justify-end">
+              <button onClick={() => setShowProjectModal(false)}
+                className="px-6 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
                 Cancel
               </button>
-              <button
-                onClick={handleSavePortfolio}
-                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
-              >
-                Add Project
+              <button onClick={handleSaveProject} disabled={saving}
+                className="px-6 py-2.5 bg-[#00564C] text-white rounded-xl hover:bg-[#027568] transition text-sm font-medium disabled:opacity-60">
+                {saving ? 'Saving...' : editingProject ? 'Update Project' : 'Publish Project'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Service Modal */}
-      {showServiceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-lg w-full">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Add Service</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Service Title *</label>
-                <input
-                  type="text"
-                  value={serviceForm.title}
-                  onChange={(e) => setServiceForm({ ...serviceForm, title: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="e.g., Website Development"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                <textarea
-                  value={serviceForm.description}
-                  onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Describe your service..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                <input
-                  type="text"
-                  value={serviceForm.price}
-                  onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="e.g., $50/hour or $500 fixed"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowServiceModal(false);
-                  setServiceForm({ title: '', description: '', price: '' });
-                }}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-              >
+      {/* Delete Confirm Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Project?</h3>
+            <p className="text-gray-500 text-sm mb-6">This will permanently remove the project from your profile and the Explore page.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm">
                 Cancel
               </button>
-              <button
-                onClick={handleSaveService}
-                className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
-              >
-                Add Service
+              <button onClick={() => handleDeleteProject(deleteConfirm)}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-sm">
+                Delete
               </button>
             </div>
           </div>
@@ -786,6 +488,61 @@ const FreelancerDashboard = () => {
       )}
     </div>
   );
-};
+}
 
-export default FreelancerDashboard;
+// Project Card sub-component
+function ProjectCard({ project, onEdit, onDelete }) {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition group">
+      <div className="relative h-48 bg-gray-100 overflow-hidden">
+        {project.projectImage ? (
+          <img src={project.projectImage} alt={project.projectTitle}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00564C]/10 to-[#00564C]/30">
+            <span className="text-5xl">💼</span>
+          </div>
+        )}
+        {project.category && (
+          <span className="absolute top-3 left-3 bg-[#00564C] text-white text-xs px-2 py-1 rounded-full">
+            {project.category}
+          </span>
+        )}
+        <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+          <button onClick={() => onEdit(project)}
+            className="p-1.5 bg-white rounded-full shadow hover:bg-gray-50 transition">
+            <Edit2 className="w-3.5 h-3.5 text-gray-700" />
+          </button>
+          <button onClick={() => onDelete(project.id)}
+            className="p-1.5 bg-white rounded-full shadow hover:bg-red-50 transition">
+            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+          </button>
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">{project.projectTitle}</h3>
+        <p className="text-gray-500 text-sm line-clamp-2 mb-3">{project.projectDescription}</p>
+        {project.technologies?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {project.technologies.slice(0, 3).map((t, i) => (
+              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{t}</span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{project.views || 0}</span>
+            <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{project.likes?.length || 0}</span>
+          </div>
+          {project.projectLink && (
+            <a href={project.projectLink} target="_blank" rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex items-center gap-1 text-[#00564C] hover:underline">
+              <ExternalLink className="w-3 h-3" />View
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -21,7 +21,7 @@ export default function HeroSection() {
 
   // Handle category button click
   const handleCategoryClick = (category) => {
-    navigate(`/freelancer/feed?category=${encodeURIComponent(category)}`);
+    navigate(`/explore-projects?category=${encodeURIComponent(category)}`);
   };
 
   return (

@@ -1,10 +1,9 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { Bell, Briefcase, MessageCircle } from "lucide-react";
+import { Bell, Briefcase, MessageCircle, Home } from "lucide-react";
 import api from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { IoSearch } from "react-icons/io5";
 
 const WhiteNavbar = () => {
   const navigate = useNavigate();
@@ -113,20 +112,20 @@ const WhiteNavbar = () => {
           />
         </div>
 
-        {/* Center: Post Project & Search (hidden on mobile) */}
+        {/* Center: Post Project & Home (hidden on mobile) */}
         <div className="flex items-center gap-3 justify-center col-start-2 col-end-3 invisible md:visible md:flex">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 text-gray-700 hover:text-[#00564C] transition font-medium"
+          >
+            <Home className="w-4 h-4" />
+            Home
+          </button>
           <button
             onClick={() => navigate(user ? "/post-project" : "/login")}
             className="bg-[#00564C] text-white hover:bg-[#027568] px-4 py-2 rounded-lg transition"
           >
             Post Project
-          </button>
-          <button
-            onClick={() => navigate("/search")}
-            className="bg-gray-300 text-black hover:bg-gray-200 px-4 py-2 rounded-lg transition flex items-center gap-2 justify-center"
-          >
-            <IoSearch />
-            Search
           </button>
         </div>
 
@@ -174,10 +173,16 @@ const WhiteNavbar = () => {
           ) : (
             <>
               <button
-                onClick={() => navigate("/welcome")}
+                onClick={() => navigate("/")}
                 className="hover:text-green-700 transition font-medium"
               >
-                Explore
+                Home
+              </button>
+              <button
+                onClick={() => navigate("/contact")}
+                className="hover:text-green-700 transition font-medium"
+              >
+                Contact Us
               </button>
               <button
                 onClick={() => navigate("/login")}

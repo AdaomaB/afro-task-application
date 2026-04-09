@@ -11,8 +11,14 @@ let bucket;
 try {
   let serviceAccount;
 
-  // Check if running in production with environment variables
-  if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
+  // Option 1: Base64-encoded full service account JSON (best for Hostinger)
+  if (process.env.FIREBASE_BASE64_CREDENTIALS) {
+    const decoded = Buffer.from(process.env.FIREBASE_BASE64_CREDENTIALS, 'base64').toString('utf8');
+    serviceAccount = JSON.parse(decoded);
+    console.log('🔧 Using Firebase credentials from FIREBASE_BASE64_CREDENTIALS');
+  }
+  // Option 2: Individual env vars (Railway, Render, Vercel)
+  else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PROJECT_ID) {
     // Use environment variables (for Railway, Render, etc.)
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
@@ -40,7 +46,7 @@ try {
     );
     console.log('🔧 Using Firebase credentials from service account file');
   } else {
-    throw new Error('Firebase credentials not found. Set FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and FIREBASE_PROJECT_ID environment variables, or provide FIREBASE_SERVICE_ACCOUNT_PATH.');
+    throw new Error('Firebase credentials not found. Set FIREBASE_BASE64_CREDENTIALS (recommended for Hostinger), or FIREBASE_PRIVATE_KEY + FIREBASE_CLIENT_EMAIL + FIREBASE_PROJECT_ID, or FIREBASE_SERVICE_ACCOUNT_PATH.');
   }
 
   admin.initializeApp({
@@ -58,6 +64,7 @@ try {
   
   // Log what we have for debugging
   console.log('Debug Info:');
+  console.log('- FIREBASE_BASE64_CREDENTIALS:', process.env.FIREBASE_BASE64_CREDENTIALS ? 'Set' : 'Missing');
   console.log('- FIREBASE_PROJECT_ID:', process.env.FIREBASE_PROJECT_ID ? 'Set' : 'Missing');
   console.log('- FIREBASE_CLIENT_EMAIL:', process.env.FIREBASE_CLIENT_EMAIL ? 'Set' : 'Missing');
   console.log('- FIREBASE_PRIVATE_KEY:', process.env.FIREBASE_PRIVATE_KEY ? `Set (${process.env.FIREBASE_PRIVATE_KEY.substring(0, 50)}...)` : 'Missing');

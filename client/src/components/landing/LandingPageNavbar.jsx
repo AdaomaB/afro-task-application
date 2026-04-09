@@ -1,33 +1,33 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { IoIosArrowDown } from "react-icons/io";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setMenuOpen(false);
-    };
-
+    const handleScroll = () => setMenuOpen(false);
     window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navLinks = [
-    { name: "AI Services", path: "/ai-services" },
-    { name: "Technology", path: "/technology" },
-    { name: "Programming", path: "/programming" },
-    { name: "Graphics Design", path: "/graphics-design" },
-    { name: "Video Editing", path: "/video-editing" },
-    { name: "SEO", path: "/seo" },
-    { name: "Branding & Sales", path: "/branding-sales" },
-    { name: "Writing & Translation", path: "/writing-translation" },
-    { name: "Business", path: "/business" },
+    { name: "AI Services", category: "AI / Machine Learning" },
+    { name: "Technology", category: "DevOps" },
+    { name: "Programming", category: "Web Development" },
+    { name: "Graphics Design", category: "Graphic Design" },
+    { name: "Video Editing", category: "Video Editing" },
+    { name: "SEO", category: "Digital Marketing" },
+    { name: "Branding & Sales", category: "Digital Marketing" },
+    { name: "Writing & Translation", category: "Writing" },
+    { name: "Business", category: "Others" },
   ];
+
+  const handleNavClick = (category) => {
+    setMenuOpen(false);
+    navigate(`/explore-projects?category=${encodeURIComponent(category)}`);
+  };
 
   const navStyle =
     "self-start inline-block relative cursor-pointer hover:text-gray-300 py-3 md:py-0 border-b border-white/10 md:border-b-0 last:border-b-0 after:absolute after:left-0 after:bottom-1 md:after:-bottom-2 after:h-[2px] after:bg-current after:w-0 hover:after:w-full after:transition-all after:duration-300 after:ease-out after:origin-left";
