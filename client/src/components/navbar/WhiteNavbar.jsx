@@ -101,18 +101,15 @@ const WhiteNavbar = () => {
   const location = useLocation();
   const pathname = location.pathname;
 
-        {/* Center: Post Project & Home (hidden on mobile) */}
-        <div className="flex items-center gap-3 justify-center col-start-2 col-end-3 invisible md:visible md:flex">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-gray-700 hover:text-[#00564C] transition font-medium"
-          >
-            <Home className="w-4 h-4" />
-            Home
-          </button>
-          <button
-            onClick={() => navigate(user ? "/post-project" : "/login")}
-            className="bg-[#00564C] text-white hover:bg-[#027568] px-4 py-2 rounded-lg transition"
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-30 bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        {/* Desktop Navbar */}
+        <div className="hidden md:grid grid-cols-3 items-center w-full">
+          {/* Left: Logo */}
+          <div
+            className="flex items-center cursor-pointer"
+            onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
           >
             <img
               src="/img/afro-task-logo.png"
@@ -120,77 +117,74 @@ const WhiteNavbar = () => {
               className="h-10 w-auto"
             />
           </div>
-          
-          <button
-            onClick={() => navigate("/")}
-            className={pathname === "/" ? "text-[#00564C]" :"hover:text-green-700 transition"}
-          >
-            Home
-          </button>
-        </div>
 
-        {/* Right: User / Auth Section */}
-        <div className="flex items-center justify-end gap-6">
-          {user ? (
-            <>
-              <span className="text-black/90">Welcome, {user.fullName}</span>
-              {user.profileImage ? (
-                <img 
-                  src={user.profileImage} 
-                  alt={user.fullName}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
-                />
-              ) : null}
-              <IoPersonCircleOutline 
-                className="w-8 h-8 text-gray-400" 
-                style={{ display: user.profileImage ? 'none' : 'block' }}
-              />
-              <button
-                onClick={() => navigate("/freelancer/feed")}
-                className="bg-[#00564C] hover:bg-[#027568] text-white px-6 py-2 rounded-lg transition "
-              >
-                View Feeds
-              </button>
-            </>
-          ) : (
-            <>
+          {/* Center: Nav Links */}
+          <div className="flex items-center gap-3 justify-center col-start-2 col-end-3">
             <button
-            onClick={() => navigate(user ? "/post-project" : "/login")}
-            className={pathname === "/post-project" ? "text-[#00564C]" :"hover:text-green-700 transition "}
-          >
-            Post Project
-          </button>
-              <button
-                onClick={() => navigate("/")}
-                className="hover:text-green-700 transition font-medium"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => navigate("/contact")}
-                className="hover:text-green-700 transition font-medium"
-              >
-                Contact Us
-              </button>
+              onClick={() => navigate("/")}
+              className={`flex items-center gap-1.5 transition font-medium ${pathname === "/" ? "text-[#00564C]" : "text-gray-700 hover:text-[#00564C]"}`}
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </button>
+            <button
+              onClick={() => navigate(user ? "/post-project" : "/login")}
+              className={`transition font-medium ${pathname === "/post-project" ? "text-[#00564C]" : "hover:text-green-700"}`}
+            >
+              Post Project
+            </button>
+          </div>
 
-              <button
-                onClick={() => navigate("/login")}
-            className={pathname === "/login" ? "text-[#00564C]" :"hover:text-green-700 transition "}
-              >
-                Log in
-              </button>
-              <button
-                onClick={() => navigate("/welcome")}
-                className="bg-[#00564C] text-white hover:bg-[#027568] px-6 py-2 rounded-lg transition"
-              >
-                Sign up
-              </button>
-            </>
-          )}
+          {/* Right: User / Auth Section */}
+          <div className="flex items-center justify-end gap-6">
+            {user ? (
+              <>
+                <span className="text-black/90">Welcome, {user.fullName}</span>
+                {user.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt={user.fullName}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <IoPersonCircleOutline
+                  className="w-8 h-8 text-gray-400"
+                  style={{ display: user.profileImage ? 'none' : 'block' }}
+                />
+                <button
+                  onClick={() => navigate("/freelancer/feed")}
+                  className="bg-[#00564C] hover:bg-[#027568] text-white px-6 py-2 rounded-lg transition"
+                >
+                  View Feeds
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate("/contact")}
+                  className={`transition font-medium ${pathname === "/contact" ? "text-[#00564C]" : "hover:text-green-700"}`}
+                >
+                  Contact Us
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className={`transition font-medium ${pathname === "/login" ? "text-[#00564C]" : "hover:text-green-700"}`}
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={() => navigate("/welcome")}
+                  className="bg-[#00564C] text-white hover:bg-[#027568] px-6 py-2 rounded-lg transition"
+                >
+                  Sign up
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

@@ -20,20 +20,9 @@ const PROJECT_CATEGORIES = [
   'AI / Machine Learning', 'Cybersecurity', 'DevOps', 'Game Development', 'Others'
 ];
 
-const emptyProjectForm = {
+const EMPTY_FORM = {
   title: '', description: '', category: '', customCategory: '',
   projectLink: '', technologies: '', completionDate: '', image: null
-};
-
-const PROJECT_CATEGORIES = [
-  'Web Development','Mobile Development','UI/UX Design','Graphic Design',
-  'Video Editing','Digital Marketing','Writing','Data Science',
-  'AI / Machine Learning','Cybersecurity','DevOps','Game Development','Others',
-];
-
-const EMPTY_FORM = {
-  projectTitle:'', projectDescription:'', category:'', customCategory:'',
-  projectLink:'', technologies:'', completionDate:'', image: null,
 };
 
 export default function FreelancerDashboard() {
