@@ -2,6 +2,8 @@ import { useContext, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Bell, Briefcase, MessageCircle, Home } from "lucide-react";
+import { IoPersonCircleOutline, IoClose } from "react-icons/io5";
+import { GiHamburgerMenu } from "react-icons/gi";
 import api from "../../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 

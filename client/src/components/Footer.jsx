@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { FaLinkedin, FaInstagram } from 'react-icons/fa';
+import { FaXTwitter } from 'react-icons/fa6';
 
 const Footer = () => {
   const navigate = useNavigate();
