@@ -170,7 +170,7 @@ const MessagesPage = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-none">
               {conversations.map((conv) => {
                 // Safely extract last message text
                 const lastMessageText = conv.lastMessage?.text || 
@@ -180,18 +180,18 @@ const MessagesPage = () => {
                   <button
                     key={conv.id}
                     onClick={() => setSelectedChat(conv)}
-                    className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition ${
+                    className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 overflow-x-hidden transition ${
                       selectedChat?.id === conv.id ? 'bg-green-50' : ''
                     }`}
                   >
                     <img
                       src={conv.otherUser?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.otherUser?.fullName || 'User')}`}
                       alt={conv.otherUser?.fullName || 'User'}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-gray-900">{conv.otherUser?.fullName || 'Unknown User'}</p>
-                      <p className="text-sm text-gray-500 truncate">{lastMessageText}</p>
+                      <p className="text-sm text-gray-500 truncate ">{lastMessageText} </p>
                     </div>
                     {conv.unreadCount > 0 && (
                       <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
