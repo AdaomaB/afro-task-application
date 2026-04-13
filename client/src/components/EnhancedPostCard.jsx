@@ -671,7 +671,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                           
                         </p>
                         <div className="relative">
-                          <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 bg-white/80 text-gray-600 hover:bg-gray-100 rounded-full transition shadow-sm">
+                          <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 bg-gray-100 text-gray-600 hover:bg-white/80 rounded-xl transition shadow-sm">
                             <MoreVertical className="w-5 h-5 text-gray-600 " />
                           </button>
                           {activeCommentMenu === comment.id && (
@@ -805,7 +805,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
               src={post.mediaUrl}
               controls
               autoPlay
-              className="h-screen w-auto max-w-none object-contain"
+              className="max-h-screen max-w-screen w-auto h-auto  object-contain"
             />
           </div>
         </div>,
@@ -828,7 +828,7 @@ const EnhancedPostCard = ({ post, onDelete }) => {
             <img
               src={post.image}
               alt="Post"
-              className="h-screen w-auto max-w-none object-contain"
+              className="max-h-screen max-w-screen h-auto w-auto object-contain"
               style={{ animation: 'imgFadeIn 0.2s ease forwards' }}
             />
           </div>
