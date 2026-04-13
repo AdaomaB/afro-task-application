@@ -1,123 +1,105 @@
 import { useState } from 'react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase.js';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaHeadset, FaCheckCircle } from 'react-icons/fa';
+import { Mail, Send, CheckCircle } from 'lucide-react';
 import WhiteNavbar from '../components/navbar/WhiteNavbar';
 import Footer from '../components/Footer';
-import api from '../services/api';
-
-// ── Recipient emails — easy to update ──
-const RECIPIENT_EMAILS = [
-  { label: 'Business Enquiries', value: 'adaoma2826@gmail.com' },
-  { label: 'Support', value: 'mbatab@gmail.com' },
-];
+import toast from 'react-hot-toast';
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', message: '', recipientEmail: RECIPIENT_EMAILS[0].value });
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    setError('');
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
     setLoading(true);
     try {
-      await api.post('/contact', {
+      await addDoc(collection(db, 'contact_messages'), {
         name: form.name.trim(),
         email: form.email.trim(),
         message: form.message.trim(),
-        recipientEmail: form.recipientEmail,
+        createdAt: serverTimestamp(),
       });
       setSubmitted(true);
+      setForm({ name: '', email: '', message: '' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      console.error('Error saving contact message:', err);
+      toast.error('Failed to send message. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <WhiteNavbar />
 
-      <section className="relative pt-24 pb-20 bg-[url('/img/cl.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden"> 
-      <div className="absolute inset-0 bg-[#00564C]/80 text-white py-14 px-6 text-center">
-        <h1 className="text-3xl md:text-5xl font-bold mb-3">Contact Us</h1>
-        <p className="text-green-100 text-lg max-w-xl mx-auto">
-          Have a question or need help? We'd love to hear from you.
-        </p>
+      {/* Hero */}
+      <div className="bg-[#00564C] text-white py-14 px-6 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold mb-3">Contact Us</h1>
+        <p className="text-green-200 text-lg">We'd love to hear from you</p>
       </div>
-      </section>
 
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 grid grid-cols-1 md:grid-cols-2 gap-10">
-        {/* Info */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Get in Touch</h2>
-            <p className="text-gray-600 leading-relaxed">
-              Whether you're a client looking for talent or a freelancer with questions,
-              our team is here to help. Reach out and we'll get back to you as soon as possible.
-            </p>
-          </div>
+      <div className="max-w-5xl mx-auto px-4 py-14 grid grid-cols-1 md:grid-cols-2 gap-12">
+        {/* Contact Info */}
+        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Get in Touch</h2>
+          <p className="text-gray-600 mb-8">
+            Have a question, feedback, or need support? Reach out to us and our team will get back to you as soon as possible.
+          </p>
 
           <div className="space-y-5">
             <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm">
-              <div className="w-10 h-10 bg-[#00564C]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <FaEnvelope className="text-[#00564C]" />
+              <div className="bg-[#00564C]/10 p-3 rounded-lg">
+                <Mail className="w-5 h-5 text-[#00564C]" />
               </div>
               <div>
                 <p className="font-semibold text-gray-800">Business Email</p>
-                <a href="mailto:adaoma2826@gmail.com" className="text-[#00564C] hover:underline text-sm">
-                  adaoma2826@gmail.com
+                <a href="mailto:business@afrotask.com" className="text-[#00564C] hover:underline text-sm">
+                  business@afrotask.com
                 </a>
               </div>
             </div>
 
             <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm">
-              <div className="w-10 h-10 bg-[#00564C]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <FaHeadset className="text-[#00564C]" />
+              <div className="bg-[#00564C]/10 p-3 rounded-lg">
+                <Mail className="w-5 h-5 text-[#00564C]" />
               </div>
               <div>
                 <p className="font-semibold text-gray-800">Support Email</p>
-                <a href="mailto:mbatab@gmail.com" className="text-[#00564C] hover:underline text-sm">
-                  mbatab@gmail.com
+                <a href="mailto:support@afrotask.com" className="text-[#00564C] hover:underline text-sm">
+                  support@afrotask.com
                 </a>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white rounded-2xl shadow-md p-8"
-        >
+        {/* Contact Form */}
+        <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           {submitted ? (
-            <div className="flex flex-col items-center justify-center h-full py-10 text-center">
-              <FaCheckCircle className="text-5xl text-[#00564C] mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Message sent successfully!</h3>
-              <p className="text-gray-600">We'll get back to you within 24 hours.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <CheckCircle className="w-16 h-16 text-[#00564C] mb-4" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent!</h3>
+              <p className="text-gray-600 mb-6">Thank you for reaching out. We'll get back to you shortly.</p>
               <button
-                onClick={() => { setSubmitted(false); setForm({ name: '', email: '', message: '', recipientEmail: RECIPIENT_EMAILS[0].value }); }}
-                className="mt-6 text-[#00564C] hover:underline text-sm font-medium"
+                onClick={() => setSubmitted(false)}
+                className="bg-[#00564C] text-white px-6 py-2 rounded-lg hover:bg-[#027568] transition"
               >
-                Send another message
+                Send Another Message
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Send a Message</h3>
-
-              <input type="checkbox" name="botcheck" style={{ display: 'none' }} />
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-6 space-y-5">
+              <h2 className="text-xl font-bold text-gray-900">Send a Message</h2>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -127,8 +109,8 @@ export default function ContactPage() {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Your full name"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00564C] text-sm"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition"
                 />
               </div>
 
@@ -140,23 +122,9 @@ export default function ContactPage() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="your@email.com"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00564C] text-sm"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Send To</label>
-                <select
-                  name="recipientEmail"
-                  value={form.recipientEmail}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition bg-white"
-                >
-                  {RECIPIENT_EMAILS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label} — {r.value}</option>
-                  ))}
-                </select>
               </div>
 
               <div>
@@ -166,19 +134,18 @@ export default function ContactPage() {
                   value={form.message}
                   onChange={handleChange}
                   placeholder="How can we help you?"
-                  required
                   rows={5}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00564C] focus:border-transparent outline-none transition resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#00564C] text-sm resize-none"
+                  required
                 />
               </div>
-
-              {error && <p className="text-red-500 text-sm">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#00564C] hover:bg-[#027568] text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
+                className="w-full bg-[#00564C] text-white py-3 rounded-lg font-semibold hover:bg-[#027568] transition flex items-center justify-center gap-2 disabled:opacity-60"
               >
+                <Send className="w-4 h-4" />
                 {loading ? 'Sending...' : 'Send Message'}
               </button>
             </form>

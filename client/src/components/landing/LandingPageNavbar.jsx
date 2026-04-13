@@ -54,7 +54,7 @@ export default function Navbar() {
           menuOpen
             ? "absolute top-full left-0 right-0 bg-[#00564C]  z-50 flex flex-col"
             : "hidden"
-        } md:flex md:flex-row md:relative md:bg-transparent md:border-t-0 md:z-auto flex-wrap justify-between gap-2 md:gap-4 text-xs lg:text-sm font-medium m-1 whitespace-nowrap`}
+        } md:flex md:flex-row md:relative md:bg-transparent md:border-t-0 md:z-auto flex-wrap justify-between gap-2 md:gap-4 text-xs md:text-sm font-medium m-1 whitespace-nowrap`}
       >
         {navLinks.map((link, index) => (
           <Link key={index} to={link.path} className={navStyle}>
