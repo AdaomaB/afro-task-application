@@ -74,7 +74,7 @@ export default function HeroSection() {
               />
             )}
             {/* Dark overlay so text stays readable */}
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/40" />
           </div>
         ))}
 
