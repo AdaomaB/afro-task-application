@@ -36,6 +36,7 @@ import BlogPage from './pages/BlogPage';
 import AboutPage from './pages/AboutPage';
 import NotFound from './pages/NotFound';
 import WhatsAppBubble from './components/WhatsAppBubble';
+import AppSettingsPage from './pages/AppSettingsPage';
 
 function App() {
   return (
@@ -66,6 +67,13 @@ function App() {
             </PrivateRoute>
           } />
 
+          {/* App Settings Route */}
+          <Route path="/settings" element={
+            <PrivateRoute>
+              <AppSettingsPage />
+            </PrivateRoute>
+          } />
+          
           {/* Freelancers Directory */}
           <Route path="/freelancers" element={<FreelancersPage />} />
 

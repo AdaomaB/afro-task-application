@@ -8,6 +8,7 @@ import BlogCard from '../components/BlogCard'
 import { AuthContext } from '../context/AuthContext'
 import api from '../services/api'
 import { X, Trash2, Pencil } from 'lucide-react'
+import ProductSection from '../components/landing/ProductSection'
 
 const emptyForm = { title: '', description: '', content: '' }
 
@@ -100,7 +101,7 @@ export default function WhyAfroTask() {
     )
   }, [allBlogs, searchTerm])
 
-  useEffect(() => { setVisibleCount(3) }, [searchTerm])
+  useEffect(() => { setVisibleCount() }, [searchTerm])
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -206,12 +207,12 @@ export default function WhyAfroTask() {
               </button>
             )}
           </div>
-          <button
+          {/* <button
             onClick={openCreate}
             className="bg-white text-[#00564C] font-semibold px-5 py-4 rounded-2xl hover:bg-green-50 transition whitespace-nowrap shadow-lg"
           >
             + Create Blog
-          </button>
+          </button> */}
         </div>
 
         {inputFocused && (
@@ -244,53 +245,61 @@ export default function WhyAfroTask() {
         )}
       </div>
 
-      {/* Blog list */}
-      <div className="px-4 sm:px-8 lg:px-12 py-12 lg:py-16">
-        <div className="max-w-6xl mx-auto lg:space-y-16 space-y-6">
-          {filteredBlogs.slice(0, visibleCount).map((blog) => (
-            <div key={blog.id} className="relative group">
-              <BlogCard
-                title={blog.title}
-                description={blog.description}
-                author={blog.author}
-                date={blog.date}
-                link={blog.link}
-                onReadMore={blog.isFirestore ? () => navigate(`/blogs/${blog.id}`) : undefined}
-              />
-              {/* Edit / Delete — only for the blog's author */}
-              {blog.isFirestore && user && blog.authorId === user.id && (
-                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => openEdit(blog)}
-                    className="bg-white/90 hover:bg-white text-[#00564C] p-2 rounded-lg shadow-md transition"
-                    title="Edit blog"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(blog)}
-                    className="bg-white/90 hover:bg-white text-red-600 p-2 rounded-lg shadow-md transition"
-                    title="Delete blog"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* <ProductSection /> */}
 
-        {visibleCount < filteredBlogs.length && (
-          <div className="flex justify-center mt-10">
-            <button
-              onClick={() => setVisibleCount(c => c + 5)}
-              className="bg-white text-[#00564C] font-semibold px-8 py-4 rounded-2xl hover:bg-green-50 transition shadow-lg text-lg"
-            >
-              View More
-            </button>
+      {/* Blog list */}
+      <div className="p-4 sm:p-6 lg:p-8">
+  
+          {/* Masonry layout */}
+          <div className="mx-auto max-w-7xl columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+            {filteredBlogs.slice(0, visibleCount).map((blog) => (
+              <div key={blog.id} className="relative group break-inside-avoid mb-6">
+                
+                <BlogCard
+                  title={blog.title}
+                  description={blog.description}
+                  author={blog.author}
+                  date={blog.date}
+                  link={blog.link}
+                  onReadMore={
+                    blog.isFirestore ? () => navigate(`/blogs/${blog.id}`) : undefined
+                  }
+                />
+
+                {/* Edit / Delete */}
+                {blog.isFirestore && user && blog.authorId === user.id && (
+                  <div className="absolute top-3 right-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => openEdit(blog)}
+                      className="bg-white/90 hover:bg-white text-[#00564C] p-2 rounded-lg shadow-md"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(blog)}
+                      className="bg-white/90 hover:bg-white text-red-600 p-2 rounded-lg shadow-md"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+
+          {/* View More button (IMPORTANT: outside columns) */}
+          {visibleCount < filteredBlogs.length && (
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={() => setVisibleCount((c) => c + 5)}
+                className="bg-white text-[#00564C] font-semibold px-6 sm:px-8 py-3 sm:py-4 rounded-2xl hover:bg-green-50 transition shadow-lg text-base sm:text-lg"
+              >
+                View More
+              </button>
+            </div>
+          )}
+        </div>
 
       <Footer />
 
