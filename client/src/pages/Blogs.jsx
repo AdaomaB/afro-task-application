@@ -26,7 +26,7 @@ function Toast({ message, type = 'success', onClose }) {
   )
 }
 
-export default function WhyAfroTask() {
+export default function Blogs() {
   const { user } = useContext(AuthContext)
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')

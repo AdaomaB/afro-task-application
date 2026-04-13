@@ -45,16 +45,6 @@ import MyJobs from './pages/MyJobs';
 import PublicProfilePage from './pages/PublicProfilePage';
 import PreProjectChat from './pages/PreProjectChat';
 import ProjectWorkspace from './pages/ProjectWorkspace';
-import LandingPage from './pages/LandingPage';
-import PolicyPage from './pages/PolicyPage';
-import TermsPage from './pages/TermsPage';
-import Blogs from './pages/Blogs';
-import SearchResults from './pages/SearchResults';
-import FreelancersPage from './pages/FreelancersPage';
-import BlogPage from './pages/BlogPage';
-import AboutPage from './pages/AboutPage';
-import NotFound from './pages/NotFound';
-import WhatsAppBubble from './components/WhatsAppBubble';
 import AppSettingsPage from './pages/AppSettingsPage';
 import AdminDashboard from './pages/AdminDashboard';
 
