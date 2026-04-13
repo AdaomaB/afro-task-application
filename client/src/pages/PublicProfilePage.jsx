@@ -90,7 +90,16 @@ const PublicProfilePage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  // Image modal state
+  const [showImageModal, setShowImageModal] = useState(false);
+
+  // Edit profile state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const isOwnProfile = user?.id === userId;
+
   const isFreelancer = profile?.role === "freelancer";
   const isClient = profile?.role === "client";
 
@@ -116,11 +125,161 @@ const PublicProfilePage = () => {
     }
   }, [userId]);
 
-  useEffect(() => {
+useEffect(() => {
     if (userId) {
       fetchShowcaseProjects(userId);
     }
   }, [userId]);
+
+  // Edit profile handlers
+// Profile image upload handlers
+  const [showProfileImageUpload, setShowProfileImageUpload] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
+
+  // Cover photo upload handlers
+  const [showCoverPhotoUpload, setShowCoverPhotoUpload] = useState(false);
+  const [coverPhotoFile, setCoverPhotoFile] = useState(null);
+  const [coverPhotoPreview, setCoverPhotoPreview] = useState(null);
+
+  const openEditProfile = () => {
+    setEditForm({
+      fullName: profile?.fullName || '',
+      country: profile?.country || '',
+      professionalTitle: profile?.professionalTitle || '',
+      yearsOfExperience: profile?.yearsOfExperience || '',
+      hourlyRate: profile?.hourlyRate || '',
+      availability: profile?.availability || '',
+      bio: profile?.bio || profile?.about?.bio || '',
+      skills: profile?.skills?.join(', ') || profile?.about?.skills?.join(', ') || '',
+      languages: profile?.languages?.join(', ') || '',
+      whatsapp: profile?.whatsapp || '',
+      companyName: profile?.companyName || '',
+      industry: profile?.industry || '',
+      hiringLookingFor: profile?.hiringPreferences?.lookingFor || '',
+      hiringBudgetRange: profile?.hiringPreferences?.budgetRange || '',
+      socialLinkedin: profile?.socialLinks?.linkedin || profile?.linkedIn || '',
+      socialGithub: profile?.socialLinks?.github || '',
+      socialPortfolio: profile?.socialLinks?.portfolio || profile?.portfolioWebsite || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const openProfileImageUpload = () => {
+    setShowProfileImageUpload(true);
+    setShowImageModal(false);
+  };
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImageFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setProfileImagePreview(previewUrl);
+    }
+  };
+
+  const handleProfileImageUpload = async () => {
+    if (!profileImageFile) {
+      toast.error("Please select an image");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('profileImage', profileImageFile);
+
+    try {
+      await api.put(`/profile/${userId}/image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success("Profile picture updated successfully!");
+      setShowProfileImageUpload(false);
+      setProfileImageFile(null);
+      setProfileImagePreview(null);
+      fetchProfile();
+    } catch (error) {
+      toast.error("Failed to upload profile picture");
+    }
+  };
+
+  const openCoverPhotoUpload = () => {
+    setShowCoverPhotoUpload(true);
+    setShowImageModal(false);
+  };
+
+  const handleCoverPhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverPhotoFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setCoverPhotoPreview(previewUrl);
+    }
+  };
+
+  const handleCoverPhotoUpload = async () => {
+    if (!coverPhotoFile) {
+      toast.error("Please select an image");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('coverPhoto', coverPhotoFile);
+
+    try {
+      await api.put(`/profile/${userId}/cover`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success("Cover photo updated successfully!");
+      setShowCoverPhotoUpload(false);
+      setCoverPhotoFile(null);
+      setCoverPhotoPreview(null);
+      fetchProfile();
+    } catch (error) {
+      toast.error("Failed to upload cover photo");
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    const skillsArray = editForm.skills.split(',').map(s => s.trim()).filter(Boolean);
+    const languagesArray = editForm.languages.split(',').map(s => s.trim()).filter(Boolean);
+    const socialLinksObj = {
+      linkedin: editForm.socialLinkedin || '',
+      github: editForm.socialGithub || '',
+      portfolio: editForm.socialPortfolio || '',
+    };
+
+    const formData = new FormData();
+    formData.append('fullName', editForm.fullName);
+    formData.append('country', editForm.country);
+    formData.append('professionalTitle', editForm.professionalTitle);
+    formData.append('yearsOfExperience', editForm.yearsOfExperience);
+    formData.append('hourlyRate', editForm.hourlyRate);
+    formData.append('availability', editForm.availability);
+    formData.append('bio', editForm.bio);
+    formData.append('skills', JSON.stringify(skillsArray));
+    formData.append('languages', JSON.stringify(languagesArray));
+    formData.append('whatsapp', editForm.whatsapp);
+    formData.append('companyName', editForm.companyName);
+    formData.append('industry', editForm.industry);
+    formData.append('hiringPreferences', JSON.stringify({
+      lookingFor: editForm.hiringLookingFor,
+      budgetRange: editForm.hiringBudgetRange,
+    }));
+    formData.append('socialLinks', JSON.stringify(socialLinksObj));
+
+    setSavingProfile(true);
+    try {
+      await api.put(`/profile/${userId}`, formData);
+      toast.success('Profile updated successfully!');
+      setShowEditModal(false);
+      fetchProfile();
+    } catch (error) {
+      toast.error('Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
 
   const fetchShowcaseProjects = async (uid) => {
     setLoadingShowcase(true);
@@ -408,7 +567,7 @@ const PublicProfilePage = () => {
 
       <div className="w-screen lg:flex-1 lg:ml-64">
         <Navbar />
-        <div className="p-2 md:p-8">
+        <div className="py-2 md:p-8">
           <div className="mx-auto">
             {/* Back Button */}
             <button
@@ -420,21 +579,27 @@ const PublicProfilePage = () => {
             </button>
 
             {/* Cover Banner */}
-            <motion.div
+
+<motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`lg:h-64 h-32 rounded-t-3xl ${
-                isFreelancer
-                  ? "bg-gradient-to-r from-green-500 to-emerald-600"
-                  : "bg-gradient-to-r from-yellow-500 to-orange-500"
-              } relative`}
+              className={`lg:h-64 md:h-32 h-24 lg:rounded-t-3xl relative ${
+                profile?.coverPhoto
+                  ? "bg-cover bg-center bg-no-repeat"
+                  : isFreelancer
+                    ? "bg-gradient-to-r from-green-500 to-emerald-600"
+                    : "bg-gradient-to-r from-yellow-500 to-orange-500"
+              } ${profile?.coverPhoto ? `bg-[url(${profile.coverPhoto})]` : ""}`}
+              style={profile?.coverPhoto ? { backgroundImage: `url(${profile.coverPhoto})` } : {}}
             >
-              <div className="absolute lg:-bottom-16 -bottom-10 left-8">
+
+              <div className="absolute lg:-bottom-16 -bottom-12 lg:left-8 left-4">
                 {profile?.profileImage ? (
                   <img
                     src={profile.profileImage}
                     alt={profile?.fullName}
-                    className="lg:w-32 lg:h-32 w-20 h-20 rounded-full object-cover lg:border-8 border-4 border-white shadow-xl"
+                    className="lg:w-32 lg:h-32 w-24 h-24 rounded-full object-cover lg:border-8 border-4 border-white shadow-xl cursor-pointer hover:shadow-2xl transition-shadow"
+                    onClick={() => setShowImageModal(true)}
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || "User")}&size=200&background=${isFreelancer ? "10b981" : "eab308"}&color=fff`;
@@ -442,9 +607,10 @@ const PublicProfilePage = () => {
                   />
                 ) : (
                   <div
-                    className={`w-32 h-32 rounded-full ${
+                    className={`w-32 h-32 rounded-full cursor-pointer hover:shadow-2xl transition-shadow ${
                       isFreelancer ? "bg-green-500" : "bg-yellow-500"
                     } border-8 border-white flex items-center justify-center text-white text-5xl font-bold shadow-xl`}
+                    onClick={() => setShowImageModal(true)}
                   >
                     {profile?.fullName?.charAt(0)?.toUpperCase() || "U"}
                   </div>
@@ -457,9 +623,9 @@ const PublicProfilePage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-b-3xl shadow-lg lg:pt-20 pt-10 px-8 pb-6 mb-6"
+              className="bg-white lg:rounded-b-3xl lg:shadow-lg lg:pt-20 pt-12 px-4 lg:px-6 pb-6 mb-6 "
             >
-              <div className="grid grid-rows-1 lg:grid-cols-2 md:grid-cols-2 justify-between items-end">
+              <div className="grid grid-rows-1 md:grid-cols-1 justify-between items-end">
                 <div>
                   <h1 className="lg:text-3xl text-xl font-bold text-gray-900 mb-2">
                     {profile?.fullName}
@@ -479,35 +645,51 @@ const PublicProfilePage = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="lg:text-2xl text-xl font-bold text-gray-900">
-                        {profile.followersCount || 0}
-                      </p>
-                      <p className="lg:text-sm text-xs text-gray-600">
-                        Followers
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="lg:text-2xl text-xl  font-bold text-gray-900">
-                        {profile.followingCount || 0}
-                      </p>
-                      <p className="lg:text-sm text-xs text-gray-600">
-                        Following
-                      </p>
-                    </div>
-                    {isFreelancer && (
+                  <div className="flex flex-row justify-between items-center w-full">
+                    <div className="flex items-center justify-start gap-4">
                       <div className="text-center">
                         <p className="lg:text-2xl text-xl font-bold text-gray-900">
-                          {profile.projects?.length || 0}
+                          {profile.followersCount || 0}
                         </p>
                         <p className="lg:text-sm text-xs text-gray-600">
-                          Projects
+                          Followers
                         </p>
                       </div>
-                    )}
+                      <div className="text-center">
+                        <p className="lg:text-2xl text-xl  font-bold text-gray-900">
+                          {profile.followingCount || 0}
+                        </p>
+                        <p className="lg:text-sm text-xs text-gray-600">
+                          Following
+                        </p>
+                      </div>
+                      {isFreelancer && (
+                        <div className="text-center">
+                          <p className="lg:text-2xl text-xl font-bold text-gray-900">
+                            {profile.projects?.length || 0}
+                          </p>
+                          <p className="lg:text-sm text-xs text-gray-600">
+                            Projects
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {isOwnProfile && activeTab === "about" && (
+                    <div className="flex items-center justify-end">
+                      <button
+                        onClick={openEditProfile}
+                        className="px-6 py-3 text-gray-600 font-medium transition flex items-end justify-end gap-2 mx-auto"
+                      >
+                        <svg className="md:w-8 md:h-8 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   </div>
                 </div>
+
                 {!isOwnProfile && (
                   <div className="flex justify-end mt-4 gap-3">
                     <button
@@ -1831,8 +2013,387 @@ const PublicProfilePage = () => {
         )}
       </AnimatePresence>
 
+      {/* ── Edit Profile Modal ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 lg:p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white lg:rounded-3xl w-full lg:max-w-2xl w-screen lg:max-h-[90vh] h-screen overflow-y-auto shadow-2xl"
+            >
+              <div className="sticky top-0 flex items-center justify-between lg:p-6 p-3 border-b border-gray-100 bg-white z-10">
+                <h3 className="lg:text-2xl text-xl font-bold text-gray-900">
+                  Edit Profile
+                </h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-xl transition"
+                >
+                  <X className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Basic Info */}
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    Basic Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.fullName}
+                        onChange={(e) => setEditForm({...editForm, fullName: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.country}
+                        onChange={(e) => setEditForm({...editForm, country: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Info - Freelancer */}
+                {isFreelancer && (
+                  <div className="bg-emerald-50 rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                      Professional Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Professional Title
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.professionalTitle}
+                          onChange={(e) => setEditForm({...editForm, professionalTitle: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          placeholder="e.g., Full Stack Developer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Years of Experience
+                        </label>
+                        <input
+                          type="number"
+                          value={editForm.yearsOfExperience}
+                          onChange={(e) => setEditForm({...editForm, yearsOfExperience: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                          placeholder="5"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Hourly Rate ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editForm.hourlyRate}
+                          onChange={(e) => setEditForm({...editForm, hourlyRate: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Availability
+                        </label>
+                        <select
+                          value={editForm.availability}
+                          onChange={(e) => setEditForm({...editForm, availability: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        >
+                          <option value="">Select availability</option>
+                          <option value="Full-time">Full-time</option>
+                          <option value="Part-time">Part-time</option>
+                          <option value="As needed">As needed</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* About/Bio */}
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    About
+                  </h4>
+                  <textarea
+                    value={editForm.bio}
+                    onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                    placeholder="Tell us about yourself and your experience..."
+                  />
+                </div>
+
+                {/* Skills & Languages */}
+                {isFreelancer && (
+                  <>
+                    <div className="bg-emerald-50 rounded-2xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                        Skills (comma separated)
+                      </h4>
+                      <input
+                        type="text"
+                        value={editForm.skills}
+                        onChange={(e) => setEditForm({...editForm, skills: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="React, Node.js, Python, AWS..."
+                      />
+                      <p className="text-xs text-emerald-700 mt-2">Enter skills separated by commas</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-2xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                        Languages (comma separated)
+                      </h4>
+                      <input
+                        type="text"
+                        value={editForm.languages}
+                        onChange={(e) => setEditForm({...editForm, languages: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="English, Spanish, French..."
+                      />
+                      <p className="text-xs text-blue-700 mt-2">Enter languages separated by commas</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Contact */}
+                <div className="bg-gray-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    Contact Information
+                  </h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      WhatsApp Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={editForm.whatsapp}
+                      onChange={(e) => setEditForm({...editForm, whatsapp: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="bg-indigo-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                    Social Links
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        LinkedIn
+                      </label>
+                      <input
+                        type="url"
+                        value={editForm.socialLinkedin}
+                        onChange={(e) => setEditForm({...editForm, socialLinkedin: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="https://linkedin.com/in/username"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        GitHub
+                      </label>
+                      <input
+                        type="url"
+                        value={editForm.socialGithub}
+                        onChange={(e) => setEditForm({...editForm, socialGithub: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="https://github.com/username"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Portfolio
+                      </label>
+                      <input
+                        type="url"
+                        value={editForm.socialPortfolio}
+                        onChange={(e) => setEditForm({...editForm, socialPortfolio: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="https://yourportfolio.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                {isClient && (
+                  <div className="bg-yellow-50 rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
+                      Company Information
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Company Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.companyName}
+                          onChange={(e) => setEditForm({...editForm, companyName: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Industry
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.industry}
+                          onChange={(e) => setEditForm({...editForm, industry: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                          placeholder="e.g., Technology, Finance"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          What you're looking for
+                        </label>
+                        <textarea
+                          value={editForm.hiringLookingFor}
+                          onChange={(e) => setEditForm({...editForm, hiringLookingFor: e.target.value})}
+                          rows={3}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                          placeholder="Full stack developers, mobile app experts..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Budget Range
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.hiringBudgetRange}
+                          onChange={(e) => setEditForm({...editForm, hiringBudgetRange: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                          placeholder="e.g., $1,000 - $5,000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-3xl">
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowEditModal(false)}
+                    className="md:px-8 p-3 py-3 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 font-medium transition flex-1 md:flex-none"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="md:px-8 p-3 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-2xl font-medium transition flex-1 md:flex-none flex items-center justify-center gap-2"
+                  >
+                    {savingProfile ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Profile Image Modal ───────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showImageModal && profile && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 xl:p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className=" backdrop-blur-sm xl:rounded-3xl xl:p-8 max-w-screen xl:max-w-2xl w-full max-h-[90vh] overflow-hidden relative shadow-2xl"
+            >
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute z-10 top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full transition shadow-lg"
+              >
+                <X className="w-6 h-6 text-gray-700" />
+              </button>
+              
+              <div className="flex flex-col items-center gap-6 pt-8 pb-12">
+                <div className="relative">
+                  {profile.profileImage ? (
+                    <img
+                      src={profile.profileImage}
+                      alt={profile.fullName}
+    className="max-w-screen max-h-screen w-auto h-auto object-cover"
+
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.fullName || "User")}&size=320&background=${isFreelancer ? "10b981" : "eab308"}&color=fff`;
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className={`w-64 h-64 lg:w-80 lg:h-80 rounded-full border-8 border-white shadow-2xl flex items-center justify-center text-6xl font-bold mx-auto ${isFreelancer ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}`}
+                    >
+                      {profile?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                </div>
+                  <h2 className="absolute translate-y-1/2 h-screen text-sm lg:text-2xl font-semibold text-white/30 text-center">
+                  {profile.fullName} <span className="text-xs lg:text-lg font-normal">@AFRO TASK</span>
+                  </h2>
+                
+                
+                <div className="absolute flex flex-col justify-between gap-3  z-20">
+                  {isOwnProfile && (
+                    <button
+                      onClick={() => {
+                        setShowImageModal(false);
+                        openProfileImageUpload();
+                      }}
+                      className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-medium transition shadow-lg flex items-center gap-2 z-20 w-max self-end"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit Profile Picture
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ── Create Project Modal ──────────────────────────────────────────── */}
       {showProjectModal && (
+
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
