@@ -49,7 +49,7 @@ const ProfileCompletionWidget = ({ userRole }) => {
         <div className="flex items-start gap-4">
           <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm mb-1">
+            <p className="font-semibold text-gray-500 text-sm mb-1">
               Your profile is {pct}% complete
             </p>
             <p className="text-xs text-gray-600 mb-3">
