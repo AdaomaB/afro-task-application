@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Paperclip, Smile, Search, MoreVertical } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
+import { useDarkMode } from '../context/DarkModeContext';
 import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
 import api from '../services/api';
@@ -11,6 +12,7 @@ import EmojiPicker from 'emoji-picker-react';
 
 const MessagesPage = () => {
   const { user } = useContext(AuthContext);
+  const { dark } = useDarkMode();
   const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -159,7 +161,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar />
       
       <div className="flex-1 lg:ml-64">
@@ -167,22 +169,21 @@ const MessagesPage = () => {
         
         <div className="h-[calc(100vh-64px)] flex flex-col md:flex-row">
           {/* Conversations List */}
-          <div className={`${selectedChat ? 'hidden md:block' : 'block'} w-full md:w-80 bg-white border-r border-gray-200 flex flex-col`}>
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Messages</h2>
+          <div className={`${selectedChat ? 'hidden md:block' : 'block'} w-full md:w-80 ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col`}>
+            <div className={`p-4 border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Messages</h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
                   placeholder="Search conversations..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${dark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 text-gray-900'}`}
                 />
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-none">
               {conversations.map((conv) => {
-                // Safely extract last message text
                 const lastMessageText = conv.lastMessage?.text || 
                                        (conv.lastMessage?.fileUrl ? '📎 File' : 'No messages yet');
                 
@@ -190,8 +191,10 @@ const MessagesPage = () => {
                   <button
                     key={conv.id}
                     onClick={() => setSelectedChat(conv)}
-                    className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 overflow-x-hidden transition ${
-                      selectedChat?.id === conv.id ? 'bg-green-50' : ''
+                    className={`w-full p-4 flex items-center gap-3 overflow-x-hidden transition ${
+                      selectedChat?.id === conv.id
+                        ? dark ? 'bg-green-900/40' : 'bg-green-50'
+                        : dark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                     }`}
                   >
                     <img
@@ -200,8 +203,8 @@ const MessagesPage = () => {
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-900">{conv.otherUser?.fullName || 'Unknown User'}</p>
-                      <p className="text-sm text-gray-500 truncate ">{lastMessageText} </p>
+                      <p className={`font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{conv.otherUser?.fullName || 'Unknown User'}</p>
+                      <p className={`text-sm truncate ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{lastMessageText}</p>
                     </div>
                     {conv.unreadCount > 0 && (
                       <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
@@ -212,7 +215,7 @@ const MessagesPage = () => {
                 );
               })}
               {conversations.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
+                <div className={`p-8 text-center ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <p>No conversations yet</p>
                 </div>
               )}
@@ -224,13 +227,13 @@ const MessagesPage = () => {
             {selectedChat ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between">
+                <div className={`p-4 border-b flex items-center justify-between ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSelectedChat(null)}
-                      className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition"
+                      className={`md:hidden p-2 rounded-lg transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                     >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-6 h-6 ${dark ? 'text-gray-300' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
@@ -240,20 +243,19 @@ const MessagesPage = () => {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                     <div>
-                      <p className="font-semibold text-gray-900">{selectedChat.otherUser?.fullName}</p>
-                      <p className="text-sm text-gray-500">{selectedChat.otherUser?.role}</p>
+                      <p className={`font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{selectedChat.otherUser?.fullName}</p>
+                      <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{selectedChat.otherUser?.role}</p>
                     </div>
                   </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                    <MoreVertical className="w-5 h-5 text-gray-600" />
+                  <button className={`p-2 rounded-lg transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <MoreVertical className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
                   </button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className={`flex-1 overflow-y-auto p-6 space-y-4 ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
                   <AnimatePresence>
                     {messages.map((message) => {
-                      // Compare with user.id to check if message is from current user
                       const isOwn = message.senderId === user?.id;
                       
                       return (
@@ -278,7 +280,7 @@ const MessagesPage = () => {
                                 <div className={`px-4 py-2 rounded-2xl ${
                                   isOwn 
                                     ? isFreelancer ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-                                    : 'bg-gray-200 text-gray-900'
+                                    : dark ? 'bg-gray-700 text-gray-100' : 'bg-gray-200 text-gray-900'
                                 }`}>
                                   <p className="text-sm">{String(message.text)}</p>
                                 </div>
@@ -288,22 +290,24 @@ const MessagesPage = () => {
                                   href={message.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`block px-4 py-3 rounded-2xl ${
-                                    isOwn ? 'bg-green-100' : 'bg-gray-200'
-                                  } hover:opacity-80 transition`}
+                                  className={`block px-4 py-3 rounded-2xl hover:opacity-80 transition ${
+                                    isOwn
+                                      ? dark ? 'bg-green-900/50 text-green-100' : 'bg-green-100'
+                                      : dark ? 'bg-gray-700 text-gray-100' : 'bg-gray-200'
+                                  }`}
                                 >
                                   <div className="flex items-center gap-2">
                                     <Paperclip className="w-4 h-4" />
                                     <div>
                                       <p className="text-sm font-medium">{message.fileName || 'File'}</p>
                                       {message.fileSize && (
-                                        <p className="text-xs text-gray-600">{formatFileSize(message.fileSize)}</p>
+                                        <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{formatFileSize(message.fileSize)}</p>
                                       )}
                                     </div>
                                   </div>
                                 </a>
                               )}
-                              <p className="text-xs text-gray-500 mt-1">{formatTime(message.createdAt)}</p>
+                              <p className={`text-xs mt-1 ${dark ? 'text-gray-500' : 'text-gray-500'}`}>{formatTime(message.createdAt)}</p>
                             </div>
                           </div>
                         </motion.div>
@@ -314,7 +318,7 @@ const MessagesPage = () => {
                 </div>
 
                 {/* Message Input */}
-                <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200">
+                <form onSubmit={handleSendMessage} className={`p-4 border-t ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <div className="flex items-center gap-3">
                     <input
                       type="file"
@@ -327,13 +331,11 @@ const MessagesPage = () => {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+                      className={`p-2 rounded-lg transition disabled:opacity-50 ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                       title={uploading ? 'Uploading...' : 'Attach files (multiple supported)'}
                     >
-                      <Paperclip className="w-5 h-5 text-gray-600" />
-                      {uploading && (
-                        <span className="ml-1 text-xs">...</span>
-                      )}
+                      <Paperclip className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
+                      {uploading && <span className="ml-1 text-xs">...</span>}
                     </button>
                     
                     <div className="flex-1 relative">
@@ -342,14 +344,14 @@ const MessagesPage = () => {
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 pr-12 border rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent ${dark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300 text-gray-900'}`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition"
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full transition ${dark ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
                       >
-                        <Smile className="w-5 h-5 text-gray-600" />
+                        <Smile className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
                       </button>
                       {showEmojiPicker && (
                         <div className="absolute bottom-full right-0 mb-2">
@@ -358,6 +360,7 @@ const MessagesPage = () => {
                               setNewMessage(prev => prev + emojiData.emoji);
                               setShowEmojiPicker(false);
                             }}
+                            theme={dark ? 'dark' : 'light'}
                             width={300}
                             height={400}
                           />
@@ -380,7 +383,7 @@ const MessagesPage = () => {
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className={`flex-1 flex items-center justify-center ${dark ? 'bg-gray-900 text-gray-400' : 'text-gray-500'}`}>
                 <p>Select a conversation to start messaging</p>
               </div>
             )}

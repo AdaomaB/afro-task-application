@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import { useDarkMode } from '../context/DarkModeContext';
 import Sidebar from '../components/Sidebar';
 
 const MyProjects = () => {
   const { logout, user } = useContext(AuthContext);
+  const { dark } = useDarkMode();
   const { status } = useParams();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
@@ -43,7 +45,7 @@ const MyProjects = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar role={user?.role} onLogout={logout} />
       
       <div className="flex-1 lg:ml-64 p-4 md:p-8">
@@ -52,14 +54,14 @@ const MyProjects = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-5xl mx-auto"
         >
-          <h1 className="text-2xl text-center lg:text-start font-bold text-gray-800 mb-8">
+          <h1 className={`text-2xl text-center lg:text-start font-bold mb-8 ${dark ? 'text-white' : 'text-gray-800'}`}>
             {status === 'ongoing' ? 'Ongoing' : 'Completed'} Projects
           </h1>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 animate-pulse">
+                <div key={i} className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-6 animate-pulse`}>
                   <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
                   <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
                 </div>
@@ -72,13 +74,13 @@ const MyProjects = () => {
                   key={project.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-2xl shadow-lg p-6"
+                  className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold text-gray-800">{project.job?.title}</h3>
+                    <h3 className={`text-xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>{project.job?.title}</h3>
                     {getStatusBadge(project.status)}
                   </div>
-                  <p className="text-gray-600 mt-2 line-clamp-2">{project.job?.description}</p>
+                  <p className={`mt-2 line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{project.job?.description}</p>
                   
                   <div className="mt-4 flex items-center gap-3">
                     <img
@@ -87,10 +89,10 @@ const MyProjects = () => {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                     <div>
-                      <p className="font-medium text-gray-800">
+                      <p className={`font-medium ${dark ? 'text-gray-200' : 'text-gray-800'}`}>
                         {isFreelancer ? project.client?.fullName : project.freelancer?.fullName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                         {isFreelancer ? project.client?.companyName : project.freelancer?.skillCategory}
                       </p>
                     </div>
@@ -107,7 +109,7 @@ const MyProjects = () => {
                     </div>
                   )}
 
-                  <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
+                  <div className={`mt-4 pt-4 border-t text-sm ${dark ? 'border-gray-700 text-gray-400' : 'border-gray-100 text-gray-500'}`}>
                     <p>Started: {new Date(project.startedAt).toLocaleDateString()}</p>
                     {project.completedAt && (
                       <p>Completed: {new Date(project.completedAt).toLocaleDateString()}</p>
@@ -129,7 +131,7 @@ const MyProjects = () => {
 
           {projects.length === 0 && !loading && (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No {status} projects</p>
+              <p className={`text-lg ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No {status} projects</p>
             </div>
           )}
         </motion.div>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Cropper from 'react-easy-crop';
 import imageCompression from 'browser-image-compression';
 import { AuthContext } from "../context/AuthContext";
+import { useDarkMode } from "../context/DarkModeContext";
 import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
 import ReviewModal from "../components/ReviewModal";
@@ -57,6 +58,7 @@ const PublicProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { dark } = useDarkMode();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
@@ -586,7 +588,7 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <Sidebar />
         <div className="flex-1 lg:ml-64">
           <Navbar />
@@ -594,7 +596,7 @@ useEffect(() => {
             <div className="max-w-6xl mx-auto">
               <div className="animate-pulse">
                 <div className="h-64 bg-gray-200 rounded-t-3xl mb-20"></div>
-                <div className="bg-white rounded-b-3xl p-8">
+                <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-b-3xl p-8`}>
                   <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
                   <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                 </div>
@@ -608,13 +610,13 @@ useEffect(() => {
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <Sidebar />
         <div className="flex-1 lg:ml-64">
           <Navbar />
           <div className="p-4 md:p-8">
             <div className="max-w-6xl mx-auto text-center py-12">
-              <p className="text-gray-600 text-lg">Profile not found</p>
+              <p className={`text-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Profile not found</p>
               <button
                 onClick={() => navigate(-1)}
                 className="mt-4 px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
@@ -629,7 +631,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="flex min-h-screen  bg-gray-50">
+    <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar />
 
       <div className="w-screen lg:flex-1 lg:ml-64">
@@ -639,7 +641,7 @@ useEffect(() => {
             {/* Back Button */}
             <button
               onClick={() => navigate(-1)}
-              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+              className={`mb-4 flex items-center gap-2 transition ${dark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900'}`}
             >
               <ArrowLeft className="w-5 h-5" />
               Back
@@ -691,14 +693,14 @@ useEffect(() => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-white lg:rounded-b-3xl lg:shadow-lg lg:pt-20 pt-12 px-4 lg:px-6 pb-6 mb-6 "
+              className={`${dark ? 'bg-gray-800' : 'bg-white'} lg:rounded-b-3xl lg:shadow-lg lg:pt-20 pt-12 px-4 lg:px-6 pb-6 mb-6`}
             >
               <div className="grid grid-rows-1 md:grid-cols-1 justify-between items-end">
                 <div>
-                  <h1 className="lg:text-3xl text-xl font-bold text-gray-900 mb-2">
+                  <h1 className={`lg:text-3xl text-xl font-bold mb-2 ${dark ? 'text-white' : 'text-gray-900'}`}>
                     {profile?.fullName}
                   </h1>
-                  <div className="flex items-center gap-4 text-gray-600 lg:text-base text-sm mb-4">
+                  <div className={`flex items-center gap-4 lg:text-base text-sm mb-4 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                     {profile?.country && (
                       <div className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
@@ -716,27 +718,27 @@ useEffect(() => {
                   <div className="flex flex-row justify-between items-center w-full">
                     <div className="flex items-center justify-start gap-4">
                       <div className="text-center">
-                        <p className="lg:text-2xl text-xl font-bold text-gray-900">
+                        <p className={`lg:text-2xl text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>
                           {profile.followersCount || 0}
                         </p>
-                        <p className="lg:text-sm text-xs text-gray-600">
+                        <p className={`lg:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                           Followers
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="lg:text-2xl text-xl  font-bold text-gray-900">
+                        <p className={`lg:text-2xl text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>
                           {profile.followingCount || 0}
                         </p>
-                        <p className="lg:text-sm text-xs text-gray-600">
+                        <p className={`lg:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                           Following
                         </p>
                       </div>
                       {isFreelancer && (
                         <div className="text-center">
-                          <p className="lg:text-2xl text-xl font-bold text-gray-900">
+                          <p className={`lg:text-2xl text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>
                             {profile.projects?.length || 0}
                           </p>
-                          <p className="lg:text-sm text-xs text-gray-600">
+                          <p className={`lg:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             Projects
                           </p>
                         </div>
@@ -747,7 +749,7 @@ useEffect(() => {
                     <div className="flex items-center justify-end">
                       <button
                         onClick={openEditProfile}
-                        className="px-6 py-3 text-gray-600 font-medium transition flex items-end justify-end gap-2 mx-auto"
+                        className={`px-6 py-3 font-medium transition flex items-end justify-end gap-2 mx-auto ${dark ? 'text-gray-300' : 'text-gray-600'}`}
                       >
                         <svg className="md:w-8 md:h-8 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -798,8 +800,8 @@ useEffect(() => {
             )}
 
             {/* Tabs */}
-            <div className="bg-white rounded-2xl shadow-lg mb-6">
-              <div className="border-b border-gray-200">
+            <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg mb-6`}>
+              <div className={`border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="overflow-x-auto no-scrollbar pb-2">
                   <div className="flex flex-nowrap gap-3 sm:gap-6 px-6 sm:px-8 min-w-max">
                     {tabs.map((tab) => (
@@ -811,7 +813,7 @@ useEffect(() => {
                             ? isFreelancer
                               ? "text-green-600"
                               : "text-yellow-600"
-                            : "text-gray-600 hover:text-gray-900"
+                            : dark ? "text-gray-400 hover:text-gray-200" : "text-gray-600 hover:text-gray-900"
                         }`}
                       >
                         {tabLabels[tab]}
@@ -839,8 +841,8 @@ useEffect(() => {
                   >
                     {/* Intro Video Section - Show for Freelancers */}
                     {isFreelancer && profile.introVideoUrl && (
-                      <div className="bg-gray-50 rounded-xl lg:p-6 p-3">
-                        <h3 className="lg:text-xl text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <div className={`${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl lg:p-6 p-3`}>
+                        <h3 className={`lg:text-xl text-sm font-bold mb-4 flex items-center gap-2 ${dark ? 'text-white' : 'text-gray-900'}`}>
                           <Award className="w-6 h-6 text-green-600" />
                           Introduction Video
                         </h3>
@@ -857,58 +859,38 @@ useEffect(() => {
                       (profile.professionalTitle ||
                         profile.bio ||
                         profile.yearsOfExperience) && (
-                        <div className="bg-gray-50 rounded-xl p-6">
-                          <h3 className="lg:text-xl text-sm font-bold text-gray-900 mb-4">
+                        <div className={`${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-6`}>
+                          <h3 className={`lg:text-xl text-sm font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>
                             Professional Information
                           </h3>
                           {profile.professionalTitle && (
                             <div className="mb-3">
-                              <span className="font-semibold text-gray-900">
-                                Title:{" "}
-                              </span>
-                              <span className="text-gray-700">
-                                {profile.professionalTitle}
-                              </span>
+                              <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Title: </span>
+                              <span className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.professionalTitle}</span>
                             </div>
                           )}
                           {profile.yearsOfExperience && (
                             <div className="mb-3">
-                              <span className="font-semibold text-gray-900">
-                                Experience:{" "}
-                              </span>
-                              <span className="text-gray-700">
-                                {profile.yearsOfExperience} years
-                              </span>
+                              <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Experience: </span>
+                              <span className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.yearsOfExperience} years</span>
                             </div>
                           )}
                           {profile.bio && (
                             <div className="mt-4">
-                              <p className="font-semibold text-gray-900 mb-2">
-                                Bio:
-                              </p>
-                              <p className="text-gray-700 leading-relaxed">
-                                {profile.bio}
-                              </p>
+                              <p className={`font-semibold mb-2 ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Bio:</p>
+                              <p className={`leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{profile.bio}</p>
                             </div>
                           )}
                           {profile.hourlyRate && (
                             <div className="mt-3">
-                              <span className="font-semibold text-gray-900">
-                                Hourly Rate:{" "}
-                              </span>
-                              <span className="text-green-600 font-bold">
-                                ${profile.hourlyRate}/hr
-                              </span>
+                              <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Hourly Rate: </span>
+                              <span className="text-green-600 font-bold">${profile.hourlyRate}/hr</span>
                             </div>
                           )}
                           {profile.availability && (
                             <div className="mt-3">
-                              <span className="font-semibold text-gray-900">
-                                Availability:{" "}
-                              </span>
-                              <span className="text-gray-700">
-                                {profile.availability}
-                              </span>
+                              <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Availability: </span>
+                              <span className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.availability}</span>
                             </div>
                           )}
                         </div>
@@ -916,114 +898,70 @@ useEffect(() => {
 
                     {/* Bio Section - Legacy */}
                     {profile.about?.bio && (
-                      <div className="bg-gray-50 rounded-xl p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">
-                          About
-                        </h3>
-                        <p className="text-gray-700">{profile.about.bio}</p>
+                      <div className={`${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-6`}>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>About</h3>
+                        <p className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.about.bio}</p>
                         {profile.about.experience && (
                           <div className="mt-3">
-                            <span className="font-semibold text-gray-900">
-                              Experience:{" "}
-                            </span>
-                            <span className="text-gray-700">
-                              {profile.about.experience}
-                            </span>
+                            <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Experience: </span>
+                            <span className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.about.experience}</span>
                           </div>
                         )}
                         {profile.about.education && (
                           <div className="mt-2">
-                            <span className="font-semibold text-gray-900">
-                              Education:{" "}
-                            </span>
-                            <span className="text-gray-700">
-                              {profile.about.education}
-                            </span>
+                            <span className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>Education: </span>
+                            <span className={dark ? 'text-gray-300' : 'text-gray-700'}>{profile.about.education}</span>
                           </div>
                         )}
                       </div>
                     )}
 
                     {/* Skills - From Onboarding */}
-                    {isFreelancer &&
-                      profile.skills &&
-                      profile.skills.length > 0 && (
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-4">
-                            Skills
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
+                    {isFreelancer && profile.skills && profile.skills.length > 0 && (
+                      <div>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Skills</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.skills.map((skill, index) => (
+                            <span key={index} className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                              {skill}
+                            </span>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* Languages - From Onboarding */}
-                    {isFreelancer &&
-                      profile.languages &&
-                      profile.languages.length > 0 && (
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-4">
-                            Languages
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.languages.map((language, index) => (
-                              <span
-                                key={index}
-                                className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                              >
-                                {language}
-                              </span>
-                            ))}
-                          </div>
+                    {isFreelancer && profile.languages && profile.languages.length > 0 && (
+                      <div>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Languages</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.languages.map((language, index) => (
+                            <span key={index} className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                              {language}
+                            </span>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* Social Links - From Onboarding */}
                     {isFreelancer && profile.socialLinks && (
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">
-                          Social Links
-                        </h3>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Social Links</h3>
                         <div className="space-y-2">
                           {profile.socialLinks.linkedin && (
-                            <a
-                              href={profile.socialLinks.linkedin}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              LinkedIn
+                            <a href={profile.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                              <ExternalLink className="w-4 h-4" />LinkedIn
                             </a>
                           )}
                           {profile.socialLinks.github && (
-                            <a
-                              href={profile.socialLinks.github}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              GitHub
+                            <a href={profile.socialLinks.github} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 ${dark ? 'text-gray-300 hover:text-white' : 'text-gray-800 hover:text-gray-900'}`}>
+                              <ExternalLink className="w-4 h-4" />GitHub
                             </a>
                           )}
                           {profile.socialLinks.portfolio && (
-                            <a
-                              href={profile.socialLinks.portfolio}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-green-600 hover:text-green-700"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                              Portfolio
+                            <a href={profile.socialLinks.portfolio} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 hover:text-green-700">
+                              <ExternalLink className="w-4 h-4" />Portfolio
                             </a>
                           )}
                         </div>
@@ -1032,27 +970,21 @@ useEffect(() => {
 
                     {/* Contact Information */}
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-4">
-                        Contact Information
-                      </h3>
+                      <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Contact Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                          <Mail className="w-5 h-5 text-gray-600" />
+                        <div className={`flex items-center gap-3 p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                          <Mail className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
                           <div>
-                            <p className="text-sm text-gray-600">Email</p>
-                            <p className="font-medium text-gray-900">
-                              {profile?.email}
-                            </p>
+                            <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Email</p>
+                            <p className={`font-medium ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{profile?.email}</p>
                           </div>
                         </div>
                         {profile?.whatsapp && (
-                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Phone className="w-5 h-5 text-gray-600" />
+                          <div className={`flex items-center gap-3 p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                            <Phone className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
                             <div>
-                              <p className="text-sm text-gray-600">WhatsApp</p>
-                              <p className="font-medium text-gray-900">
-                                {profile.whatsapp}
-                              </p>
+                              <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>WhatsApp</p>
+                              <p className={`font-medium ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{profile.whatsapp}</p>
                             </div>
                           </div>
                         )}
@@ -1060,122 +992,67 @@ useEffect(() => {
                     </div>
 
                     {/* Legacy Skills */}
-                    {isFreelancer &&
-                      profile.about?.skills &&
-                      profile.about.skills.length > 0 &&
-                      !profile.skills && (
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-4">
-                            Skills
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {profile.about.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
+                    {isFreelancer && profile.about?.skills && profile.about.skills.length > 0 && !profile.skills && (
+                      <div>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Skills</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.about.skills.map((skill, index) => (
+                            <span key={index} className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">{skill}</span>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* Legacy Links */}
-                    {isFreelancer &&
-                      (profile?.portfolioWebsite || profile?.linkedIn) &&
-                      !profile.socialLinks && (
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-4">
-                            Links
-                          </h3>
-                          <div className="space-y-2">
-                            {profile?.portfolioWebsite && (
-                              <a
-                                href={profile.portfolioWebsite}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-green-600 hover:text-green-700"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                                Portfolio Website
-                              </a>
-                            )}
-                            {profile?.linkedIn && (
-                              <a
-                                href={profile.linkedIn}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-green-600 hover:text-green-700"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                                LinkedIn Profile
-                              </a>
-                            )}
-                          </div>
+                    {isFreelancer && (profile?.portfolioWebsite || profile?.linkedIn) && !profile.socialLinks && (
+                      <div>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Links</h3>
+                        <div className="space-y-2">
+                          {profile?.portfolioWebsite && (
+                            <a href={profile.portfolioWebsite} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 hover:text-green-700">
+                              <ExternalLink className="w-4 h-4" />Portfolio Website
+                            </a>
+                          )}
+                          {profile?.linkedIn && (
+                            <a href={profile.linkedIn} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-green-600 hover:text-green-700">
+                              <ExternalLink className="w-4 h-4" />LinkedIn Profile
+                            </a>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* Company Info */}
                     {isClient && profile?.companyName && (
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">
-                          Company Information
-                        </h3>
+                        <h3 className={`text-xl font-bold mb-4 ${dark ? 'text-white' : 'text-gray-900'}`}>Company Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-600 mb-1">
-                              Company Name
-                            </p>
-                            <p className="font-medium text-gray-900">
-                              {profile.companyName}
-                            </p>
+                          <div className={`p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                            <p className={`text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Company Name</p>
+                            <p className={`font-medium ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{profile.companyName}</p>
                           </div>
                           {profile.companyWebsite && (
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Website
-                              </p>
-                              <a
-                                href={profile.companyWebsite}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-blue-600 hover:text-blue-700"
-                              >
-                                {profile.companyWebsite}
-                              </a>
+                            <div className={`p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                              <p className={`text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Website</p>
+                              <a href={profile.companyWebsite} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:text-blue-700">{profile.companyWebsite}</a>
                             </div>
                           )}
                           {profile.industry && (
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Industry
-                              </p>
-                              <p className="font-medium text-gray-900">
-                                {profile.industry}
-                              </p>
+                            <div className={`p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                              <p className={`text-sm mb-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Industry</p>
+                              <p className={`font-medium ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{profile.industry}</p>
                             </div>
                           )}
                         </div>
                         {profile.hiringPreferences && (
-                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-600 mb-2">
-                              Hiring Preferences
-                            </p>
-                            <div className="space-y-1 text-sm text-gray-700">
+                          <div className={`mt-4 p-4 ${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                            <p className={`text-sm mb-2 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Hiring Preferences</p>
+                            <div className={`space-y-1 text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
                               {profile.hiringPreferences.lookingFor && (
-                                <p>
-                                  <span className="font-medium">
-                                    Looking for:
-                                  </span>{" "}
-                                  {profile.hiringPreferences.lookingFor}
-                                </p>
+                                <p><span className="font-medium">Looking for:</span> {profile.hiringPreferences.lookingFor}</p>
                               )}
                               {profile.hiringPreferences.budgetRange && (
-                                <p>
-                                  <span className="font-medium">Budget:</span>{" "}
-                                  {profile.hiringPreferences.budgetRange}
-                                </p>
+                                <p><span className="font-medium">Budget:</span> {profile.hiringPreferences.budgetRange}</p>
                               )}
                             </div>
                           </div>
@@ -1201,10 +1078,7 @@ useEffect(() => {
                     {loadingShowcase ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            className="bg-white rounded-xl overflow-hidden shadow-md animate-pulse"
-                          >
+                          <div key={i} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-xl overflow-hidden shadow-md animate-pulse`}>
                             <div className="w-full h-48 bg-gray-200" />
                             <div className="p-6 space-y-3">
                               <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -1216,19 +1090,9 @@ useEffect(() => {
                     ) : showcaseProjects.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {showcaseProjects.map((item) => (
-                          <div
-                            key={item.id}
-                            className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition"
-                          >
+                          <div key={item.id} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-xl overflow-hidden shadow-md hover:shadow-xl transition`}>
                             {item.projectImage ? (
-                              <img
-                                src={item.projectImage}
-                                alt={item.title}
-                                className="w-full h-48 object-cover"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                }}
-                              />
+                              <img src={item.projectImage} alt={item.title} className="w-full h-48 object-cover" onError={(e) => { e.target.style.display = "none"; }} />
                             ) : (
                               <div className="w-full h-48 bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center">
                                 <Briefcase className="w-16 h-16 text-green-600" />
@@ -1236,46 +1100,25 @@ useEffect(() => {
                             )}
                             <div className="p-6">
                               <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-bold text-lg text-gray-900">
-                                  {item.title}
-                                </h4>
-                                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-2 shrink-0">
-                                  {item.category}
-                                </span>
+                                <h4 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>{item.title}</h4>
+                                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full ml-2 shrink-0">{item.category}</span>
                               </div>
-                              <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                                {item.description}
-                              </p>
+                              <p className={`text-sm mb-3 line-clamp-3 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{item.description}</p>
                               {item.technologies?.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mb-3">
                                   {item.technologies.map((t, i) => (
-                                    <span
-                                      key={i}
-                                      className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded"
-                                    >
-                                      {t}
-                                    </span>
+                                    <span key={i} className={`text-xs px-2 py-0.5 rounded ${dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>{t}</span>
                                   ))}
                                 </div>
                               )}
                               {item.projectLink && (
-                                <a
-                                  href={item.projectLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium mb-4"
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  View Project
+                                <a href={item.projectLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 text-sm font-medium mb-4">
+                                  <ExternalLink className="w-4 h-4" />View Project
                                 </a>
                               )}
                               {!isOwnProfile && (
-                                <button
-                                  onClick={handleContactUser}
-                                  className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2"
-                                >
-                                  <MessageCircle className="w-4 h-4" />
-                                  Contact Me
+                                <button onClick={handleContactUser} className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2">
+                                  <MessageCircle className="w-4 h-4" />Contact Me
                                 </button>
                               )}
                             </div>
@@ -1285,7 +1128,7 @@ useEffect(() => {
                     ) : (
                       <div className="text-center py-12">
                         <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No projects yet</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No projects yet</p>
                       </div>
                     )}
                   </motion.div>
@@ -1307,40 +1150,20 @@ useEffect(() => {
                     {profile.services && profile.services.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {profile.services.map((service) => (
-                          <div
-                            key={service.id}
-                            className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition"
-                          >
-                            <h4 className="font-bold text-lg text-gray-900 mb-3">
-                              {service.title}
-                            </h4>
-                            <p className="text-gray-700 text-sm mb-4 line-clamp-3">
-                              {service.description}
-                            </p>
+                          <div key={service.id} className={`${dark ? 'bg-gray-700' : 'bg-white'} rounded-xl p-6 shadow-md hover:shadow-xl transition`}>
+                            <h4 className={`font-bold text-lg mb-3 ${dark ? 'text-white' : 'text-gray-900'}`}>{service.title}</h4>
+                            <p className={`text-sm mb-4 line-clamp-3 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{service.description}</p>
                             <div className="flex items-center justify-between mb-4">
-                              <span className="text-2xl font-bold text-green-600">
-                                {service.price}
-                              </span>
+                              <span className="text-2xl font-bold text-green-600">{service.price}</span>
                               <Briefcase className="w-6 h-6 text-green-600" />
                             </div>
-
                             {isOwnProfile ? (
-                              <button
-                                onClick={() => {
-                                  setItemToDelete(service);
-                                  setShowDeleteServiceModal(true);
-                                }}
-                                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition"
-                              >
+                              <button onClick={() => { setItemToDelete(service); setShowDeleteServiceModal(true); }} className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition">
                                 Delete Service
                               </button>
                             ) : (
-                              <button
-                                onClick={handleContactUser}
-                                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2"
-                              >
-                                <MessageCircle className="w-4 h-4" />
-                                Contact Me
+                              <button onClick={handleContactUser} className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition flex items-center justify-center gap-2">
+                                <MessageCircle className="w-4 h-4" />Contact Me
                               </button>
                             )}
                           </div>
@@ -1349,194 +1172,100 @@ useEffect(() => {
                     ) : (
                       <div className="text-center py-12">
                         <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No services listed yet</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No services listed yet</p>
                       </div>
                     )}
                   </motion.div>
                 )}
 
                 {activeTab === "active-jobs" && isClient && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     {profile.activeJobs && profile.activeJobs.length > 0 ? (
                       <div className="grid grid-cols-1 gap-4">
                         {profile.activeJobs.map((job) => (
-                          <div
-                            key={job.id}
-                            className="bg-white border border-gray-200 rounded-xl p-6"
-                          >
+                          <div key={job.id} className={`${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-xl p-6`}>
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h4 className="font-bold text-lg text-gray-900">
-                                  {job.title}
-                                </h4>
-                                <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                                  {job.status?.toUpperCase() || "ACTIVE"}
-                                </span>
+                                <h4 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>{job.title}</h4>
+                                <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">{job.status?.toUpperCase() || "ACTIVE"}</span>
                               </div>
-                              {job.budgetRange && (
-                                <p className="text-xl font-bold text-yellow-600">
-                                  {job.budgetRange}
-                                </p>
-                              )}
+                              {job.budgetRange && <p className="text-xl font-bold text-yellow-600">{job.budgetRange}</p>}
                             </div>
-                            {job.description && (
-                              <p className="text-gray-700 mb-3 line-clamp-2">
-                                {job.description}
-                              </p>
+                            {job.description && <p className={`mb-3 line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{job.description}</p>}
+                            {job.requiredSkills && job.requiredSkills.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {job.requiredSkills.map((skill, idx) => (
+                                  <span key={idx} className={`px-3 py-1 rounded-full text-sm ${dark ? 'bg-gray-600 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>{skill}</span>
+                                ))}
+                              </div>
                             )}
-                            {job.requiredSkills &&
-                              job.requiredSkills.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                  {job.requiredSkills.map((skill, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                    >
-                                      {skill}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-12">
                         <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No active jobs</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No active jobs</p>
                       </div>
                     )}
                   </motion.div>
                 )}
 
                 {activeTab === "completed-jobs" && isClient && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    {profile.completedJobs &&
-                    profile.completedJobs.length > 0 ? (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                    {profile.completedJobs && profile.completedJobs.length > 0 ? (
                       <div className="grid grid-cols-1 gap-4">
                         {profile.completedJobs.map((job) => (
-                          <div
-                            key={job.id}
-                            className="bg-white border border-gray-200 rounded-xl p-6"
-                          >
+                          <div key={job.id} className={`${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-xl p-6`}>
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h4 className="font-bold text-lg text-gray-900">
-                                  {job.title}
-                                </h4>
-                                <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                  COMPLETED
-                                </span>
+                                <h4 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>{job.title}</h4>
+                                <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">COMPLETED</span>
                               </div>
-                              {job.budgetRange && (
-                                <p className="text-xl font-bold text-gray-600">
-                                  {job.budgetRange}
-                                </p>
-                              )}
+                              {job.budgetRange && <p className={`text-xl font-bold ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{job.budgetRange}</p>}
                             </div>
-                            {job.description && (
-                              <p className="text-gray-700 mb-3 line-clamp-2">
-                                {job.description}
-                              </p>
-                            )}
-                            {job.completedAt && (
-                              <p className="text-sm text-gray-500">
-                                Completed on{" "}
-                                {new Date(job.completedAt).toLocaleDateString()}
-                              </p>
-                            )}
+                            {job.description && <p className={`mb-3 line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{job.description}</p>}
+                            {job.completedAt && <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>Completed on {new Date(job.completedAt).toLocaleDateString()}</p>}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-12">
                         <Award className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">No completed jobs yet</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No completed jobs yet</p>
                       </div>
                     )}
                   </motion.div>
                 )}
 
                 {activeTab === "projects" && isFreelancer && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     {(() => {
                       const activeJobs = (profile.projects || []).filter(
-                        (p) =>
-                          p.status === "ongoing" ||
-                          p.status === "awaiting_confirmation" ||
-                          p.status === "active",
+                        (p) => p.status === "ongoing" || p.status === "awaiting_confirmation" || p.status === "active",
                       );
                       return activeJobs.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {activeJobs.map((project) => (
-                            <div
-                              key={project.id}
-                              className="bg-white border border-gray-200 rounded-xl p-6"
-                            >
+                            <div key={project.id} className={`${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-xl p-6`}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1">
-                                  <h4 className="font-bold text-lg text-gray-900 mb-1">
-                                    {project.job?.title || "Project"}
-                                  </h4>
-                                  <p className="text-gray-600 text-sm line-clamp-2">
-                                    {project.job?.description}
-                                  </p>
+                                  <h4 className={`font-bold text-lg mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>{project.job?.title || "Project"}</h4>
+                                  <p className={`text-sm line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{project.job?.description}</p>
                                 </div>
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${
-                                    project.status === "awaiting_confirmation"
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-blue-100 text-blue-700"
-                                  }`}
-                                >
-                                  {project.status === "awaiting_confirmation"
-                                    ? "Pending"
-                                    : "Ongoing"}
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ml-2 ${project.status === "awaiting_confirmation" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"}`}>
+                                  {project.status === "awaiting_confirmation" ? "Pending" : "Ongoing"}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                <div className="flex items-center gap-1">
-                                  <DollarSign className="w-4 h-4" />
-                                  <span>
-                                    {project.job?.budget ||
-                                      project.job?.budgetRange ||
-                                      "N/A"}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  <span>
-                                    {new Date(
-                                      project.startedAt,
-                                    ).toLocaleDateString()}
-                                  </span>
-                                </div>
+                              <div className={`flex items-center gap-4 text-sm mb-3 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                <div className="flex items-center gap-1"><DollarSign className="w-4 h-4" /><span>{project.job?.budget || project.job?.budgetRange || "N/A"}</span></div>
+                                <div className="flex items-center gap-1"><Clock className="w-4 h-4" /><span>{new Date(project.startedAt).toLocaleDateString()}</span></div>
                               </div>
-                              <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                                <img
-                                  src={
-                                    project.client?.profileImage ||
-                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(project.client?.fullName || "Client")}`
-                                  }
-                                  alt={project.client?.fullName}
-                                  className="w-10 h-10 rounded-full object-cover"
-                                />
+                              <div className={`flex items-center gap-3 pt-3 border-t ${dark ? 'border-gray-600' : 'border-gray-100'}`}>
+                                <img src={project.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.client?.fullName || "Client")}`} alt={project.client?.fullName} className="w-10 h-10 rounded-full object-cover" />
                                 <div className="flex-1">
-                                  <p className="text-gray-900 text-sm font-medium">
-                                    {project.client?.fullName}
-                                  </p>
-                                  <p className="text-gray-600 text-xs">
-                                    {project.client?.companyName || "Client"}
-                                  </p>
+                                  <p className={`text-sm font-medium ${dark ? 'text-gray-200' : 'text-gray-900'}`}>{project.client?.fullName}</p>
+                                  <p className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{project.client?.companyName || "Client"}</p>
                                 </div>
                               </div>
                             </div>
@@ -1545,9 +1274,7 @@ useEffect(() => {
                       ) : (
                         <div className="text-center py-12">
                           <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-600">
-                            No active jobs at the moment
-                          </p>
+                          <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No active jobs at the moment</p>
                         </div>
                       );
                     })()}
@@ -1555,10 +1282,7 @@ useEffect(() => {
                 )}
 
                 {activeTab === "posts" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     {profile.posts && profile.posts.length > 0 ? (
                       <div className="space-y-4">
                         {profile.posts.map((post) => (
@@ -1567,42 +1291,29 @@ useEffect(() => {
                             post={post}
                             profile={profile}
                             isOwnProfile={isOwnProfile}
-                            onDelete={(postId) => {
-                              setPostToDelete(postId);
-                              setShowDeleteModal(true);
-                            }}
+                            onDelete={(postId) => { setPostToDelete(postId); setShowDeleteModal(true); }}
                           />
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <p className="text-gray-600">No posts yet</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No posts yet</p>
                       </div>
                     )}
                   </motion.div>
                 )}
 
                 {activeTab === "reviews" && isFreelancer && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     {!isOwnProfile && (
-                      <button
-                        onClick={() => setShowReviewModal(true)}
-                        className="mb-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium"
-                      >
+                      <button onClick={() => setShowReviewModal(true)} className="mb-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition font-medium">
                         ⭐ Leave a Review
                       </button>
                     )}
-
                     {profile.reviews && profile.reviews.length > 0 ? (
                       <div className="space-y-4">
                         {profile.reviews.map((review) => (
-                          <div
-                            key={review.id}
-                            className="bg-white border border-gray-200 rounded-xl p-6"
-                          >
+                          <div key={review.id} className={`${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-xl p-6`}>
                             <div className="flex items-start gap-4">
                               <img
                                 src={
@@ -1615,26 +1326,15 @@ useEffect(() => {
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-2">
                                   <div>
-                                    <h5 className="font-semibold text-gray-900">
+                                    <h5 className={`font-semibold ${dark ? 'text-gray-200' : 'text-gray-900'}`}>
                                       {review.reviewer?.fullName || "Anonymous"}
                                     </h5>
                                     <div className="flex items-center gap-1">
                                       {Array.from({ length: 5 }).map((_, i) => (
-                                        <span
-                                          key={i}
-                                          className={
-                                            i < review.rating
-                                              ? "text-yellow-400"
-                                              : "text-gray-300"
-                                          }
-                                        >
-                                          ⭐
-                                        </span>
+                                        <span key={i} className={i < review.rating ? "text-yellow-400" : "text-gray-300"}>⭐</span>
                                       ))}
-                                      <span className="text-sm text-gray-600 ml-2">
-                                        {new Date(
-                                          review.createdAt,
-                                        ).toLocaleDateString()}
+                                      <span className={`text-sm ml-2 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {new Date(review.createdAt).toLocaleDateString()}
                                       </span>
                                     </div>
                                   </div>
@@ -1661,7 +1361,7 @@ useEffect(() => {
                                     </button>
                                   )}
                                 </div>
-                                <p className="text-gray-700">
+                                <p className={dark ? 'text-gray-300' : 'text-gray-700'}>
                                   {review.comment}
                                 </p>
                               </div>
@@ -1671,7 +1371,7 @@ useEffect(() => {
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <p className="text-gray-600">No reviews yet</p>
+                        <p className={dark ? 'text-gray-400' : 'text-gray-600'}>No reviews yet</p>
                       </div>
                     )}
                   </motion.div>
@@ -2089,17 +1789,17 @@ useEffect(() => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white lg:rounded-3xl w-full lg:max-w-2xl w-screen lg:max-h-[90vh] h-screen overflow-y-auto shadow-2xl"
+              className={`${dark ? 'bg-gray-800' : 'bg-white'} lg:rounded-3xl w-full lg:max-w-2xl w-screen lg:max-h-[90vh] h-screen overflow-y-auto shadow-2xl`}
             >
-              <div className="sticky top-0 flex items-center justify-between lg:p-6 p-3 border-b border-gray-100 bg-white z-10">
-                <h3 className="lg:text-2xl text-xl font-bold text-gray-900">
+              <div className={`sticky top-0 flex items-center justify-between lg:p-6 p-3 border-b ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-white'} z-10`}>
+                <h3 className={`lg:text-2xl text-xl font-bold ${dark ? 'text-white' : 'text-gray-900'}`}>
                   Edit Profile
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition"
+                  className={`p-2 rounded-xl transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
                 >
-                  <X className="w-6 h-6 text-gray-500" />
+                  <X className={`w-6 h-6 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
                 </button>
               </div>
               <div className="p-6 space-y-6">

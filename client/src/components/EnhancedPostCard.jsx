@@ -3,6 +3,7 @@ import { MdMoreVert } from "react-icons/md";
 import { FiThumbsUp } from "react-icons/fi";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useDarkMode } from "../context/DarkModeContext";
 import { MessageCircle, Share2, Bookmark, MoreVertical, Send, Smile, Play, X } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
@@ -104,6 +105,7 @@ const ReplyInput = ({ comment, postId, onReplied, onCancel }) => {
 const EnhancedPostCard = ({ post, onDelete }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { dark } = useDarkMode();
   const mounted = useRef(false); // track first mount to skip re-animation
 
   const [liked, setLiked] = useState(false);
@@ -313,20 +315,20 @@ const [replyingTo, setReplyingTo] = useState(null);
     {/* Detail Modal */}
     {showDetailModal && (
       <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center md:p-4 p-0 overflow-y-auto transition duration-300">
-        <div className="bg-white max-w-2xl w-full my-8 h-[100vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className={`${dark ? 'bg-gray-800' : 'bg-white'} max-w-2xl w-full my-8 h-[100vh] overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()}>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-            <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition duration-300 ">
-              <X className="w-5 h-5 text-gray-600" />
+          <div className={`flex items-center justify-between px-4 py-2 border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <button onClick={() => setShowDetailModal(false)} className={`p-2 rounded-full transition duration-300 ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+              <X className={`w-5 h-5 ${dark ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
             <div className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg transition">
-                <MoreVertical className="w-5 h-5 text-gray-600" />
+              <button onClick={() => setShowMenu(!showMenu)} className={`p-2 rounded-lg transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <MoreVertical className={`w-5 h-5 ${dark ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border py-2 z-10 ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                   {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
-                  <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                  <button className={`w-full px-4 py-2 text-left transition ${dark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-50'}`}>Report</button>
                 </div>
               )}
             </div>
@@ -334,7 +336,7 @@ const [replyingTo, setReplyingTo] = useState(null);
 
           <div className="flex-1 overflow-y-auto flex flex-col">
             {/* Post Content */}
-            <div className="p-6 border-b border-gray-200">
+            <div className={`p-6 border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
               {/* Author Header */}
               <div className="flex items-center gap-3 mb-4">
                 <img
@@ -344,15 +346,15 @@ const [replyingTo, setReplyingTo] = useState(null);
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
                 />
                 <div className="flex-1">
-                  <h3 onClick={handleUserClick} className="font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition">
+                  <h3 onClick={handleUserClick} className={`font-semibold cursor-pointer hover:text-green-600 transition ${dark ? 'text-white' : 'text-gray-900'}`}>
                     {postAuthor?.fullName || 'Unknown User'}
                   </h3>
-                  <p className="text-sm text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+                  <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
                 </div>
               </div>
 
               {/* Content */}
-              {post.content && <p className="text-gray-800 mb-4 whitespace-pre-wrap leading-relaxed text-base">{post.content}</p>}
+              {post.content && <p className={`mb-4 whitespace-pre-wrap leading-relaxed text-base ${dark ? 'text-gray-200' : 'text-gray-800'}`}>{post.content}</p>}
 
               {/* Media */}
               {hasVideo && post.mediaUrl && (
@@ -380,7 +382,7 @@ const [replyingTo, setReplyingTo] = useState(null);
               )}
 
               {/* Stats */}
-              <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+              <div className={`mt-4 pt-4 border-t flex items-center justify-between text-sm ${dark ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-600'}`}>
                 <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
                 <span>{post.commentsCount || comments.length} comments</span>
               </div>
@@ -389,7 +391,7 @@ const [replyingTo, setReplyingTo] = useState(null);
             {/* Comments Section */}
             <div className="flex-1 p-4 space-y-4">
               {topComments.length === 0 ? (
-                <p className="text-center text-gray-500 py-4 text-sm">No comments yet. Be the first!</p>
+                <p className={`text-center py-4 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No comments yet. Be the first!</p>
               ) : topComments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <img
@@ -399,27 +401,25 @@ const [replyingTo, setReplyingTo] = useState(null);
                     onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}
                   />
                   <div className="flex-1">
-                    <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
+                    <div className={`${dark ? 'bg-gray-700' : 'bg-gray-100'} rounded-2xl px-4 py-2.5 inline-block max-w-full`}>
                       <div className="flex flex-row justify-between gap-4">
-                      <p className=" font-semibold text-sm text-gray-900 cursor-pointer hover:underline"
+                      <p className={`font-semibold text-sm cursor-pointer hover:underline ${dark ? 'text-gray-200' : 'text-gray-900'}`}
                         onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}>
                         {comment.user?.fullName || 'Anonymous'}
                       </p>
-
                       <div className="relative">
-                        <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 hover:bg-gray-100 rounded-lg transition">
-                          <MdMoreVert className='text-xl text-gray-500' />
+                        <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className={`p-2 rounded-lg transition ${dark ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}>
+                          <MdMoreVert className={`text-xl ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
                         </button>
                         {activeCommentMenu === comment.id && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                          <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border py-2 z-10 ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                             {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
-                            <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                            <button className={`w-full px-4 py-2 text-left transition ${dark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-50'}`}>Report</button>
                           </div>
                         )}
                       </div>
                       </div>
-                      
-                      <p className="text-gray-800 text-sm mt-0.5 break-words">{comment.content}</p>
+                      <p className={`text-sm mt-0.5 break-words ${dark ? 'text-gray-300' : 'text-gray-800'}`}>{comment.content}</p>
                     </div>
                     <div className="flex items-center gap-3 mt-1 ml-1">
                       <span className="text-xs text-gray-400">{fmt(comment.createdAt)}</span>
@@ -428,7 +428,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                     </div>
                     {/* Nested replies */}
                     {getReplies(comment.id).length > 0 && (
-                      <div className="mt-2 space-y-2 pl-2 border-l-2 border-gray-200">
+                      <div className={`mt-2 space-y-2 pl-2 border-l-2 ${dark ? 'border-gray-600' : 'border-gray-200'}`}>
                         {getReplies(comment.id).map(reply => (
                           <div key={reply.id} className="flex gap-2">
                             <img
@@ -438,12 +438,12 @@ const [replyingTo, setReplyingTo] = useState(null);
                               alt=""
                             />
                             <div className="flex-1">
-                              <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full">
-                                <p className="font-semibold text-xs text-gray-900 cursor-pointer hover:underline"
+                              <div className={`${dark ? 'bg-gray-700' : 'bg-gray-100'} rounded-2xl px-3 py-2 inline-block max-w-full`}>
+                                <p className={`font-semibold text-xs cursor-pointer hover:underline ${dark ? 'text-gray-200' : 'text-gray-900'}`}
                                   onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}>
                                   {reply.user?.fullName || 'Anonymous'}
                                 </p>
-                                <p className="text-gray-800 text-xs mt-0.5 break-words">{reply.content}</p>
+                                <p className={`text-xs mt-0.5 break-words ${dark ? 'text-gray-300' : 'text-gray-800'}`}>{reply.content}</p>
                               </div>
                               <span className="text-xs text-gray-400 ml-1 block mt-0.5">{fmt(reply.createdAt)}</span>
                             </div>
@@ -458,7 +458,7 @@ const [replyingTo, setReplyingTo] = useState(null);
           </div>
 
           {/* Comment Input - Fixed at bottom with z-20 */}
-          <form onSubmit={handleComment} className="border-t border-gray-200 bg-white p-4 relative z-20">
+          <form onSubmit={handleComment} className={`border-t p-4 relative z-20 ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
             <div className="flex gap-3">
               <img
                 src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
@@ -471,12 +471,12 @@ const [replyingTo, setReplyingTo] = useState(null);
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
                   placeholder="Write a comment..."
-                  className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
+                  className={`w-full px-4 py-2 pr-20 border rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm ${dark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20">
                   <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="p-1.5 hover:bg-gray-100 rounded-full transition">
-                    <Smile className="w-4 h-4 text-gray-500" />
+                    className={`p-1.5 rounded-full transition ${dark ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}>
+                    <Smile className={`w-4 h-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
                   </button>
                   <button type="submit" disabled={!newComment.trim()}
                     className="p-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 rounded-full transition">
@@ -487,6 +487,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                   <div className="absolute bottom-full right-0 mb-2 z-50">
                     <EmojiPicker
                       onEmojiClick={d => { setNewComment(p => p + d.emoji); setShowEmojiPicker(false); }}
+                      theme={dark ? 'dark' : 'light'}
                       width={300} height={380}
                     />
                   </div>
@@ -505,13 +506,12 @@ const [replyingTo, setReplyingTo] = useState(null);
       layout="position"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white lg:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible contain-content  min-sm:w-[100%] lg:w-[100%] w-screen cursor-pointer"
+      className={`${dark ? 'bg-gray-800' : 'bg-white'} lg:rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-visible contain-content min-sm:w-[100%] lg:w-[100%] w-screen cursor-pointer`}
     >
       {/* Header */}
       <div className="p-3 md:p-6 pb-4">
-        <div className="flex items-start justify-between mb-4"  >
-        {/* <div className="w-full bg-red-500 lg:h-12 h-10" > </div> */}
-          <div className="flex items-center  gap-3 w-full" onClick={() => setShowDetailModal(true)}>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3 w-full" onClick={() => setShowDetailModal(true)}>
             <div className="contain-content lg:w-12 w-10 lg:h-12 h-10">
             <img
               src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
@@ -521,10 +521,10 @@ const [replyingTo, setReplyingTo] = useState(null);
             />
             </div>
               <div className="flex flex-col items-start gap-1">
-                <h3 onClick={handleUserClick} className="flex flex-row flex-nowrap w-full font-semibold text-gray-900 cursor-pointer hover:text-green-600 transition md:text-lg text-sm">
+                <h3 onClick={handleUserClick} className={`flex flex-row flex-nowrap w-full font-semibold cursor-pointer hover:text-green-600 transition md:text-lg text-sm ${dark ? 'text-white' : 'text-gray-900'}`}>
                   {postAuthor?.fullName || 'Unknown User'}
                 </h3>
-              <p className="flex flex-row flex-nowrap md:text-sm text-xs text-gray-500">{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+              <p className={`flex flex-row flex-nowrap md:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
             </div>
           </div>
 
@@ -536,20 +536,20 @@ const [replyingTo, setReplyingTo] = useState(null);
               </button>
             )}
             <div className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg transition">
-                <MoreVertical className="w-5 h-5 text-gray-600" />
+              <button onClick={() => setShowMenu(!showMenu)} className={`p-2 rounded-lg transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <MoreVertical className={`w-5 h-5 ${dark ? 'text-gray-400' : 'text-gray-600'}`} />
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border py-2 z-10 ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                   {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
-                  <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                  <button className={`w-full px-4 py-2 text-left transition ${dark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-50'}`}>Report</button>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {post.content && <p className="text-gray-800 mb-3 whitespace-pre-wrap leading-relaxed" onClick={() => setShowDetailModal(true)}>{post.content}</p>}
+        {post.content && <p className={`mb-3 whitespace-pre-wrap leading-relaxed ${dark ? 'text-gray-200' : 'text-gray-800'}`} onClick={() => setShowDetailModal(true)}>{post.content}</p>}
 
         {/* Video */}
         {hasVideo && post.mediaUrl && (
@@ -580,20 +580,20 @@ const [replyingTo, setReplyingTo] = useState(null);
       </div>
 
       {/* Stats */}
-      <div className="px-6 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-600">
+      <div className={`px-6 py-3 border-t flex items-center justify-between text-sm ${dark ? 'border-gray-700 text-gray-400' : 'border-gray-100 text-gray-600'}`}>
         <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
         <span>{post.commentsCount || 0} comments</span>
       </div>
 
       {/* Actions */}
-      <div className="lg:px-6 px-3 py-3 border-t border-gray-100 flex items-center justify-around" onClick={e => e.stopPropagation()}>
+      <div className={`lg:px-6 px-3 py-3 border-t flex items-center justify-around ${dark ? 'border-gray-700' : 'border-gray-100'}`} onClick={e => e.stopPropagation()}>
         {/* Reaction picker */}
         <div className="relative" ref={reactionRef}>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={(e) => { e.stopPropagation(); handleLike(); }}
             onMouseEnter={() => setShowReactions(true)}
-            className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}
           >
             {myReaction ? <span className="lg:text-lg leading-none">{myReaction}</span> : <FiThumbsUp className="w-5 h-5" />}
             <span className="font-medium text-xs md:text-sm">{myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}</span>
@@ -607,7 +607,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                 exit={{ opacity: 0, y: 8, scale: 0.9 }}
                 transition={{ duration: 0.15 }}
                 onMouseLeave={() => setShowReactions(false)}
-                className="absolute bottom-full left-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 md:px-3 p-2 flex gap-1 z-20 whitespace-nowrap"
+                className={`absolute bottom-full left-0 mb-2 rounded-2xl shadow-2xl border md:px-3 p-2 flex gap-1 z-20 whitespace-nowrap ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'}`}
               >
                 {REACTIONS.map((r) => (
                   <button key={r.emoji} onClick={(e) => { e.stopPropagation(); handleReaction(r.emoji); }} title={r.label}
@@ -621,19 +621,19 @@ const [replyingTo, setReplyingTo] = useState(null);
         </div>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }}
-          className="flex items-center gap-2 md:px-4 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+          className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <MessageCircle className="lg:w-5 w-4 h-4 lg:h-5" />
           <span className="font-medium text-xs md:text-sm">Comment</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); handleShare(); }}
-          className="flex items-center gap-2 md:px-4 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+          className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Share2 className="lg:w-5 w-4 h-4 lg:h-5" />
           <span className="font-medium text-xs md:text-sm">Share</span>
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setBookmarked(!bookmarked); }}
-          className={`p-2 rounded-lg transition ${bookmarked ? 'text-green-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+          className={`p-2 rounded-lg transition ${bookmarked ? 'text-green-600' : dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
         </motion.button>
       </div>
@@ -641,19 +641,19 @@ const [replyingTo, setReplyingTo] = useState(null);
       {/* Comments Modal */}
       {showComments && createPortal(
         <div className="fixed inset-0 bg-black/50 z-40 flex lg:items-center items-end justify-center md:p-4 p-0 overflow-y-auto" onClick={() => setShowComments(false)}>
-          <div className="bg-white max-w-2xl w-full lg:my-8 h-[90vh] overflow-hidden flex flex-col lg:rounded-2xl" onClick={e => e.stopPropagation()}>
+          <div className={`${dark ? 'bg-gray-800' : 'bg-white'} max-w-2xl w-full lg:my-8 h-[90vh] overflow-hidden flex flex-col lg:rounded-2xl`} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Comments</h2>
-              <button onClick={() => setShowComments(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
-                <X className="w-5 h-5 text-gray-600" />
+            <div className={`flex items-center justify-between p-4 border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h2 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>Comments</h2>
+              <button onClick={() => setShowComments(false)} className={`p-2 rounded-full transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <X className={`w-5 h-5 ${dark ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
             </div>
 
             {/* Comments List */}
             <div className="flex-1 p-4 space-y-4 overflow-y-auto">
               {topComments.length === 0 ? (
-                <p className="text-center text-gray-500 py-8 text-sm">No comments yet. Be the first!</p>
+                <p className={`text-center py-8 text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>No comments yet. Be the first!</p>
               ) : topComments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <img
@@ -664,26 +664,25 @@ const [replyingTo, setReplyingTo] = useState(null);
                   />
                   <div className="flex-1 min-w-0">
                     {/* Comment bubble */}
-                    <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
+                    <div className={`${dark ? 'bg-gray-700' : 'bg-gray-100'} rounded-2xl px-4 py-2.5 inline-block max-w-full`}>
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-sm text-gray-900 cursor-pointer hover:underline leading-tight"
+                        <p className={`font-semibold text-sm cursor-pointer hover:underline leading-tight ${dark ? 'text-gray-200' : 'text-gray-900'}`}
                           onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}>
                           {comment.user?.fullName || 'Anonymous'}
-                          
                         </p>
                         <div className="relative">
-                          <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 bg-gray-100 text-gray-600 hover:bg-white/80 rounded-xl transition shadow-sm">
-                            <MoreVertical className="w-5 h-5 text-gray-600 " />
+                          <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className={`p-2 rounded-xl transition shadow-sm ${dark ? 'bg-gray-600 hover:bg-gray-500 text-gray-300' : 'bg-gray-100 text-gray-600 hover:bg-white/80'}`}>
+                            <MoreVertical className="w-5 h-5" />
                           </button>
                           {activeCommentMenu === comment.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                            <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border py-2 z-10 ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                               {isOwner && <button onClick={() => { handleDelete(); setActiveCommentMenu(null); }} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Comment</button>}
-                              <button onClick={() => setActiveCommentMenu(null)} className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                              <button onClick={() => setActiveCommentMenu(null)} className={`w-full px-4 py-2 text-left transition ${dark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-50'}`}>Report</button>
                             </div>
                           )}
                         </div>
                       </div>
-                      <p className="text-gray-800 text-sm mt-0.5 break-words">{comment.content}</p>
+                      <p className={`text-sm mt-0.5 break-words ${dark ? 'text-gray-300' : 'text-gray-800'}`}>{comment.content}</p>
                     </div>
 
                     {/* Comment actions */}
@@ -716,9 +715,9 @@ const [replyingTo, setReplyingTo] = useState(null);
                       />
                     )}
 
-                    {/* Nested replies — indented under parent */}
+                    {/* Nested replies */}
                     {getReplies(comment.id).length > 0 && (
-                      <div className="mt-2 space-y-3 pl-5 ml-2 border-l-2 border-gray-200">
+                      <div className={`mt-2 space-y-3 pl-5 ml-2 border-l-2 ${dark ? 'border-gray-600' : 'border-gray-200'}`}>
                         {getReplies(comment.id).map(reply => (
                           <div key={reply.id} className="flex gap-2">
                             <img
@@ -728,13 +727,13 @@ const [replyingTo, setReplyingTo] = useState(null);
                               alt=""
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="bg-gray-50 rounded-2xl px-3 py-2 shadow-sm inline-block max-w-full">
+                              <div className={`${dark ? 'bg-gray-700' : 'bg-gray-50'} rounded-2xl px-3 py-2 shadow-sm inline-block max-w-full`}>
                                 <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-1">Reply</p>
-                                <p className="font-semibold text-xs text-gray-900 cursor-pointer hover:underline leading-tight"
+                                <p className={`font-semibold text-xs cursor-pointer hover:underline leading-tight ${dark ? 'text-gray-200' : 'text-gray-900'}`}
                                   onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}>
                                   {reply.user?.fullName || 'Anonymous'}
                                 </p>
-                                <p className="text-gray-800 text-xs mt-0.5 break-words">{reply.content}</p>
+                                <p className={`text-xs mt-0.5 break-words ${dark ? 'text-gray-300' : 'text-gray-800'}`}>{reply.content}</p>
                               </div>
                               <span className="text-xs text-gray-400 ml-1 block mt-0.5">{fmt(reply.createdAt)}</span>
                             </div>
@@ -748,7 +747,7 @@ const [replyingTo, setReplyingTo] = useState(null);
             </div>
 
             {/* Main comment input */}
-            <form onSubmit={handleComment} className="p-4 border-t border-gray-200 bg-white">
+            <form onSubmit={handleComment} className={`p-4 border-t ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
               <div className="flex gap-3 relative z-20">
                 <img
                   src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
@@ -761,12 +760,12 @@ const [replyingTo, setReplyingTo] = useState(null);
                     value={newComment}
                     onChange={e => setNewComment(e.target.value)}
                     placeholder="Write a comment..."
-                    className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm"
+                    className={`w-full px-4 py-2 pr-20 border rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm ${dark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button type="button" onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="p-1.5 hover:bg-gray-100 rounded-full transition">
-                      <Smile className="w-4 h-4 text-gray-500" />
+                      className={`p-1.5 rounded-full transition ${dark ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}>
+                      <Smile className={`w-4 h-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`} />
                     </button>
                     <button type="submit" disabled={!newComment.trim()}
                       className="p-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 rounded-full transition">
@@ -777,6 +776,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                     <div className="absolute bottom-full right-0 mb-2 z-50">
                       <EmojiPicker
                         onEmojiClick={d => { setNewComment(p => p + d.emoji); setShowEmojiPicker(false); }}
+                        theme={dark ? 'dark' : 'light'}
                         width={300} height={380}
                       />
                     </div>
