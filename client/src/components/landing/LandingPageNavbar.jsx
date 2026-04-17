@@ -30,7 +30,7 @@ export default function Navbar() {
   ];
 
   const navStyle =
-    "self-start inline-block relative cursor-pointer hover:text-gray-300 py-3 md:py-0 border-b border-white/10 md:border-b-0 last:border-b-0 after:absolute after:left-0 after:bottom-1 md:after:-bottom-2 after:h-[2px] after:bg-current after:w-0 hover:after:w-full after:transition-all after:duration-300 after:ease-out after:origin-left";
+    "self-start inline-block relative cursor-pointer hover:text-gray-300 py-3 md:py-0 border-b border-white/10 md:border-b-0 last:border-b-0 after:absolute after:left-0 after:bottom-1 md:after:-bottom-2 after:h-[2px] after:bg-current after:w-0 hover:after:w-full after:transition-all after:duration-300 after:ease-out after:origin-left sm:w-auto w-full";
 
   return (
       <div className="text-white md:mx-10 border-b-2 border-white/50 py-3 md:py-5 relative">
@@ -54,7 +54,7 @@ export default function Navbar() {
           menuOpen
             ? "absolute top-full left-0 right-0 bg-[#00564C]  z-50 flex flex-col"
             : "hidden"
-        } md:flex md:flex-row md:relative md:bg-transparent md:border-t-0 md:z-auto flex-wrap justify-between gap-2 md:gap-4 text-xs md:text-sm font-medium m-1 whitespace-nowrap`}
+        } md:flex md:flex-row md:relative md:bg-transparent md:border-t-0 md:z-auto flex-wrap justify-between gap-2 md:gap-4 text-xs lg:text-sm font-medium m-1 whitespace-nowrap`}
       >
         {navLinks.map((link, index) => (
           <Link key={index} to={link.path} className={navStyle}>

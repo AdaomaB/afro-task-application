@@ -144,7 +144,7 @@ const Navbar = () => {
         )}
         
         {user ? (
-          <div className="flex items-center justify-end gap-6 ml-12">
+          <div className="flex items-center justify-end gap-2 md:gap-6 md:ml-12">
             {/* Notifications Icon */}
             <div className="relative">
               <button
@@ -166,7 +166,7 @@ const Navbar = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute lg:right-0 md:right-0 right-1 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
+                    className="absolute lg:right-0 md:right-0 -right-32 mt-2  w-screen md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
                   >
                     <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                       <h3 className="font-semibold text-gray-900">Notifications</h3>
@@ -197,7 +197,7 @@ const Navbar = () => {
                             <div className="flex items-start gap-3">
                               {getNotificationIcon(notification.type)}
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-900">
+                                <p className="text-sm text-gray-500">
                                   {getNotificationText(notification)}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">

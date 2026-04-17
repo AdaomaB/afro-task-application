@@ -1,22 +1,53 @@
-
-export default function BlogCard({ title, description, author, date, link, onReadMore }) {
+export default function BlogCard({
+  title,
+  description,
+  author,
+  date,
+  link,
+  onReadMore,
+}) {
   return (
-    <div className='flex flex-col lg:flex-row flex-shrink-0 items-start lg:items-center justify-center lg:h-[350px] rounded-2xl w-full text-white bg-white/10 backdrop-blur-sm shadow-2xl overflow-hidden'>
-        <div className="w-full lg:w-1/3 h-48 lg:h-full">
-            <img src={link || "/img/blog1.png"} alt="" className="w-full h-full object-cover rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none" />
+    <div className="w-full max-w-sm mx-auto bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
+      
+      {/* Image */}
+      <div className="w-full aspect-[16/9] overflow-hidden">
+        <img
+          src={link || "/img/blog1.png"}
+          alt={title}
+          className="w-full h-full object-cover"
+        />
+      </div>
+
+      {/* Content */}
+      <div className="flex flex-col flex-1 p-5 md:p-6 gap-3 md:gap-4">
+        
+        {/* Title */}
+        <h2 className="text-black text-lg md:text-xl font-semibold leading-tight line-clamp-2">
+          {title}
+        </h2>
+
+        {/* Description */}
+        <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+          {description}
+        </p>
+
+        {/* Spacer pushes footer down */}
+        <div className="flex-1" />
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs md:text-sm text-gray-500">
+            {author} • {date}
+          </p>
+
+          <button
+            onClick={onReadMore}
+            className="bg-[#00564c] hover:bg-green-600 text-white px-4 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105"
+          >
+            Read More
+          </button>
         </div>
-        <div className='w-full lg:w-2/3 p-6 lg:p-8 flex flex-col gap-4 h-full lg:gap-6'>
-            <h1 className="text-xl md:text-2xl lg:text-4xl font-bold leading-tight">{title}</h1>
-            <p className="text-base md:text-lg text-gray-100 leading-relaxed flex-1">{description}</p>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <p className="text-sm text-gray-300">{author} · {date}</p>
-              <button
-                onClick={onReadMore}
-                className="bg-green-500 hover:bg-green-600 transition-all duration-300 ease-in-out hover:scale-105 px-6 py-3 rounded-3xl text-lg font-medium whitespace-nowrap ml-auto sm:ml-0">
-                Read More
-              </button>
-            </div>
-        </div>
+      </div>
     </div>
-  )
+  );
 }

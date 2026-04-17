@@ -191,16 +191,77 @@ export const likePost = async (req, res) => {
   }
 };
 
+export const reactToPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { emoji } = req.body;
+    const userId = req.user.userId;
+
+    const postRef = db.collection('posts').doc(postId);
+    const postDoc = await postRef.get();
+
+    if (!postDoc.exists) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const postData = postDoc.data();
+    const reactions = postData.reactions || {};
+    const userReactions = postData.userReactions || {};
+
+    // Remove previous reaction if user had one
+    if (userReactions[userId]) {
+      const prevEmoji = userReactions[userId];
+      if (reactions[prevEmoji]) {
+        reactions[prevEmoji] = reactions[prevEmoji].filter(id => id !== userId);
+        if (reactions[prevEmoji].length === 0) {
+          delete reactions[prevEmoji];
+        }
+      }
+    }
+
+    // Add new reaction
+    if (!reactions[emoji]) {
+      reactions[emoji] = [];
+    }
+    if (!reactions[emoji].includes(userId)) {
+      reactions[emoji].push(userId);
+    }
+    userReactions[userId] = emoji;
+
+    // Update likes array for backward compatibility
+    const allUserIds = Object.values(reactions).flat();
+    const uniqueUserIds = [...new Set(allUserIds)];
+
+    await postRef.update({
+      reactions,
+      userReactions,
+      likes: uniqueUserIds
+    });
+
+    // Create notification if reacting to someone else's post
+    const postAuthorId = postData.authorId;
+    if (postAuthorId !== userId) {
+      await createNotification(postAuthorId, userId, 'reaction', { postId, emoji });
+    }
+
+    res.json({ success: true, reactions });
+  } catch (error) {
+    console.error('React to post error:', error);
+    res.status(500).json({ message: 'Failed to react to post' });
+  }
+};
+
 export const addComment = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content } = req.body;
+    const { content, parentId } = req.body;
     const userId = req.user.userId;
 
     console.log('=== ADD COMMENT REQUEST ===');
     console.log('Post ID:', postId);
     console.log('User ID:', userId);
     console.log('Content:', content);
+    console.log('Parent ID:', parentId);
 
     if (!content || !content.trim()) {
       return res.status(400).json({ message: 'Comment content is required' });
@@ -220,6 +281,7 @@ export const addComment = async (req, res) => {
       postId,
       userId,
       content: content.trim(),
+      parentId: parentId || null, // Add parentId for replies
       likes: [],
       createdAt: new Date().toISOString(),
       user: {

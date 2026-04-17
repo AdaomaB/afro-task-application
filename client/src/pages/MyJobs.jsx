@@ -249,7 +249,7 @@ const MyJobs = () => {
                       <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center flex-shrink-0">
                         <img
                           src={job.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.client?.fullName || "Client")}&background=10b981&color=fff`}
-                        alt={job.client?.fullName || "Client"}
+                        alt={job.client?.fullName || "you"}
                           className="w-full h-full rounded-xl object-cover"
                         />
                       </div>

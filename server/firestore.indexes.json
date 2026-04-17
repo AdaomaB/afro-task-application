@@ -1,22 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "freelancer_projects",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "freelancerId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "freelancer_projects",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "category", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "jobs",
       "queryScope": "COLLECTION",
       "fields": [

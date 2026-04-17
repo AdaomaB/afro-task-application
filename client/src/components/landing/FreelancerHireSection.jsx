@@ -114,21 +114,21 @@ export default function FreelancerHireSection() {
 
   return (
     <div className="text-black">
-      <div className="flex items-center justify-center flex-col gap-4 mb-6 md:mb-10 px-2">
-        <h1 className="text-xl md:text-xl lg:text-3xl font-semibold tracking-wider text-center">
+      <div className="flex items-center justify-center flex-col gap-1 mb-6 md:mb-10 px-2">
+        <h1 className="text-sm md:text-xl lg:text-2xl font-semibold tracking-wider text-center">
           Hire a Freelancer
         </h1>
 
-        <h2 className="flex flex-col md:flex-row text-sm lg:text-xl font-thin text-center">
+        <h2 className="flex flex-col md:flex-row text-xs md:text-base font-thin text-center">
           <span className="md:ml-2">Find the right talent.</span>
           <span className="md:ml-2">Start your project.</span>
           <span className="md:ml-2">Watch your vision come alive.</span>
         </h2>
       </div>
 
-      <div className=" w-full px-6">
+      <div className=" w-screen px-6">
       {/* Category Filter Buttons */}
-      <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth -webkit-overflow-scrolling-touch w-full max-w-5xl mx-auto px-4 py-2 gap-x-2 mb-8 md:!grid md:!grid-cols-7 md:gap-4 md:overflow-visible md:max-w-none lg:px-12 md:p-0">
+      <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth -webkit-overflow-scrolling-touch w-full max-w-5xl mx-auto md:px-4 md:py-2 gap-x-2 mb-8 md:!grid md:grid-cols-5 lg:!grid-cols-7 md:gap-4 md:overflow-visible md:max-w-none px-0 lg:px-12 md:p-0">
         {CATEGORIES.map((category) => (
           <button
             key={category}
@@ -136,7 +136,7 @@ export default function FreelancerHireSection() {
             className={`min-w-[80px] px-2 py-2 lg:px-3 text-[10px] lg:text-xs xl:text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 rounded-lg ${
               activeCategory === category
                 ? "bg-[#00564c] text-white shadow-lg shadow-blue-500/25"
-                : "bg-white/80 backdrop-blur-sm h-12 hover:bg-white border border-gray-300 hover:shadow-md text-gray-800"
+                : "bg-white/80 backdrop-blur-sm h-8 md:h-12 hover:bg-white border border-gray-300 hover:shadow-md text-gray-800"
             }`}
           >
             {category}
@@ -145,7 +145,7 @@ export default function FreelancerHireSection() {
       </div>
 
       {/* Freelancer cards container */}
-        <div className="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 xl:justify-start justify-center lg:gap-6 gap-4 px-6 mx-auto max-w-7xl">
+        <div className="grid xl:grid-cols-6 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-4 grid-cols-3 justify-center lg:gap-6 md:gap-4 gap-2 px-1 md:px-6 mx-auto max-w-7xl">
           {loading ? (
             Array(12)
               .fill()

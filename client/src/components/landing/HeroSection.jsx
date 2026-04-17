@@ -74,21 +74,21 @@ export default function HeroSection() {
               />
             )}
             {/* Dark overlay so text stays readable */}
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/40" />
           </div>
         ))}
 
         {/* Prev / Next arrows */}
         <button
           onClick={() => goTo(current - 1)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition"
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition hidden md:flex"
           aria-label="Previous slide"
         >
           <IoIosArrowBack className="text-xl" />
         </button>
         <button
           onClick={() => goTo(current + 1)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition"
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition hidden md:flex"
           aria-label="Next slide"
         >
           <IoIosArrowForward className="text-xl" />
@@ -100,7 +100,7 @@ export default function HeroSection() {
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+              className={`md:w-2.5 w-1.5 h-1.5 md:h-2.5 rounded-full transition-all duration-300 ${
                 i === current ? "bg-white scale-125" : "bg-white/50"
               }`}
               aria-label={`Slide ${i + 1}`}
@@ -109,7 +109,7 @@ export default function HeroSection() {
         </div>
 
         {/* Content — unchanged */}
-        <div className="relative z-10 font-bold text-2xl md:text-4xl lg:text-5xl flex justify-center flex-col items-center text-center px-2">
+        <div className="relative z-10 font-bold text-xl md:text-2xl lg:text-3xl flex justify-center flex-col items-center text-center px-2">
           <p>Empowering Ideas, Connecting</p>
           <p>Talent , and Building the Future</p>
         </div>
@@ -134,7 +134,7 @@ export default function HeroSection() {
           </button>
         </form>
 
-        <div className="relative z-10 flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-10 text-sm md:text-xl font-thin mt-3 md:mt-5 px-2">
+        <div className="relative z-10 flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-10 text-sm md:text-xl font-light mt-3 md:mt-5 px-2">
           <button
             onClick={() => handleCategoryClick("Web Development")}
             className="bg-[#00564C] p-2 px-3 md:px-4 rounded-xl md:rounded-2xl hover:bg-[#027568] transition-colors duration-300 cursor-pointer text-xs lg:text-base"

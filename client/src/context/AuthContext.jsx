@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (token, userData) => {
     localStorage.setItem('token', token);
     setUser(userData);
-    // Always go to dashboard — ProfileCompletionWidget will remind user to complete profile
-    navigate(`/${userData.role}/dashboard`);
+    // Always go to feed — ProfileCompletionWidget will remind user to complete profile
+    navigate(`/${userData.role}/feed`);
   };
 
   const logout = () => {

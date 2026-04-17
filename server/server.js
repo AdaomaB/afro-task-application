@@ -22,9 +22,8 @@ import statsRoutes from './routes/statsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import rankingRoutes from './routes/rankingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
-import freelancerProjectRoutes from './routes/freelancerProjectRoutes.js';
-import contactRoutes from './routes/contactRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 dotenv.config();
 
@@ -39,26 +38,45 @@ app.use(helmet({
 app.use(compression());
 
 // CORS configuration
+// const allowedOrigins = [
+//   'http://localhost:5173',
+//   'http://localhost:3000',
+//   'https://afro-task.vercel.app',
+//   process.env.FRONTEND_URL
+// ].filter(Boolean);
+
+// app.use(cors({
+//   origin: function(origin, callback) {
+//     // Allow requests with no origin (mobile apps, Postman, curl, etc.)
+//     if (!origin) return callback(null, true);
+
+//     // Allow any vercel.app subdomain (preview deployments)
+//     if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+//     if (allowedOrigins.indexOf(origin) !== -1) {
+//       callback(null, true);
+//     } else {
+//       console.warn('CORS blocked origin:', origin);
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://afro-task.vercel.app',
   'https://afrotask.digify.com.ng',
-  'https://www.afrotask.digify.com.ng',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin(origin, callback) {
     if (!origin) return callback(null, true);
-    if (origin.endsWith('.vercel.app')) return callback(null, true);
-    if (origin.endsWith('.digify.com.ng')) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -83,9 +101,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/freelancer-projects', freelancerProjectRoutes);
-app.use('/api/contact', contactRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 

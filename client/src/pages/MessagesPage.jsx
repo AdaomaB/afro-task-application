@@ -18,6 +18,7 @@ const MessagesPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -112,27 +113,36 @@ const MessagesPage = () => {
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !selectedChat) return;
+    if (!selectedChat) return;
+
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
 
     setUploading(true);
+    setSelectedFiles(files);
+
     try {
-      const formData = new FormData();
-      formData.append('text', '');
-      formData.append('file', file);
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('text', '');
+        formData.append('file', file);
 
-      await api.post(`/pre-project-chats/${selectedChat.id}/messages`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+        await api.post(`/pre-project-chats/${selectedChat.id}/messages`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
 
-      toast.success('File uploaded');
+      toast.success(`${files.length} file(s) uploaded successfully`);
       
-      // Immediately fetch messages to show the new one
+      // Immediately fetch messages to show the new ones
       await fetchMessages();
     } catch (error) {
-      toast.error('Failed to upload file');
+      toast.error('Failed to upload files');
     } finally {
       setUploading(false);
+      setSelectedFiles([]);
+      // Reset input
+      e.target.value = '';
     }
   };
 
@@ -170,7 +180,7 @@ const MessagesPage = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-none">
               {conversations.map((conv) => {
                 // Safely extract last message text
                 const lastMessageText = conv.lastMessage?.text || 
@@ -180,18 +190,18 @@ const MessagesPage = () => {
                   <button
                     key={conv.id}
                     onClick={() => setSelectedChat(conv)}
-                    className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition ${
+                    className={`w-full p-4 flex items-center gap-3 hover:bg-gray-50 overflow-x-hidden transition ${
                       selectedChat?.id === conv.id ? 'bg-green-50' : ''
                     }`}
                   >
                     <img
                       src={conv.otherUser?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.otherUser?.fullName || 'User')}`}
                       alt={conv.otherUser?.fullName || 'User'}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-gray-900">{conv.otherUser?.fullName || 'Unknown User'}</p>
-                      <p className="text-sm text-gray-500 truncate">{lastMessageText}</p>
+                      <p className="text-sm text-gray-500 truncate ">{lastMessageText} </p>
                     </div>
                     {conv.unreadCount > 0 && (
                       <span className="px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full">
@@ -310,6 +320,7 @@ const MessagesPage = () => {
                       type="file"
                       ref={fileInputRef}
                       onChange={handleFileUpload}
+                      multiple
                       className="hidden"
                     />
                     <button
@@ -317,8 +328,12 @@ const MessagesPage = () => {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
                       className="p-2 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+                      title={uploading ? 'Uploading...' : 'Attach files (multiple supported)'}
                     >
                       <Paperclip className="w-5 h-5 text-gray-600" />
+                      {uploading && (
+                        <span className="ml-1 text-xs">...</span>
+                      )}
                     </button>
                     
                     <div className="flex-1 relative">

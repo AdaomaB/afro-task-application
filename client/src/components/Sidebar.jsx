@@ -5,6 +5,7 @@ import {
   Home, Briefcase, FileText, FolderOpen, CheckCircle, 
   User, PlusCircle, Search, MessageSquare, X, BookOpen, Moon, Sun
 } from 'lucide-react';
+import { IoMdSettings } from "react-icons/io";
 import { AuthContext } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
 
@@ -95,7 +96,7 @@ const Sidebar = () => {
       </nav>
 
       {/* User Info + Dark Mode Toggle */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 space-y-1">
         <div className="flex items-center gap-3 mb-3">
           <img
             src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
@@ -109,7 +110,7 @@ const Sidebar = () => {
         </div>
 
         {/* Dark mode toggle */}
-        <button
+        {/* <button
           onClick={toggle}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition"
         >
@@ -117,6 +118,11 @@ const Sidebar = () => {
             {dark ? 'Light Mode' : 'Dark Mode'}
           </span>
           {dark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-gray-500" />}
+        </button> */}
+
+        <button  className="w-full flex items-center gap-4 justify-between px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition" onClick={() => handleNavigation("/settings")}> 
+        <span className="text-sm font-medium text-gray-700">Settings</span>
+        <IoMdSettings className="w-4 h-4 text-gray-400" /> 
         </button>
       </div>
     </>
