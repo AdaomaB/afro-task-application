@@ -1,5 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import LandingPage from './pages/LandingPage';
+import AboutPage from './pages/AboutPage';
+import PolicyPage from './pages/PolicyPage';
+import TermsPage from './pages/TermsPage';
+import FreelancersPage from './pages/FreelancersPage';
+
 import { AuthProvider } from './context/AuthContext';
 import { DarkModeProvider } from './context/DarkModeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -18,6 +24,11 @@ import CreatePost from './pages/CreatePost';
 import PostJob from './pages/PostJob';
 import MyJobs from './pages/MyJobs';
 import MyProjects from './pages/MyProjects';
+import WhatsAppBubble from './components/WhatsAppBubble';
+import NotFound from './pages/NotFound';
+import SearchResults from './pages/SearchResults';
+import Blogs from './pages/Blogs';
+import BlogPage from './pages/BlogPage';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import MessagesPage from './pages/MessagesPage';

@@ -78,7 +78,7 @@ export default function WhyAfroTaskBoard() {
           </button>
           <button
             onClick={() => goTo(current + 1)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition hidden md:"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition hidden md:flex"
             aria-label="Next"
           >
             <IoIosArrowForward className="text-lg" />

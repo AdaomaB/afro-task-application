@@ -111,7 +111,7 @@ const WhiteNavbar = () => {
         <div className="flex flex-row justify-start gap-4 items-center">
           <div
             className="flex items-center cursor-pointer"
-            onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
+            onClick={() => navigate(user ? `/${user.role}/feed` : "/")}
           >
             <img
               src="/img/afro-task-logo.png"
@@ -215,7 +215,7 @@ const WhiteNavbar = () => {
           />
           <div
             className="flex items-center cursor-pointer"
-            onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
+            onClick={() => navigate(user ? `/${user.role}/feed` : "/")}
           >
             <img
               src="/img/afro-task-logo.png"
@@ -272,7 +272,7 @@ const WhiteNavbar = () => {
             <div className="p-6 border-b flex items-center justify-between">
               <div
                 className="flex items-center cursor-pointer"
-                onClick={() => navigate(user ? `/${user.role}/dashboard` : "/")}
+                onClick={() => navigate(user ? `/${user.role}/feed` : "/")}
               >
                 <img
                   src="/img/afro-task-logo.png"

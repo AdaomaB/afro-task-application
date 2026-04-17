@@ -18,7 +18,7 @@ const PrivateRoute = ({ children, role }) => {
   }
 
   if (role && user.role !== role) {
-    return <Navigate to={`/${user.role}/dashboard`} />;
+    return <Navigate to={`/${user.role}/feed`} />;
   }
 
   return children;

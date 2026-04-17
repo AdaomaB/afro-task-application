@@ -15,28 +15,40 @@ const CreatePost = () => {
     content: '',
     hashtags: ''
   });
-  const [mediaFile, setMediaFile] = useState(null);
-  const [mediaType, setMediaType] = useState(null); // 'image' or 'video'
-  const [preview, setPreview] = useState(null);
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
 
   const isFreelancer = user?.role === 'freelancer';
   const dashboardPath = isFreelancer ? '/freelancer/feed' : '/client/feed';
 
   const handleMediaChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const type = file.type.startsWith('video/') ? 'video' : 'image';
-      setMediaFile(file);
-      setMediaType(type);
-      setPreview(URL.createObjectURL(file));
-    }
+    const newFiles = Array.from(e.target.files);
+    const newPreviews = newFiles.map(file => ({
+      url: URL.createObjectURL(file),
+      name: file.name,
+      type: file.type.startsWith('video/') ? 'video' : 'image'
+    }));
+
+    setMediaFiles(prev => [...prev, ...newFiles]);
+    setMediaPreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeMedia = (index) => {
+    const fileToRemove = mediaFiles[index];
+    const previewToRemove = mediaPreviews[index];
+    
+    // Cleanup URL
+    URL.revokeObjectURL(previewToRemove.url);
+    
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate: either content or media must be provided
-    if (!formData.content.trim() && !mediaFile) {
+    if (!formData.content.trim() && mediaFiles.length === 0) {
       toast.error('Please add some content or media');
       return;
     }
@@ -46,7 +58,6 @@ const CreatePost = () => {
     try {
       const data = new FormData();
       data.append('content', formData.content);
-      data.append('type', mediaType || 'text');
       
       const hashtagsArray = formData.hashtags
         .split(',')
@@ -54,10 +65,11 @@ const CreatePost = () => {
         .filter(tag => tag);
       data.append('hashtags', JSON.stringify(hashtagsArray));
       
-      if (mediaFile) {
-        data.append('media', mediaFile);
-        data.append('mediaType', mediaType);
-      }
+      mediaFiles.forEach((file, index) => {
+        const type = file.type.startsWith('video/') ? 'video' : 'image';
+        data.append('media', file);
+        data.append(`mediaType_${index}`, type);
+      });
 
       await api.post('/posts', data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -136,37 +148,58 @@ const CreatePost = () => {
                     type="file"
                     onChange={handleMediaChange}
                     accept="image/*,video/*"
+                    multiple
                     className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 ${
                       isFreelancer ? 'focus:ring-green-500' : 'focus:ring-yellow-500'
                     } focus:border-transparent`}
                   />
-                  {preview && (
-                    <div className="mt-4 relative">
-                      {mediaType === 'video' ? (
-                        <video
-                          src={preview}
-                          controls
-                          className="rounded-lg max-h-96 w-full"
-                        />
-                      ) : (
-                        <img
-                          src={preview}
-                          alt="Preview"
-                          className="rounded-lg max-h-96 w-full object-cover"
-                        />
-                      )}
+                  {mediaPreviews.length > 0 && (
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {mediaPreviews.map((preview, index) => (
+                        <div key={index} className="relative group">
+                          {preview.type === 'video' ? (
+                            <video
+                              src={preview.url}
+                              controls
+                              className="w-full h-48 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <img
+                              src={preview.url}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-48 rounded-lg object-cover cursor-pointer"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 rounded-lg flex items-center justify-center transition-all">
+                            <button
+                              type="button"
+                              onClick={() => removeMedia(index)}
+                              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition"
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{preview.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {mediaFiles.length > 0 && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      {mediaFiles.length} file(s) selected. 
                       <button
                         type="button"
                         onClick={() => {
-                          setMediaFile(null);
-                          setMediaType(null);
-                          setPreview(null);
+                          mediaFiles.forEach(URL.revokeObjectURL);
+                          setMediaFiles([]);
+                          setMediaPreviews([]);
                         }}
-                        className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full transition"
+                        className="text-red-500 hover:text-red-700 font-medium ml-1"
                       >
-                        ✕
+                        Clear all
                       </button>
-                    </div>
+                    </p>
                   )}
                 </div>
 

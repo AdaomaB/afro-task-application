@@ -1,6 +1,8 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import Cropper from 'react-easy-crop';
+import imageCompression from 'browser-image-compression';
 import { AuthContext } from "../context/AuthContext";
 import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
@@ -18,6 +20,7 @@ import {
   X,
   DollarSign,
   Clock,
+  Upload,
 } from "lucide-react";
 import api from "../services/api";
 import toast from "react-hot-toast";
@@ -132,10 +135,17 @@ useEffect(() => {
   }, [userId]);
 
   // Edit profile handlers
-// Profile image upload handlers
+// Profile image upload handlers - CROP STATES
   const [showProfileImageUpload, setShowProfileImageUpload] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  
+  // Cropper states
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const inputRef = useRef(null);
 
   // Cover photo upload handlers
   const [showCoverPhotoUpload, setShowCoverPhotoUpload] = useState(false);
@@ -170,30 +180,87 @@ useEffect(() => {
     setShowImageModal(false);
   };
 
-  const handleProfileImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  // Cropper handlers
+  const onSelectFile = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setSelectedImage(reader.result));
+      reader.readAsDataURL(file);
       setProfileImageFile(file);
-      const previewUrl = URL.createObjectURL(file);
-      setProfileImagePreview(previewUrl);
     }
   };
 
+  const createImage = (url) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.addEventListener('load', () => resolve(img));
+      img.addEventListener('error', (error) => reject(error));
+      img.src = url;
+    });
+
+  const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 256;
+    canvas.height = 256;
+
+    const safeArea = Math.floor(256 * 4 / 3);
+    const safeAreaMargin = Math.floor(safeArea / 2);
+    const safeAreaSize = Math.floor(safeArea - safeAreaMargin * 2);
+
+    const cropX = -pixelCrop.x + pixelCrop.width / 2 - safeAreaSize / 2;
+    const cropY = -pixelCrop.y + pixelCrop.height / 2 - safeAreaSize / 2;
+
+    ctx.drawImage(
+      image,
+      cropX,
+      cropY,
+      safeAreaSize,
+      safeAreaSize,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const compressedFile = await imageCompression(blob, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 512,
+          useWebWorker: true,
+          fileType: 'image/webp',
+        });
+        resolve(compressedFile);
+      }, 'image/webp');
+    });
+  };
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
   const handleProfileImageUpload = async () => {
-    if (!profileImageFile) {
-      toast.error("Please select an image");
+    if (!profileImageFile || !croppedAreaPixels) {
+      toast.error("Please crop and select an image");
       return;
     }
 
-    const formData = new FormData();
-    formData.append('profileImage', profileImageFile);
-
     try {
+      const croppedImageFile = await getCroppedImg(selectedImage, croppedAreaPixels);
+      const formData = new FormData();
+      formData.append('profileImage', croppedImageFile);
+
       await api.put(`/profile/${userId}/image`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast.success("Profile picture updated successfully!");
       setShowProfileImageUpload(false);
+      setSelectedImage(null);
       setProfileImageFile(null);
       setProfileImagePreview(null);
       fetchProfile();
@@ -583,7 +650,8 @@ useEffect(() => {
 <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`lg:h-64 md:h-32 h-24 lg:rounded-t-3xl relative ${
+              onClick={() => setCoverPhotoPreview(true)}
+              className={`lg:h-64 md:h-32 h-24 lg:rounded-t-3xl cursor-pointer relative ${
                 profile?.coverPhoto
                   ? "bg-cover bg-center bg-no-repeat"
                   : isFreelancer
@@ -2329,16 +2397,16 @@ useEffect(() => {
       {/* ── Profile Image Modal ───────────────────────────────────────────── */}
       <AnimatePresence>
         {showImageModal && profile && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 xl:p-4">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className=" backdrop-blur-sm xl:rounded-3xl xl:p-8 max-w-screen xl:max-w-2xl w-full max-h-[90vh] overflow-hidden relative shadow-2xl"
+              className=" backdrop-blur-sm xl:rounded-3xl max-w-screen xl:max-w-2xl w-full max-h-[100vh] overflow-hidden relative shadow-2xl"
             >
               <button
                 onClick={() => setShowImageModal(false)}
-                className="absolute z-10 top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full transition shadow-lg"
+                className="absolute z-20 top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full transition shadow-lg"
               >
                 <X className="w-6 h-6 text-gray-700" />
               </button>
@@ -2385,6 +2453,198 @@ useEffect(() => {
                     </button>
                   )}
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Profile Image Upload Modal with Crop ───────────────────────────── */}
+      <AnimatePresence>
+        {showProfileImageUpload && isOwnProfile && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 md:p-2">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white md:rounded-2xl p-6 max-w-3xl w-full md:max-h-[90vh] overflow-y-auto h-full overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-4 ">
+                <h3 className="md:text-lg text-base font-bold text-gray-900">Crop Profile Picture (1:1)</h3>
+                <button
+                  onClick={() => {
+                    setShowProfileImageUpload(false);
+                    setSelectedImage(null);
+                    setProfileImageFile(null);
+                    setProfileImagePreview(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {selectedImage ? (
+                <div className="space-y-4 h-auto flex flex-col">
+                  <div className="relative h-96 bg-gray-100 rounded-lg overflow-hidden shadow-inner">
+                    <Cropper
+                      image={selectedImage}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <div className="flex-1 text-xs text-gray-500">
+                      Zoom: {Math.round(zoom * 100)}% | Drag to reposition
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setZoom(zoom - 0.1)}
+                        className="p-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoom(1)}
+                        className="p-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setZoom(zoom + 0.1)}
+                        className="p-1 text-gray-500 hover:text-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="md:text-sm text-xs flex gap-3 pt-4">
+                    <button
+                      onClick={() => {
+                        setShowProfileImageUpload(false);
+                        setSelectedImage(null);
+                        setProfileImageFile(null);
+                      }}
+                      className="flex-1 md:py-3 md:px-4 p-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={inputRef.current?.click()}
+                      className="flex-1 md:py-3 md:px-4 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium"
+                    >
+                      Change Image
+                    </button>
+                    <button
+                      onClick={handleProfileImageUpload}
+                      disabled={!croppedAreaPixels || !profileImageFile}
+                      className="flex-1 md:py-3 md:px-4 p-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg transition font-medium"
+                    >
+                    Upload
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-12 space-y-4">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                    <Upload className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900">Choose profile picture</h4>
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={onSelectFile}
+                  />
+                  <button
+                    onClick={() => inputRef.current?.click()}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  >
+                    Select Image
+                  </button>
+                </div>
+              )}
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onSelectFile}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Cover Photo Upload Modal ─────────────────────────────────────── */}
+      <AnimatePresence>
+        {showCoverPhotoUpload && isOwnProfile && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Update Cover Photo</h3>
+                <button
+                  onClick={() => setShowCoverPhotoUpload(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverPhotoChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                {coverPhotoPreview && (
+                  <div>
+                    <img src={coverPhotoPreview} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowCoverPhotoUpload(false);
+                    setCoverPhotoFile(null);
+                    setCoverPhotoPreview(null);
+                  }}
+                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCoverPhotoUpload}
+                  disabled={!coverPhotoFile}
+                  className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg transition font-medium"
+                >
+                  Upload
+                </button>
               </div>
             </motion.div>
           </div>

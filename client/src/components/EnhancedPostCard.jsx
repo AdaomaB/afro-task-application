@@ -123,8 +123,9 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   const [following, setFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
   const [viewTracked, setViewTracked] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
+const [replyingTo, setReplyingTo] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [commentDetailId, setCommentDetailId] = useState(null);
   const reactionRef = useRef(null);
 
   const isOwner = user?.uid === post.authorId;
@@ -311,23 +312,23 @@ const EnhancedPostCard = ({ post, onDelete }) => {
     <>
     {/* Detail Modal */}
     {showDetailModal && (
-      <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center md:p-4 p-0 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center md:p-4 p-0 overflow-y-auto transition duration-300">
         <div className="bg-white max-w-2xl w-full my-8 h-[100vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-            <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition">
+            <button onClick={() => setShowDetailModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition duration-300 ">
               <X className="w-5 h-5 text-gray-600" />
             </button>
             <div className="relative">
               <button onClick={() => setShowMenu(!showMenu)} className="p-2 hover:bg-gray-100 rounded-lg transition">
                 <MoreVertical className="w-5 h-5 text-gray-600" />
               </button>
-{activeCommentMenu === commentDetailId && (
-                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
-                            <button className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Comment</button>
-                            <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
-                          </div>
-                        )}
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
+                  {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
+                  <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -406,10 +407,10 @@ const EnhancedPostCard = ({ post, onDelete }) => {
                       </p>
 
                       <div className="relative">
-                        <button onClick={() => setActiveCommentMenu(activeCommentMenu === commentDetailId ? null : commentDetailId)} className="p-2 hover:bg-gray-100 rounded-lg transition">
+                        <button onClick={() => setActiveCommentMenu(activeCommentMenu === comment.id ? null : comment.id)} className="p-2 hover:bg-gray-100 rounded-lg transition">
                           <MdMoreVert className='text-xl text-gray-500' />
                         </button>
-                        {showMenu && (
+                        {activeCommentMenu === comment.id && (
                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-10">
                             {isOwner && <button onClick={handleDelete} className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition">Delete Post</button>}
                             <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition">Report</button>

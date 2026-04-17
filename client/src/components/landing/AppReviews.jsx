@@ -101,7 +101,7 @@ function ReviewCard({ review, onEdit, onDelete, user, delay = 0 }) {
       <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
         <div className="relative w-10 h-10 rounded-full shadow-sm flex-shrink-0 overflow-hidden">
           <img
-            src={review.reviewer?.profileImage || review.profileImage}
+            src={review.reviewer?.profileImage || review.reviewer.profileIMage }
             className="w-10 h-10 rounded-full"
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=User`;
