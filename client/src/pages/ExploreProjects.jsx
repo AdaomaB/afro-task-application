@@ -1,14 +1,14 @@
-import { useState, useEffect, useContext } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, getDocs, startAfter } from 'firebase/firestore';
-import { db } from '../config/firebase.js';
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Eye, MessageCircle, MapPin, ExternalLink, X, ChevronDown } from 'lucide-react';
+import { IoStarSharp, IoClose } from 'react-icons/io5';
+import { FaEye, FaGithub, FaLinkedin, FaGlobe, FaMapMarkerAlt, FaPlay } from 'react-icons/fa';
+import { MdWork } from 'react-icons/md';
 import WhiteNavbar from '../components/navbar/WhiteNavbar';
 import Footer from '../components/Footer';
-import api from '../services/api';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 
 const CATEGORIES = [
   'All',
@@ -30,131 +30,143 @@ const CATEGORIES = [
 const PAGE_SIZE = 12;
 
 export default function ExploreProjects() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user } = useContext(AuthContext);
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [lastDoc, setLastDoc] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [hasMore, setHasMore] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [contactLoading, setContactLoading] = useState(false);
+  const [freelancerDetails, setFreelancerDetails] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
 
-  // Read category from URL param on mount
-  useEffect(() => {
-    const cat = searchParams.get('category');
-    if (cat) {
-      const match = CATEGORIES.find(c => c.toLowerCase() === cat.toLowerCase());
-      setSelectedCategory(match || 'All');
-    }
-  }, []);
+  const activeCategory = searchParams.get('category') || 'All';
 
-  useEffect(() => {
-    fetchProjects(true);
-  }, [selectedCategory]);
-
-  const buildQuery = (afterDoc = null) => {
-    const col = collection(db, 'freelancer_projects');
-    const constraints = [];
-
-    if (selectedCategory !== 'All') {
-      constraints.push(where('category', '==', selectedCategory));
-    }
-
-    constraints.push(orderBy('createdAt', 'desc'));
-    constraints.push(limit(PAGE_SIZE));
-
-    if (afterDoc) constraints.push(startAfter(afterDoc));
-
-    return query(col, ...constraints);
-  };
-
-  const fetchProjects = async (reset = false) => {
+  const fetchProjects = useCallback(async (category, paginate = false) => {
+    if (!paginate) setLoading(true);
     try {
-      reset ? setLoading(true) : setLoadingMore(true);
-      if (reset) setLastDoc(null);
+      const params = { limit: PAGE_SIZE };
+      if (category && category !== 'All') params.category = category;
+      if (paginate && lastDoc) params.startAfter = lastDoc;
 
-      const q = buildQuery(reset ? null : lastDoc);
-      const snap = await getDocs(q);
-      const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const res = await api.get('/profile/showcase-projects', { params });
+      const { projects: docs, lastId, hasMore: more } = res.data;
 
-      setProjects(reset ? items : prev => [...prev, ...items]);
-      setLastDoc(snap.docs[snap.docs.length - 1] || null);
-      setHasMore(snap.docs.length === PAGE_SIZE);
+      setLastDoc(lastId || null);
+      setHasMore(more);
+      if (paginate) {
+        setProjects(prev => [...prev, ...docs]);
+      } else {
+        setProjects(docs);
+      }
     } catch (err) {
       console.error('Error fetching projects:', err);
-      // Fallback: simpler query without composite index
-      try {
-        const col = collection(db, 'freelancer_projects');
-        const fallbackQ = selectedCategory !== 'All'
-          ? query(col, where('category', '==', selectedCategory), limit(PAGE_SIZE))
-          : query(col, limit(PAGE_SIZE));
-        const snap = await getDocs(fallbackQ);
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setProjects(reset ? items : prev => [...prev, ...items]);
-        setLastDoc(snap.docs[snap.docs.length - 1] || null);
-        setHasMore(snap.docs.length === PAGE_SIZE);
-      } catch (fallbackErr) {
-        console.error('Fallback query failed:', fallbackErr);
-        toast.error('Failed to load projects');
-      }
+      toast.error('Failed to load projects');
     } finally {
       setLoading(false);
-      setLoadingMore(false);
+    }
+  }, [lastDoc]);
+
+  useEffect(() => {
+    setLastDoc(null);
+    fetchProjects(activeCategory, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
+
+  const handleCategoryChange = (cat) => {
+    if (cat === 'All') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category: cat });
     }
   };
 
-  const handleContactFreelancer = async (freelancerId) => {
+  const openProjectModal = async (project) => {
+    setSelectedProject(project);
+    setModalLoading(true);
+    try {
+      const freelancerId = project.freelancerId || project.userId;
+      if (freelancerId) {
+        const res = await api.get(`/profile/public/${freelancerId}`);
+        setFreelancerDetails(res.data.success ? { id: freelancerId, ...res.data.profile } : null);
+      } else {
+        setFreelancerDetails(null);
+      }
+    } catch (err) {
+      console.error('Error fetching freelancer:', err);
+      setFreelancerDetails(null);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedProject(null);
+    setFreelancerDetails(null);
+  };
+
+  const handleContactFreelancer = () => {
     if (!user) {
       navigate('/welcome');
       return;
     }
-    setContactLoading(true);
-    try {
-      const res = await api.post('/chats/create', { otherUserId: freelancerId });
-      const chatId = res.data.chatId;
-      const messagesPath = user.role === 'client' ? '/client/messages' : '/freelancer/messages';
-      navigate(`${messagesPath}?chatId=${chatId}`);
-    } catch (err) {
-      console.error('Error creating chat:', err);
-      toast.error('Failed to open chat');
-    } finally {
-      setContactLoading(false);
+    const freelancerId = selectedProject?.freelancerId || selectedProject?.userId;
+    if (freelancerId) {
+      navigate(`/${user.role}/messages?userId=${freelancerId}`);
+    } else {
+      navigate(`/${user.role}/messages`);
     }
+    closeModal();
   };
 
-  const renderStars = (rating = 0) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star key={i} className={`w-4 h-4 ${i < Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-    ));
+  const formatDate = (ts) => {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return isNaN(d) ? '' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const renderStars = (rating) => {
+    const r = parseFloat(rating) || 0;
+    return (
+      <span className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map(i => (
+          <IoStarSharp key={i} className={i <= Math.round(r) ? 'text-yellow-400' : 'text-gray-300'} />
+        ))}
+        <span className="ml-1 text-sm text-gray-600">{r.toFixed(1)}</span>
+      </span>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <WhiteNavbar />
 
-      {/* Header */}
-      <div className="bg-[#00564C] text-white py-12 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-3xl md:text-5xl font-bold mb-3">Explore Projects</h1>
-          <p className="text-green-200 text-lg">Discover work by top African freelancers</p>
-        </div>
+      {/* Page Header */}
+      <section className="relative pt-24 pb-20 bg-[url('/img/pjt.png')] bg-cover bg-center bg-no-repeat text-white overflow-hidden">
+      <div className="absolute inset-0 bg-[#00564C]/80 text-white py-12 px-6 text-center">
+        <h1 className="text-3xl md:text-5xl font-bold mb-3">Explore Projects</h1>
+        <p className="text-lg text-green-100 max-w-2xl mx-auto">
+          Discover amazing work by talented African freelancers
+        </p>
       </div>
+      </section>
 
       {/* Category Filters */}
-      <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 overflow-x-auto no-scrollbar">
           <div className="flex gap-2 min-w-max">
             {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-[#00564C] text-white shadow'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}>
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeCategory === cat
+                    ? 'bg-[#00564C] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
                 {cat}
               </button>
             ))}
@@ -163,10 +175,10 @@ export default function ExploreProjects() {
       </div>
 
       {/* Projects Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {Array(8).fill(0).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl overflow-hidden shadow animate-pulse">
                 <div className="h-48 bg-gray-200" />
                 <div className="p-4 space-y-3">
@@ -178,77 +190,32 @@ export default function ExploreProjects() {
             ))}
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              No projects found{selectedCategory !== 'All' ? ` in ${selectedCategory}` : ''}.
-            </h3>
-            <p className="text-gray-500">Try selecting a different category or check back later.</p>
+          <div className="flex flex-col items-center justify-center py-24 text-gray-500">
+            <MdWork className="text-6xl mb-4 text-gray-300" />
+            <p className="text-xl font-medium">No projects found in this category.</p>
+            <p className="text-sm mt-2">Try selecting a different category.</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {projects.map(project => (
-                <motion.div key={project.id}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -4 }}
-                  onClick={() => setSelectedProject(project)}
-                  className="bg-white rounded-2xl overflow-hidden shadow hover:shadow-xl transition-all cursor-pointer group">
-                  {/* Project Image */}
-                  <div className="relative h-48 bg-gray-100 overflow-hidden">
-                    {project.projectImage ? (
-                      <img src={project.projectImage} alt={project.projectTitle}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00564C]/10 to-[#00564C]/30">
-                        <span className="text-5xl">💼</span>
-                      </div>
-                    )}
-                    {project.category && (
-                      <span className="absolute top-3 left-3 bg-[#00564C] text-white text-xs px-2 py-1 rounded-full">
-                        {project.category}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">{project.projectTitle || 'Untitled Project'}</h3>
-                    <p className="text-gray-500 text-sm line-clamp-2 mb-3">{project.projectDescription || ''}</p>
-
-                    {/* Freelancer Info */}
-                    <div className="flex items-center gap-2 mb-2">
-                      {project.freelancerProfileImage ? (
-                        <img src={project.freelancerProfileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-[#00564C] flex items-center justify-center text-white text-xs font-bold">
-                          {(project.freelancerName || 'F')[0]}
-                        </div>
-                      )}
-                      <span className="text-sm font-medium text-gray-700 line-clamp-1">{project.freelancerName || 'Freelancer'}</span>
-                    </div>
-
-                    {/* Rating & Stats */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        {renderStars(project.freelancerRating)}
-                        <span className="text-xs text-gray-500 ml-1">({project.reviewCount || 0})</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-400 text-xs">
-                        <Eye className="w-3 h-3" />
-                        <span>{project.views || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => openProjectModal(project)}
+                  formatDate={formatDate}
+                  renderStars={renderStars}
+                />
               ))}
             </div>
 
-            {/* Load More */}
             {hasMore && (
-              <div className="text-center mt-10">
-                <button onClick={() => fetchProjects(false)} disabled={loadingMore}
-                  className="bg-[#00564C] text-white px-8 py-3 rounded-full hover:bg-[#027568] transition flex items-center gap-2 mx-auto disabled:opacity-60">
-                  {loadingMore ? 'Loading...' : <><ChevronDown className="w-4 h-4" /> Load More</>}
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={() => fetchProjects(activeCategory, true)}
+                  className="bg-[#00564C] text-white px-8 py-3 rounded-full font-medium hover:bg-[#027568] transition"
+                >
+                  Load More
                 </button>
               </div>
             )}
@@ -259,123 +226,298 @@ export default function ExploreProjects() {
       {/* Project Detail Modal */}
       <AnimatePresence>
         {selectedProject && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedProject(null)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-
-              {/* Modal Image */}
-              <div className="relative">
-                {selectedProject.projectImage ? (
-                  <img src={selectedProject.projectImage} alt={selectedProject.projectTitle}
-                    className="w-full h-56 object-cover rounded-t-2xl" />
-                ) : (
-                  <div className="w-full h-56 bg-gradient-to-br from-[#00564C] to-[#027568] rounded-t-2xl flex items-center justify-center">
-                    <span className="text-7xl">💼</span>
-                  </div>
-                )}
-                <button onClick={() => setSelectedProject(null)}
-                  className="absolute top-3 right-3 bg-white/90 rounded-full p-1.5 hover:bg-white transition">
-                  <X className="w-5 h-5" />
-                </button>
-                {selectedProject.category && (
-                  <span className="absolute bottom-3 left-3 bg-[#00564C] text-white text-xs px-3 py-1 rounded-full">
-                    {selectedProject.category}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedProject.projectTitle || 'Untitled Project'}</h2>
-                <p className="text-gray-600 mb-5 leading-relaxed">{selectedProject.projectDescription || 'No description provided.'}</p>
-
-                {/* Technologies */}
-                {selectedProject.technologies?.length > 0 && (
-                  <div className="mb-5">
-                    <p className="text-sm font-semibold text-gray-700 mb-2">Technologies Used</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProject.technologies.map((t, i) => (
-                        <span key={i} className="bg-[#00564C]/10 text-[#00564C] text-xs px-3 py-1 rounded-full">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Project Link */}
-                {selectedProject.projectLink && (
-                  <div className="mb-5">
-                    <a href={selectedProject.projectLink} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#00564C] hover:text-[#027568] font-medium text-sm transition">
-                      <ExternalLink className="w-4 h-4" />View Project / Live Demo
-                    </a>
-                  </div>
-                )}
-
-                {/* Freelancer Profile */}
-                <div className="bg-gray-50 rounded-xl p-4 mb-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    {selectedProject.freelancerProfileImage ? (
-                      <img src={selectedProject.freelancerProfileImage} alt="" className="w-12 h-12 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#00564C] flex items-center justify-center text-white font-bold text-lg">
-                        {(selectedProject.freelancerName || 'F')[0]}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-gray-900">{selectedProject.freelancerName || 'Freelancer'}</p>
-                      {selectedProject.freelancerLocation && (
-                        <div className="flex items-center gap-1 text-gray-500 text-sm">
-                          <MapPin className="w-3 h-3" /><span>{selectedProject.freelancerLocation}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-auto flex items-center gap-1">
-                      {renderStars(selectedProject.freelancerRating)}
-                      <span className="text-sm text-gray-500 ml-1">({selectedProject.reviewCount || 0})</span>
-                    </div>
-                  </div>
-
-                  {selectedProject.freelancerBio && (
-                    <p className="text-gray-600 text-sm mb-3">{selectedProject.freelancerBio}</p>
-                  )}
-
-                  {selectedProject.freelancerSkills?.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProject.freelancerSkills.map((skill, i) => (
-                        <span key={i} className="bg-[#00564C]/10 text-[#00564C] text-xs px-2 py-1 rounded-full">{skill}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Stats */}
-                <div className="flex gap-4 text-sm text-gray-500 mb-6">
-                  <div className="flex items-center gap-1"><Eye className="w-4 h-4" />{selectedProject.views || 0} views</div>
-                  <div className="flex items-center gap-1"><MessageCircle className="w-4 h-4" />{selectedProject.reviewCount || 0} reviews</div>
-                  {selectedProject.completionDate && (
-                    <div className="flex items-center gap-1">
-                      Completed: {new Date(selectedProject.completionDate).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-
-                {/* Contact Button */}
-                <button onClick={() => handleContactFreelancer(selectedProject.freelancerId)}
-                  disabled={contactLoading || user?.id === selectedProject.freelancerId}
-                  className="w-full bg-[#00564C] text-white py-3 rounded-xl font-semibold hover:bg-[#027568] transition disabled:opacity-60">
-                  {contactLoading ? 'Opening chat...'
-                    : user?.id === selectedProject.freelancerId ? 'This is your project'
-                    : 'Contact Freelancer'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <ProjectModal
+            project={selectedProject}
+            freelancer={freelancerDetails}
+            loading={modalLoading}
+            onClose={closeModal}
+            onContact={handleContactFreelancer}
+            formatDate={formatDate}
+            renderStars={renderStars}
+          />
         )}
       </AnimatePresence>
 
       <Footer />
     </div>
+  );
+}
+
+// ─── Project Card ────────────────────────────────────────────────────────────
+function ProjectCard({ project, onClick, formatDate, renderStars }) {
+  const media = project.projectImage || project.mediaUrl || project.imageUrl || project.image || null;
+  const isVideo = media && (media.includes('.mp4') || media.includes('.webm') || media.includes('video'));
+
+  return (
+    <motion.div
+      whileHover={{ y: -4, boxShadow: '0 12px 32px rgba(0,0,0,0.12)' }}
+      transition={{ duration: 0.2 }}
+      onClick={onClick}
+      className="bg-white rounded-2xl overflow-hidden shadow cursor-pointer group"
+    >
+      {/* Media */}
+      <div className="relative h-48 bg-gray-100 overflow-hidden">
+        {media ? (
+          isVideo ? (
+            <div className="relative w-full h-full">
+              <video src={media} className="w-full h-full object-cover" muted />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <FaPlay className="text-white text-3xl" />
+              </div>
+            </div>
+          ) : (
+            <img src={media} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          )
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00564C]/10 to-[#00564C]/30">
+            <MdWork className="text-5xl text-[#00564C]/40" />
+          </div>
+        )}
+        {project.category && (
+          <span className="absolute top-3 left-3 bg-[#00564C] text-white text-xs px-2 py-1 rounded-full">
+            {project.category}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 text-base line-clamp-1 mb-1">
+          {project.title || 'Untitled Project'}
+        </h3>
+        <p className="text-gray-500 text-sm line-clamp-2 mb-3">
+          {project.description || project.content || ''}
+        </p>
+
+        {/* Freelancer info */}
+        <div className="flex items-center gap-2 mb-3">
+          <img
+            src={project.freelancerProfileImage || project.freelancerImage || project.userImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.freelancerName || project.userName || 'F')}&background=00564C&color=fff`}
+            alt={project.freelancerName || project.userName}
+            className="w-7 h-7 rounded-full object-cover"
+          />
+          <span className="text-sm text-gray-700 font-medium truncate">
+            {project.freelancerName || project.userName || 'Freelancer'}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center gap-1">
+            {renderStars(project.freelancerRating || project.rating)}
+            <span className="ml-1">({project.reviews || project.reviewCount || 0})</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FaEye />
+            <span>{project.views || 0}</span>
+          </div>
+        </div>
+
+        {project.createdAt && (
+          <p className="text-xs text-gray-400 mt-2">{formatDate(project.createdAt)}</p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Project Modal ────────────────────────────────────────────────────────────
+function ProjectModal({ project, freelancer, loading, onClose, onContact, formatDate, renderStars }) {
+  const media = project.projectImage || project.mediaUrl || project.imageUrl || project.image || null;
+  const isVideo = media && (media.includes('.mp4') || media.includes('.webm') || media.includes('video'));
+
+  const fl = freelancer || {};
+  const flName = fl.fullName || project.freelancerName || project.userName || 'Freelancer';
+  const flImage = fl.profileImage || project.freelancerProfileImage || project.freelancerImage || project.userImage ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(flName)}&background=00564C&color=fff`;
+  const flRating = fl.rating || project.freelancerRating || project.rating || 0;
+  const flReviews = fl.reviewCount || project.reviews || project.reviewCount || 0;
+  const flLocation = fl.country || fl.location || project.freelancerLocation || '';
+  const flBio = fl.bio || fl.introduction || project.freelancerBio || '';
+  const flSkills = fl.skills || project.skills || [];
+  const flIntroVideo = fl.introVideo || fl.introductionVideo || null;
+  const flGithub = fl.github || fl.githubUrl || null;
+  const flLinkedin = fl.linkedin || fl.linkedinUrl || null;
+  const flPortfolio = fl.portfolio || fl.portfolioUrl || fl.website || null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 line-clamp-1">{project.title || 'Project Details'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition">
+            <IoClose className="text-xl text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-6">
+          {/* Media */}
+          {media && (
+            <div className="rounded-xl overflow-hidden bg-gray-100 max-h-72">
+              {isVideo ? (
+                <video src={media} controls className="w-full h-full object-cover max-h-72" />
+              ) : (
+                <img src={media} alt={project.title} className="w-full object-cover max-h-72" />
+              )}
+            </div>
+          )}
+
+          {/* Category & Date */}
+          <div className="flex flex-wrap gap-2">
+            {project.category && (
+              <span className="bg-[#00564C]/10 text-[#00564C] text-sm px-3 py-1 rounded-full font-medium">
+                {project.category}
+              </span>
+            )}
+            {project.createdAt && (
+              <span className="bg-gray-100 text-gray-600 text-sm px-3 py-1 rounded-full">
+                {formatDate(project.createdAt)}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2">About this project</h3>
+            <p className="text-gray-600 leading-relaxed">
+              {project.description || project.content || 'No description provided.'}
+            </p>
+          </div>
+
+          {/* Technologies */}
+          {project.technologies?.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Technologies Used</h3>
+              <div className="flex flex-wrap gap-2">
+                {project.technologies.map((tech, i) => (
+                  <span key={i} className="bg-[#00564C]/10 text-[#00564C] text-sm px-3 py-1 rounded-full">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Project Link */}
+          {project.projectLink && (
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Project Link</h3>
+              <a href={project.projectLink} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-[#00564C] hover:underline font-medium">
+                <FaGlobe />
+                {project.projectLink}
+              </a>
+            </div>
+          )}
+
+          {/* Freelancer Profile */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h3 className="font-semibold text-gray-800 mb-3">Freelancer</h3>
+
+            {loading ? (
+              <div className="flex items-center gap-3 animate-pulse">
+                <div className="w-14 h-14 rounded-full bg-gray-200" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <img src={flImage} alt={flName} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 text-lg">{flName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {renderStars(flRating)}
+                      <span className="text-sm text-gray-500">({flReviews} reviews)</span>
+                    </div>
+                    {flLocation && (
+                      <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
+                        <FaMapMarkerAlt className="text-[#00564C]" />
+                        <span>{flLocation}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {flBio && (
+                  <p className="text-gray-600 text-sm leading-relaxed">{flBio}</p>
+                )}
+
+                {/* Intro Video */}
+                {flIntroVideo && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Introduction Video</p>
+                    <video src={flIntroVideo} controls className="w-full rounded-lg max-h-48" />
+                  </div>
+                )}
+
+                {/* Skills */}
+                {flSkills.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {flSkills.map((skill, i) => (
+                        <span key={i} className="bg-[#00564C]/10 text-[#00564C] text-xs px-2 py-1 rounded-full">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Portfolio Links */}
+                {(flGithub || flLinkedin || flPortfolio) && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Portfolio Links</p>
+                    <div className="flex gap-3">
+                      {flGithub && (
+                        <a href={flGithub} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-gray-700 hover:text-[#00564C] transition">
+                          <FaGithub className="text-lg" /> GitHub
+                        </a>
+                      )}
+                      {flLinkedin && (
+                        <a href={flLinkedin} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-gray-700 hover:text-[#00564C] transition">
+                          <FaLinkedin className="text-lg text-blue-600" /> LinkedIn
+                        </a>
+                      )}
+                      {flPortfolio && (
+                        <a href={flPortfolio} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-gray-700 hover:text-[#00564C] transition">
+                          <FaGlobe className="text-lg text-green-600" /> Portfolio
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Contact Button */}
+          <button
+            onClick={onContact}
+            className="w-full bg-[#00564C] hover:bg-[#027568] text-white font-semibold py-4 rounded-xl transition-all duration-200 hover:scale-[1.01] text-lg"
+          >
+            Contact Freelancer
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
