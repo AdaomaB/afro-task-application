@@ -6,11 +6,13 @@ import toast from "react-hot-toast";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/navbar/Navbar";
 import { AuthContext } from "../context/AuthContext";
+import { useDarkMode } from "../context/DarkModeContext";
 import { MessageCircle, Heart, Send, Smile } from "lucide-react";
 
 const MyJobs = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { dark } = useDarkMode();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -159,7 +161,7 @@ const MyJobs = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Sidebar />
 
       <div className="flex-1 lg:ml-64">
@@ -173,10 +175,10 @@ const MyJobs = () => {
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                <h1 className={`text-2xl md:text-3xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
                   My Posted Jobs
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className={`mt-1 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                   Manage your job postings and applicants
                 </p>
               </div>
@@ -191,10 +193,7 @@ const MyJobs = () => {
             {loading ? (
               <div className="grid grid-cols-1 gap-4 md:gap-6">
                 {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl p-6 animate-pulse"
-                  >
+                  <div key={i} className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-6 animate-pulse`}>
                     <div className="flex items-start gap-4">
                       <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
                       <div className="flex-1">
@@ -222,10 +221,10 @@ const MyJobs = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                <h3 className={`text-xl font-semibold mb-2 ${dark ? 'text-white' : 'text-gray-800'}`}>
                   No jobs posted yet
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className={`mb-6 ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                   Start by posting your first job to find talented freelancers
                 </p>
                 <button
@@ -242,14 +241,18 @@ const MyJobs = () => {
                     key={job.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all border border-gray-100"
+                    className={`${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-2xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all border`}
                   >
                     <div className="flex flex-col md:flex-row md:items-start gap-4">
                       {/* Job Icon */}
                       <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center flex-shrink-0">
                         <img
-                          src={job.client?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.client?.fullName || "Client")}&background=10b981&color=fff`}
-                        alt={job.client?.fullName || "you"}
+                          src={
+                            job.client?.profileImage ||
+                            user?.profileImage ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(job.client?.fullName || user?.fullName || "Client")}&background=eab308&color=fff`
+                          }
+                          alt={job.client?.fullName || user?.fullName || "Client"}
                           className="w-full h-full rounded-xl object-cover"
                         />
                       </div>
@@ -258,10 +261,10 @@ const MyJobs = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-3">
                           <div className="flex-1">
-                            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-1">
+                            <h3 className={`text-lg md:text-xl font-bold mb-1 ${dark ? 'text-white' : 'text-gray-900'}`}>
                               {job.title}
                             </h3>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                            <div className={`flex flex-wrap items-center gap-2 text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                               {job.status && (
                                 <span
                                   className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -303,7 +306,7 @@ const MyJobs = () => {
                                   `$${job.budget?.toLocaleString()}`}
                               </p>
                               {job.projectType && (
-                                <p className="text-sm text-gray-500">
+                                <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {job.projectType}
                                 </p>
                               )}
@@ -312,7 +315,7 @@ const MyJobs = () => {
                         </div>
 
                         {job.description && (
-                          <p className="text-gray-700 mb-4 line-clamp-2">
+                          <p className={`mb-4 line-clamp-2 ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {job.description}
                           </p>
                         )}
@@ -325,15 +328,12 @@ const MyJobs = () => {
                             {(job.requiredSkills || job.skills)
                               ?.slice(0, 5)
                               .map((skill, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                >
+                                <span key={idx} className={`px-3 py-1 rounded-full text-sm ${dark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                                   {skill}
                                 </span>
                               ))}
                             {(job.requiredSkills || job.skills)?.length > 5 && (
-                              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                              <span className={`px-3 py-1 rounded-full text-sm ${dark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
                                 +{(job.requiredSkills || job.skills).length - 5}{" "}
                                 more
                               </span>
@@ -342,8 +342,8 @@ const MyJobs = () => {
                         )}
 
                         {/* Stats and Actions */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t ${dark ? 'border-gray-700' : 'border-gray-100'}`}>
+                          <div className={`flex items-center gap-4 text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>
                             <div className="flex items-center gap-1">
                               <svg
                                 className="w-5 h-5"
@@ -402,7 +402,7 @@ const MyJobs = () => {
 
                         {/* Comments Section */}
                         {showComments[job.id] && (
-                          <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className={`mt-4 pt-4 border-t ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
                             {/* Add Comment */}
                             <div className="flex items-start gap-3 mb-4">
                               <img
@@ -428,7 +428,7 @@ const MyJobs = () => {
                                     e.key === "Enter" &&
                                     handleAddComment(job.id)
                                   }
-                                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                  className={`flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 ${dark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'border-gray-300'}`}
                                 />
                                 <button
                                   onClick={() => handleAddComment(job.id)}
@@ -442,14 +442,14 @@ const MyJobs = () => {
                             {/* Comments List */}
                             <div className="space-y-3">
                               {comments[job.id]?.length === 0 && (
-                                <p className="text-center text-gray-500 py-4">
+                                <p className={`text-center py-4 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                                   No comments yet. Be the first to comment!
                                 </p>
                               )}
                               {comments[job.id]?.map((comment) => (
                                 <div
                                   key={comment.id}
-                                  className="flex items-start gap-3 bg-gray-50 rounded-lg p-3"
+                                  className={`flex items-start gap-3 rounded-lg p-3 ${dark ? 'bg-gray-700' : 'bg-gray-50'}`}
                                 >
                                   <img
                                     src={
@@ -461,27 +461,23 @@ const MyJobs = () => {
                                   />
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-semibold text-sm">
+                                      <span className={`font-semibold text-sm ${dark ? 'text-gray-200' : ''}`}>
                                         {comment.user?.fullName}
                                       </span>
-                                      <span className="text-xs text-gray-500">
+                                      <span className={`text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
                                         {new Date(
                                           comment.createdAt,
                                         ).toLocaleDateString()}
                                       </span>
                                     </div>
-                                    <p className="text-gray-700 text-sm">
+                                    <p className={`text-sm ${dark ? 'text-gray-300' : 'text-gray-700'}`}>
                                       {comment.content}
                                     </p>
                                     <button
-                                      onClick={() =>
-                                        handleLikeComment(job.id, comment.id)
-                                      }
-                                      className={`flex items-center gap-1 mt-2 text-xs ${
-                                        comment.likes?.includes(user?.id)
-                                          ? "text-red-500"
-                                          : "text-gray-500"
-                                      } hover:text-red-500 transition`}
+                                      onClick={() => handleLikeComment(job.id, comment.id)}
+                                      className={`flex items-center gap-1 mt-2 text-xs transition ${
+                                        comment.likes?.includes(user?.id) ? "text-red-500" : dark ? "text-gray-400 hover:text-red-400" : "text-gray-500 hover:text-red-500"
+                                      }`}
                                     >
                                       <Heart
                                         className={`w-4 h-4 ${comment.likes?.includes(user?.id) ? "fill-current" : ""}`}
@@ -510,35 +506,22 @@ const MyJobs = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-4 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-4 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto`}
           >
             <div className="flex items-center justify-between mb-4 md:mb-6">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+              <h2 className={`text-xl md:text-2xl font-bold ${dark ? 'text-white' : 'text-gray-800'}`}>
                 Applicants for {selectedJob?.title}
               </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+              <button onClick={() => setShowModal(false)} className={`p-2 rounded-lg transition ${dark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                <svg className={`w-6 h-6 ${dark ? 'text-gray-300' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {applications.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${dark ? 'bg-gray-700' : 'bg-gray-100'}`}>
                   <svg
                     className="w-10 h-10 text-gray-400"
                     fill="none"
@@ -553,14 +536,14 @@ const MyJobs = () => {
                     />
                   </svg>
                 </div>
-                <p className="text-gray-500">No applications yet</p>
+                <p className={dark ? 'text-gray-400' : 'text-gray-500'}>No applications yet</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {applications.map((app) => (
                   <div
                     key={app.id}
-                    className="border border-gray-200 rounded-xl p-4 md:p-6"
+                    className={`border rounded-xl p-4 md:p-6 ${dark ? 'border-gray-700' : 'border-gray-200'}`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                       <img
@@ -572,15 +555,9 @@ const MyJobs = () => {
                         className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg">
-                          {app.freelancer?.fullName}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {app.freelancer?.skillCategory}
-                        </p>
-                        <p className="mt-3 text-gray-700 text-sm md:text-base">
-                          {app.proposalMessage}
-                        </p>
+                        <h3 className={`font-bold text-lg ${dark ? 'text-white' : ''}`}>{app.freelancer?.fullName}</h3>
+                        <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-600'}`}>{app.freelancer?.skillCategory}</p>
+                        <p className={`mt-3 text-sm md:text-base ${dark ? 'text-gray-300' : 'text-gray-700'}`}>{app.proposalMessage}</p>
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                           <span className="font-medium text-green-600">
                             Budget: {app.proposedBudget}
@@ -661,7 +638,7 @@ const MyJobs = () => {
 
             <button
               onClick={() => setShowModal(false)}
-              className="mt-6 w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              className={`mt-6 w-full px-6 py-3 border rounded-lg transition ${dark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               Close
             </button>

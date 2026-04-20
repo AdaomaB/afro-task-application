@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { getDoc } from "firebase/firestore";
+import { getDoc } from "firebase/firestore"; // kept for potential future use
 import { AuthContext } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 import { motion, useInView, AnimatePresence } from "framer-motion";
@@ -101,10 +101,16 @@ function ReviewCard({ review, onEdit, onDelete, user, delay = 0 }) {
       <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
         <div className="relative w-10 h-10 rounded-full shadow-sm flex-shrink-0 overflow-hidden">
           <img
-            src={review.reviewer?.profileImage || review.reviewer.profileIMage }
-            className="w-10 h-10 rounded-full"
+            src={
+              review.reviewer?.profileImage ||
+              review.reviewer?.profileIMage ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer?.fullName || review.name || 'User')}&background=random`
+            }
+            alt={review.reviewer?.fullName || review.name || 'User'}
+            className="w-10 h-10 rounded-full object-cover"
             onError={(e) => {
-              e.target.src = `https://ui-avatars.com/api/?name=User`;
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(review.reviewer?.fullName || review.name || 'User')}&background=random`;
             }}
           />
         </div>
@@ -326,23 +332,15 @@ export default function AppReviews() {
 
               if (!usersCache.current[review.reviewerId]) {
                 try {
-                  const userRef = doc(db, "users", review.reviewerId);
-                  const userSnap = await getDoc(userRef);
-
-                  if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    usersCache.current[review.reviewerId] = {
-                      fullName: userData.fullName || userData.name || "Anonymous",
-                      profileImage: userData.profileImage || userData.photoURL || null,
-                      role: userData.role === "freelancer" ? "Freelancer" : "Client",
-                    };
-                  } else {
-                    usersCache.current[review.reviewerId] = {
-                      fullName: review.name || "Anonymous",
-                      profileImage: null,
-                      role: review.role || "Client",
-                    };
-                  }
+                  // Fetch from backend API (works for all users, no Firestore permission issues)
+                  const { default: api } = await import('../../services/api');
+                  const res = await api.get(`/profile/public/${review.reviewerId}`);
+                  const userData = res.data.profile;
+                  usersCache.current[review.reviewerId] = {
+                    fullName: userData.fullName || userData.name || review.name || "Anonymous",
+                    profileImage: userData.profileImage || null,
+                    role: userData.role === "freelancer" ? "Freelancer" : "Client",
+                  };
                 } catch (err) {
                   console.error(`Failed to fetch user ${review.reviewerId}:`, err);
                   usersCache.current[review.reviewerId] = {
