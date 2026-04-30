@@ -523,11 +523,11 @@ export default function AppReviews() {
 
         ) : reviews.length === 0 ? (
           <div className="col-span-full text-center py-4">
-            <Star className="lg:w-20 w-12 h-12 lg:h-20 mx-auto text-gray-300 mb-6" />
-            <h3 className="lg:text-3xl text-xl font-bold text-gray-900 mb-4">
+            <Star className="lg:w-12 w-8 h-8 lg:h-12 mx-auto text-gray-300 mb-4" />
+            <h3 className="lg:text-xl text-sm font-bold text-gray-900 mb-4">
               No Reviews Yet
             </h3>
-            <p className="lg:text-xl text-xs text-gray-500 max-w-lg mx-auto mb-8">
+            <p className="lg:text-sm text-xs text-gray-500 max-w-lg mx-auto mb-8">
               Be the first to share your experience!
               <br />
               Your feedback helps freelancers and clients worldwide.

@@ -16,6 +16,7 @@ import LoginPage from './pages/LoginPage';
 import FreelancerFeed from './pages/FreelancerFeed';
 import ClientFeed from './pages/ClientFeed';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLoginPage from './pages/AdminLoginPage';
 import ExploreJobs from './pages/ExploreJobs';
 import ExploreProjects from './pages/ExploreProjects';
 import ContactPage from './pages/ContactPage';
@@ -38,6 +39,8 @@ import FreelancerDashboard from './pages/FreelancerDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import ProjectWorkspace from './pages/ProjectWorkspace';
 import AppSettingsPage from './pages/AppSettingsPage';
+import AdminProfilePage from './pages/AdminProfilePage';
+import BookmarksPage from './pages/BookmarksPage';
 
 function App() {
   return (
@@ -136,11 +139,23 @@ function App() {
               <MessagesPage />
             </PrivateRoute>
           } />
+          <Route path="/freelancer/bookmarks" element={
+            <PrivateRoute role="freelancer">
+              <BookmarksPage />
+            </PrivateRoute>
+          } />
           
           {/* Public Profile Route */}
           <Route path="/profile/:userId" element={
             <PrivateRoute>
               <PublicProfilePage />
+            </PrivateRoute>
+          } />
+
+          {/* Admin Public Profile */}
+          <Route path="/admin/profile/:userId" element={
+            <PrivateRoute>
+              <AdminProfilePage />
             </PrivateRoute>
           } />
           
@@ -199,11 +214,22 @@ function App() {
               <MessagesPage />
             </PrivateRoute>
           } />
+          <Route path="/client/bookmarks" element={
+            <PrivateRoute role="client">
+              <BookmarksPage />
+            </PrivateRoute>
+          } />
           
           {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={
             <PrivateRoute role="admin">
               <AdminDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/admin/messages" element={
+            <PrivateRoute role="admin">
+              <MessagesPage />
             </PrivateRoute>
           } />
           <Route path="*" element={<NotFound />} />
