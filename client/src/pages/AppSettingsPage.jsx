@@ -18,6 +18,7 @@ import {
   EyeOff,
   Lock,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -65,6 +66,29 @@ function saveLocalSettings(value) {
     // ignore storage failures
   }
 }
+
+function getPasswordStrength(password) {
+  if (!password) return null;
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  if (score <= 1) return { label: 'Weak', color: 'bg-red-500', width: 'w-1/5' };
+  if (score <= 2) return { label: 'Fair', color: 'bg-orange-400', width: 'w-2/5' };
+  if (score <= 3) return { label: 'Good', color: 'bg-yellow-400', width: 'w-3/5' };
+  if (score <= 4) return { label: 'Strong', color: 'bg-emerald-500', width: 'w-4/5' };
+  return { label: 'Very strong', color: 'bg-emerald-600', width: 'w-full' };
+}
+
+const NAV_SECTIONS = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'appearance', label: 'Appearance', icon: Monitor },
+  { id: 'security', label: 'Security', icon: Shield },
+  { id: 'session', label: 'Session', icon: LogOut },
+];
 
 function SettingsCard({ icon: Icon, title, description, children }) {
   return (
@@ -142,7 +166,17 @@ export default function AppSettingsPage() {
     confirmPassword: '',
   });
   const [savingPassword, setSavingPassword] = useState(false);
+  const [activeSection, setActiveSection] = useState('profile');
+  const [unsavedProfile, setUnsavedProfile] = useState(false);
+  const [unsavedPrefs, setUnsavedPrefs] = useState(false);
+  const sectionRefs = useRef({});
 
+  const passwordStrength = getPasswordStrength(passwordForm.newPassword);
+
+  const scrollToSection = (id) => {
+    sectionRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveSection(id);
+  };
   useEffect(() => {
     setProfile(buildInitialProfile(user));
     setProfileImagePreview(user?.profileImage || '');
@@ -160,10 +194,12 @@ export default function AppSettingsPage() {
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
+    setUnsavedProfile(true);
   };
 
   const handleToggleSetting = (field) => {
     setLocalSettings((prev) => ({ ...prev, [field]: !prev[field] }));
+    setUnsavedPrefs(true);
   };
 
   const handleImageChange = (e) => {
@@ -197,6 +233,7 @@ export default function AppSettingsPage() {
       });
 
       toast.success('Profile settings saved');
+      setUnsavedProfile(false);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Failed to save profile settings');
     } finally {
@@ -210,6 +247,7 @@ export default function AppSettingsPage() {
     try {
       saveLocalSettings(localSettings);
       toast.success('Preferences saved on this device');
+      setUnsavedPrefs(false);
     } catch {
       toast.error('Failed to save preferences');
     } finally {
@@ -257,6 +295,7 @@ export default function AppSettingsPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fa] px-4 py-6 text-gray-900 dark:bg-[#071411] dark:text-white md:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
+        {/* Header */}
         <div className="mb-6 flex flex-col gap-4 rounded-3xl bg-gradient-to-r from-[#00564C] to-[#0b7a6d] p-6 text-white shadow-lg md:flex-row md:items-center md:justify-between">
           <div>
             <div className="mb-3 flex items-center gap-3 text-white/80">
@@ -295,8 +334,37 @@ export default function AppSettingsPage() {
           </div>
         </div>
 
+        {/* Unsaved changes banner */}
+        {(unsavedProfile || unsavedPrefs) && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-300">
+            <AlertCircle size={16} className="shrink-0" />
+            You have unsaved changes.{' '}
+            {unsavedProfile && <button onClick={handleSaveProfile} className="font-semibold underline">Save profile</button>}
+            {unsavedProfile && unsavedPrefs && ' · '}
+            {unsavedPrefs && <button onClick={handleSavePreferences} className="font-semibold underline">Save preferences</button>}
+          </div>
+        )}
+
+        {/* Section nav */}
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {NAV_SECTIONS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => scrollToSection(id)}
+              className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+                activeSection === id
+                  ? 'bg-[#00564C] text-white shadow'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-white/5 dark:text-white/70 dark:hover:bg-white/10'
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
+            <div ref={(el) => (sectionRefs.current['profile'] = el)}>
             <SettingsCard
               icon={User}
               title="Profile information"
@@ -416,7 +484,9 @@ export default function AppSettingsPage() {
                 </button>
               </div>
             </SettingsCard>
+            </div>
 
+            <div ref={(el) => (sectionRefs.current['notifications'] = el)}>
             <SettingsCard
               icon={Bell}
               title="Notifications"
@@ -468,9 +538,11 @@ export default function AppSettingsPage() {
                 </button>
               </div>
             </SettingsCard>
+            </div>
           </div>
 
           <div className="space-y-6">
+            <div ref={(el) => (sectionRefs.current['appearance'] = el)}>
             <SettingsCard
               icon={Monitor}
               title="Appearance"
@@ -516,7 +588,9 @@ export default function AppSettingsPage() {
                 </button>
               </div>
             </SettingsCard>
+            </div>
 
+            <div ref={(el) => (sectionRefs.current['security'] = el)}>
             <SettingsCard
               icon={Shield}
               title="Security"
@@ -558,6 +632,14 @@ export default function AppSettingsPage() {
                       onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
                       placeholder="Enter new password"
                     />
+                    {passwordStrength && (
+                      <div className="space-y-1">
+                        <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-white/10">
+                          <div className={`h-full rounded-full transition-all ${passwordStrength.color} ${passwordStrength.width}`} />
+                        </div>
+                        <p className={`text-xs font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}>{passwordStrength.label}</p>
+                      </div>
+                    )}
                     <Input
                       type="password"
                       label="Confirm new password"
@@ -594,7 +676,9 @@ export default function AppSettingsPage() {
                 </div>
               </div>
             </SettingsCard>
+            </div>
 
+            <div ref={(el) => (sectionRefs.current['session'] = el)}>
             <SettingsCard
               icon={LogOut}
               title="Session and danger zone"
@@ -638,6 +722,7 @@ export default function AppSettingsPage() {
                 </button>
               </div>
             </SettingsCard>
+            </div>
           </div>
         </div>
 

@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, Briefcase, FileText, FolderOpen, CheckCircle, 
-  User, PlusCircle, Search, MessageSquare, X, BookOpen, Moon, Sun
+  User, PlusCircle, Search, MessageSquare, X, BookOpen, Moon, Sun,
+  Bookmark
 } from 'lucide-react';
 import { IoMdSettings } from "react-icons/io";
 import { AuthContext } from '../context/AuthContext';
@@ -26,6 +27,7 @@ const Sidebar = () => {
     { name: 'Completed Projects', path: '/freelancer/projects/completed', icon: CheckCircle },
     { name: 'Create Post', path: '/freelancer/create-post', icon: PlusCircle },
     { name: 'Messages', path: '/freelancer/messages', icon: MessageSquare },
+    { name: 'Bookmarks', path: '/freelancer/bookmarks', icon: Bookmark },
     { name: 'Blog', path: '/blogs', icon: BookOpen },
     { name: 'Profile', path: '/freelancer/profile', icon: User }
   ];
@@ -38,6 +40,7 @@ const Sidebar = () => {
     { name: 'Ongoing Projects', path: '/client/projects/ongoing', icon: FolderOpen },
     { name: 'Completed Projects', path: '/client/projects/completed', icon: CheckCircle },
     { name: 'Messages', path: '/client/messages', icon: MessageSquare },
+    { name: 'Bookmarks', path: '/client/bookmarks', icon: Bookmark },
     { name: 'Blog', path: '/blogs', icon: BookOpen },
     { name: 'Profile', path: '/client/profile', icon: User }
   ];

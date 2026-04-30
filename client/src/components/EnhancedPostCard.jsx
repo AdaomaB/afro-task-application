@@ -1,10 +1,10 @@
 import { useState, useEffect, useContext, useRef, memo } from 'react';
 import { MdMoreVert } from "react-icons/md";
-import { FiThumbsUp } from "react-icons/fi";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from "../context/DarkModeContext";
-import { MessageCircle, Share2, Bookmark, MoreVertical, Send, Smile, Play, X } from 'lucide-react';
+import { MessageCircle, Bookmark, MoreVertical, Send, Smile, Play, X } from 'lucide-react';
+import { TbShare3 } from "react-icons/tb";
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -12,15 +12,39 @@ import { db } from '../config/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { createPortal } from 'react-dom';
 import EmojiPicker from 'emoji-picker-react';
+import { getBookmarkedIds, toggleBookmark } from '../pages/BookmarksPage';
+// Resolve avatar — admins always use the official logo
+const getAvatar = (u) =>
+  u?.role === 'admin'
+    ? '/img/afro-task-logo.png'
+    : (u?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.fullName || 'User')}`);
+
+// Convert emoji codepoint to Twemoji CDN URL for crisp, consistent cross-platform emojis
+const twemojiUrl = (emoji) => {
+  const cp = [...emoji].map(e => e.codePointAt(0).toString(16)).filter(c => c !== 'fe0f').join('-');
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${cp}.svg`;
+};
+
+// Crisp emoji image using Twemoji
+const TwEmoji = ({ emoji, size = 20, className = '' }) => (
+  <img
+    src={twemojiUrl(emoji)}
+    alt={emoji}
+    width={size}
+    height={size}
+    className={`inline-block select-none ${className}`}
+    draggable={false}
+  />
+);
 
 const REACTIONS = [
-  { emoji: '👍', label: 'Like' },
-  { emoji: '❤️', label: 'Love' },
-  { emoji: '😂', label: 'Haha' },
-  { emoji: '😮', label: 'Wow' },
-  { emoji: '😢', label: 'Sad' },
-  { emoji: '😡', label: 'Angry' },
-  { emoji: '🎉', label: 'Celebrate' },
+  { emoji: '👍', label: 'Like',      color: 'text-blue-500' },
+  { emoji: '❤️', label: 'Love',      color: 'text-red-500' },
+  { emoji: '😂', label: 'Haha',      color: 'text-yellow-500' },
+  { emoji: '😮', label: 'Wow',       color: 'text-yellow-500' },
+  { emoji: '😢', label: 'Sad',       color: 'text-blue-400' },
+  { emoji: '😡', label: 'Angry',     color: 'text-red-600' },
+  { emoji: '🎉', label: 'Celebrate', color: 'text-purple-500' },
 ];
 
 // Separate component for the image so it never re-mounts due to parent state changes
@@ -56,7 +80,7 @@ const ReplyInput = ({ comment, postId, onReplied, onCancel }) => {
   return (
     <div className="mt-2 flex gap-2 items-start">
       <img
-        src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
+        src={getAvatar(user)}
         className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-1"
         alt=""
       />
@@ -102,17 +126,29 @@ const ReplyInput = ({ comment, postId, onReplied, onCancel }) => {
   );
 };
 
-const EnhancedPostCard = ({ post, onDelete }) => {
+const EnhancedPostCard = ({ post, onDelete, isAdminView = false }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const { dark } = useDarkMode();
   const mounted = useRef(false); // track first mount to skip re-animation
 
+  // Resolve admin identity from localStorage for admin-authored posts
+  const adminUser = (() => { try { return JSON.parse(localStorage.getItem('adminUser')); } catch { return null; } })();
+  const isAdminPost = post.authorRole === 'admin';
+  const postAuthor = post.author || post.user;
+  const hasVideo = post.type === 'video' || post.mediaType === 'video';
+  const hasImage = (post.type === 'image' || post.image) && !hasVideo;
+
+  // For admin posts always use the official logo
+  const authorAvatar = getAvatar(isAdminPost ? { role: 'admin' } : postAuthor);
+
   const [liked, setLiked] = useState(false);
   const [myReaction, setMyReaction] = useState(null);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [reactionCounts, setReactionCounts] = useState(post.reactions || {});
-  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(() =>
+    user?.id ? getBookmarkedIds(user.id).includes(post.id) : false
+  );
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -125,15 +161,15 @@ const EnhancedPostCard = ({ post, onDelete }) => {
   const [following, setFollowing] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
   const [viewTracked, setViewTracked] = useState(false);
-const [replyingTo, setReplyingTo] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [commentDetailId, setCommentDetailId] = useState(null);
   const reactionRef = useRef(null);
 
-  const isOwner = user?.uid === post.authorId;
-  const postAuthor = post.author || post.user;
-  const hasVideo = post.type === 'video' || post.mediaType === 'video';
-  const hasImage = (post.type === 'image' || post.image) && !hasVideo;
+  // isOwner: regular user owns their post, OR admin viewing an admin post
+  const isOwner = isAdminPost
+    ? (isAdminView || adminUser?.role === 'admin')
+    : user?.uid === post.authorId;
 
   // Mark mounted after first render
   useEffect(() => { mounted.current = true; }, []);
@@ -179,12 +215,12 @@ const [replyingTo, setReplyingTo] = useState(null);
 
   useEffect(() => {
     const check = async () => {
-      if (!isOwner && post.authorId && user?.id) {
+      if (!isOwner && !isAdminPost && post.authorId && user?.id) {
         try { const r = await api.get(`/follows/${post.authorId}/status`); setFollowing(r.data.following); } catch {}
       }
     };
     check();
-  }, [post.authorId, user?.id, isOwner]);
+  }, [post.authorId, user?.id, isOwner, isAdminPost]);
 
   useEffect(() => {
     if (showComments && post.id) fetchComments();
@@ -207,6 +243,10 @@ const [replyingTo, setReplyingTo] = useState(null);
   };
 
   const handleUserClick = () => {
+    if (isAdminPost) {
+      navigate(`/admin/profile/${post.authorId}`);
+      return;
+    }
     if (post.authorId && post.authorId !== user?.id) navigate(`/profile/${post.authorId}`);
     else if (post.authorId === user?.id) navigate(`/${user.role}/profile`);
   };
@@ -227,18 +267,31 @@ const [replyingTo, setReplyingTo] = useState(null);
     try {
       const same = myReaction === emoji;
       const newReaction = same ? null : emoji;
-      
+      const prevReaction = myReaction;
+
+      // Optimistic update — update bubble immediately, don't wait for Firebase
       setMyReaction(newReaction);
-      
-      // Call the new reaction endpoint
-      if (newReaction) {
-        await api.post(`/posts/${post.id}/react`, { emoji: newReaction });
-      } else {
-        // If removing reaction, we need to handle this differently
-        // For now, let's just update the UI locally
-      }
-      
+      setReactionCounts(prev => {
+        const next = { ...prev };
+        if (prevReaction && next[prevReaction]) {
+          next[prevReaction] = next[prevReaction].filter(id => id !== (user?.uid || user?.id));
+          if (next[prevReaction].length === 0) delete next[prevReaction];
+        }
+        if (newReaction) {
+          next[newReaction] = [...(next[newReaction] || []), (user?.uid || user?.id)];
+        }
+        return next;
+      });
+
       setShowReactions(false);
+
+      if (newReaction) {
+        // Apply or switch reaction
+        await api.post(`/posts/${post.id}/react`, { emoji: newReaction });
+      } else if (prevReaction) {
+        // Remove reaction — send the previous emoji so backend knows what to remove
+        await api.post(`/posts/${post.id}/react`, { emoji: prevReaction, remove: true });
+      }
     } catch (error) {
       console.error('Failed to react:', error);
       toast.error('Failed to react to post');
@@ -278,8 +331,15 @@ const [replyingTo, setReplyingTo] = useState(null);
 
   const handleDelete = async () => {
     if (!window.confirm('Delete this post?')) return;
-    try { await api.delete(`/posts/${post.id}`); toast.success('Post deleted'); onDelete?.(post.id); }
-    catch { toast.error('Failed to delete post'); }
+    try {
+      if (isAdminPost) {
+        await api.delete(`/admin/posts/${post.id}`);
+      } else {
+        await api.delete(`/posts/${post.id}`);
+      }
+      toast.success('Post deleted');
+      onDelete?.(post.id);
+    } catch { toast.error('Failed to delete post'); }
   };
 
   const getTypeBadge = () => {
@@ -291,23 +351,66 @@ const [replyingTo, setReplyingTo] = useState(null);
   };
 
   const fmt = (ts) => {
-    const d = Math.floor((Date.now() - new Date(ts)) / 1000);
-    if (d < 60) return 'Just now';
-    if (d < 3600) return `${Math.floor(d / 60)}m ago`;
-    if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
-    return `${Math.floor(d / 86400)}d ago`;
+    if (!ts) return '';
+    let date;
+    if (ts && typeof ts === 'object' && (ts._seconds !== undefined || ts.seconds !== undefined)) {
+      date = new Date((ts._seconds ?? ts.seconds) * 1000);
+    } else {
+      date = new Date(ts);
+    }
+    if (isNaN(date.getTime())) return '';
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return 'Just now';
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    const days = Math.floor(s / 86400);
+    if (days < 7) return `${days}d ago`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 5) return `${weeks}w ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
   };
 
   const topComments = comments.filter(c => !c.parentId);
   const getReplies = (id) => comments.filter(c => c.parentId === id);
 
-  // Get top 3 most used reactions
+  // Get top 3 most used reactions with their counts
   const getTopReactions = () => {
-    const reactionEntries = Object.entries(reactionCounts);
-    return reactionEntries
-      .sort(([, a], [, b]) => b.length - a.length)
-      .slice(0, 3)
-      .map(([emoji]) => emoji);
+    return Object.entries(reactionCounts)
+      .map(([emoji, users]) => ({ emoji, count: Array.isArray(users) ? users.length : (users || 0) }))
+      .filter(r => r.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  };
+
+  const totalReactions = Object.values(reactionCounts).reduce((sum, users) => {
+    return sum + (Array.isArray(users) ? users.length : (users || 0));
+  }, 0) + likeCount;
+
+  // Stacked emoji bubbles like Facebook/LinkedIn
+  const ReactionBubbles = () => {
+    const top = getTopReactions();
+    if (top.length === 0 && totalReactions === 0) return null;
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className="flex items-center">
+          {top.map((r, i) => (
+            <span
+              key={r.emoji}
+              title={`${r.count} ${r.emoji}`}
+              className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-white shadow-sm border border-gray-100"
+              style={{ marginLeft: i > 0 ? '-5px' : 0, zIndex: top.length - i }}
+            >
+              <TwEmoji emoji={r.emoji} size={14} />
+            </span>
+          ))}
+        </span>
+        {totalReactions > 0 && (
+          <span className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{totalReactions}</span>
+        )}
+      </span>
+    );
   };
 
   return (
@@ -340,7 +443,7 @@ const [replyingTo, setReplyingTo] = useState(null);
               {/* Author Header */}
               <div className="flex items-center gap-3 mb-4">
                 <img
-                  src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
+                  src={authorAvatar}
                   alt={postAuthor?.fullName}
                   onClick={handleUserClick}
                   className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
@@ -349,7 +452,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                   <h3 onClick={handleUserClick} className={`font-semibold cursor-pointer hover:text-green-600 transition ${dark ? 'text-white' : 'text-gray-900'}`}>
                     {postAuthor?.fullName || 'Unknown User'}
                   </h3>
-                  <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+                  <p className={`text-sm ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{isAdminPost ? 'AfroTask Admin' : (postAuthor?.skillCategory || postAuthor?.role)} • {fmt(post.createdAt)}</p>
                 </div>
               </div>
 
@@ -383,9 +486,8 @@ const [replyingTo, setReplyingTo] = useState(null);
 
               {/* Stats */}
               <div className={`mt-4 pt-4 border-t flex items-center justify-between text-sm ${dark ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-600'}`}>
-                <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
-                <span>{post.commentsCount || comments.length} comments</span>
-              </div>
+                <ReactionBubbles />
+                <span>{post.commentsCount || comments.length} comments</span>              </div>
             </div>
 
             {/* Comments Section */}
@@ -395,7 +497,7 @@ const [replyingTo, setReplyingTo] = useState(null);
               ) : topComments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <img
-                    src={comment.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.fullName || 'User')}`}
+                    src={getAvatar(comment.user)}
                     alt={comment.user?.fullName}
                     className="w-8 h-8 rounded-full object-cover cursor-pointer flex-shrink-0"
                     onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}
@@ -432,7 +534,7 @@ const [replyingTo, setReplyingTo] = useState(null);
                         {getReplies(comment.id).map(reply => (
                           <div key={reply.id} className="flex gap-2">
                             <img
-                              src={reply.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.user?.fullName || 'User')}`}
+                              src={getAvatar(reply.user)}
                               className="w-6 h-6 rounded-full object-cover flex-shrink-0 cursor-pointer"
                               onClick={() => reply.userId && navigate(`/profile/${reply.userId}`)}
                               alt=""
@@ -461,7 +563,7 @@ const [replyingTo, setReplyingTo] = useState(null);
           <form onSubmit={handleComment} className={`border-t p-4 relative z-20 ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
             <div className="flex gap-3">
               <img
-                src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
+                src={getAvatar(user)}
                 alt={user?.fullName}
                 className="w-9 h-9 rounded-full object-cover flex-shrink-0"
               />
@@ -514,22 +616,22 @@ const [replyingTo, setReplyingTo] = useState(null);
           <div className="flex items-center gap-3 w-full" onClick={() => setShowDetailModal(true)}>
             <div className="contain-content lg:w-12 w-10 lg:h-12 h-10">
             <img
-              src={postAuthor?.profileImage || `https://ui-avatars.com/api/?name=${postAuthor?.fullName || 'User'}`}
+              src={authorAvatar}
               alt={postAuthor?.fullName}
               onClick={handleUserClick}
-              className="w-full h-full rounded-full object-cover ring-2 ring-gray-100 cursor-pointer hover:ring-4 hover:ring-gray-200 transition"
+              className="w-full h-full rounded-full object-cover cursor-pointer transition"
             />
             </div>
               <div className="flex flex-col items-start gap-1">
                 <h3 onClick={handleUserClick} className={`flex flex-row flex-nowrap w-full font-semibold cursor-pointer hover:text-green-600 transition md:text-lg text-sm ${dark ? 'text-white' : 'text-gray-900'}`}>
                   {postAuthor?.fullName || 'Unknown User'}
                 </h3>
-              <p className={`flex flex-row flex-nowrap md:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{postAuthor?.skillCategory || postAuthor?.role} • {fmt(post.createdAt)}</p>
+              <p className={`flex flex-row flex-nowrap md:text-sm text-xs ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{isAdminPost ? 'AfroTask Admin' : (postAuthor?.skillCategory || postAuthor?.role)} • {fmt(post.createdAt)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {!isOwner && (
+            {!isOwner && !isAdminPost && (
               <button onClick={handleFollow} disabled={loadingFollow}
                 className={`px-4 py-1.5 text-sm font-medium rounded-lg transition ${following ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-green-600 hover:bg-green-700 text-white'}`}>
                 {loadingFollow ? '...' : following ? 'Following' : 'Follow'}
@@ -581,22 +683,35 @@ const [replyingTo, setReplyingTo] = useState(null);
 
       {/* Stats */}
       <div className={`px-6 py-3 border-t flex items-center justify-between text-sm ${dark ? 'border-gray-700 text-gray-400' : 'border-gray-100 text-gray-600'}`}>
-        <span className="flex items-center gap-1">{likeCount} {getTopReactions().join('')} reactions</span>
+        <ReactionBubbles />
         <span>{post.commentsCount || 0} comments</span>
       </div>
 
       {/* Actions */}
       <div className={`lg:px-6 px-3 py-3 border-t flex items-center justify-around ${dark ? 'border-gray-700' : 'border-gray-100'}`} onClick={e => e.stopPropagation()}>
+        <div className="contain-content lg:w-5 w-4 h-4 lg:h-5">
+            <img
+              src={getAvatar(user)}
+              alt={user?.fullName}
+              className="w-full h-full rounded-full object-cover transition"
+            />
+            </div>
+
         {/* Reaction picker */}
         <div className="relative" ref={reactionRef}>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={(e) => { e.stopPropagation(); handleLike(); }}
+            onClick={(e) => { e.stopPropagation(); myReaction ? handleReaction(myReaction) : handleReaction('👍'); }}
             onMouseEnter={() => setShowReactions(true)}
-            className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${liked ? 'text-blue-600 font-semibold' : dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={`flex items-center gap-1.5 md:px-4 p-2 rounded-lg transition ${myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.color || 'text-blue-500' : dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            {myReaction ? <span className="lg:text-lg leading-none">{myReaction}</span> : <FiThumbsUp className="w-5 h-5" />}
-            <span className="font-medium text-xs md:text-sm">{myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}</span>
+            {myReaction
+              ? <TwEmoji emoji={myReaction} size={20} />
+              : <TwEmoji emoji="👍" size={20} className="opacity-60" />
+            }
+            <span className="font-medium text-xs md:text-sm">
+              {myReaction ? REACTIONS.find(r => r.emoji === myReaction)?.label : 'Like'}
+            </span>
           </motion.button>
 
           <AnimatePresence>
@@ -610,9 +725,14 @@ const [replyingTo, setReplyingTo] = useState(null);
                 className={`absolute bottom-full left-0 mb-2 rounded-2xl shadow-2xl border md:px-3 p-2 flex gap-1 z-20 whitespace-nowrap ${dark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-100'}`}
               >
                 {REACTIONS.map((r) => (
-                  <button key={r.emoji} onClick={(e) => { e.stopPropagation(); handleReaction(r.emoji); }} title={r.label}
-                    className={`lg:text-2xl hover:scale-125 transition-transform p-1 rounded-full ${myReaction === r.emoji ? 'bg-blue-50 scale-125' : ''}`}>
-                    {r.emoji}
+                  <button
+                    key={r.emoji}
+                    onClick={(e) => { e.stopPropagation(); handleReaction(r.emoji); }}
+                    title={r.label}
+                    className={`flex flex-col items-center gap-0.5 p-1.5 rounded-xl transition-transform hover:scale-125 hover:bg-gray-50 ${myReaction === r.emoji ? 'scale-125 bg-blue-50' : ''}`}
+                  >
+                    <TwEmoji emoji={r.emoji} size={28} />
+                    <span className="text-[10px] text-gray-500 font-medium">{r.label}</span>
                   </button>
                 ))}
               </motion.div>
@@ -623,16 +743,22 @@ const [replyingTo, setReplyingTo] = useState(null);
         <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }}
           className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <MessageCircle className="lg:w-5 w-4 h-4 lg:h-5" />
-          <span className="font-medium text-xs md:text-sm">Comment</span>
+          {/* <span className="font-medium text-xs md:text-sm">Comment</span> */}
         </motion.button>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); handleShare(); }}
           className={`flex items-center gap-2 md:px-4 p-2 rounded-lg transition ${dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-          <Share2 className="lg:w-5 w-4 h-4 lg:h-5" />
-          <span className="font-medium text-xs md:text-sm">Share</span>
+          <TbShare3 className="lg:w-5 w-4 h-4 lg:h-5" />
+          {/* <span className="font-medium text-xs md:text-sm">Share</span> */}
         </motion.button>
 
-        <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => { e.stopPropagation(); setBookmarked(!bookmarked); }}
+        <motion.button whileTap={{ scale: 0.95 }} onClick={(e) => {
+            e.stopPropagation();
+            if (!user?.id) return;
+            const isNowBookmarked = toggleBookmark(user.id, post);
+            setBookmarked(isNowBookmarked);
+            toast.success(isNowBookmarked ? 'Post saved' : 'Bookmark removed', { duration: 1500 });
+          }}
           className={`p-2 rounded-lg transition ${bookmarked ? 'text-green-600' : dark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}>
           <Bookmark className={`w-5 h-5 ${bookmarked ? 'fill-current' : ''}`} />
         </motion.button>
@@ -657,7 +783,7 @@ const [replyingTo, setReplyingTo] = useState(null);
               ) : topComments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <img
-                    src={comment.user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.user?.fullName || 'User')}`}
+                    src={getAvatar(comment.user)}
                     alt={comment.user?.fullName}
                     className="w-8 h-8 rounded-full object-cover cursor-pointer flex-shrink-0 mt-0.5"
                     onClick={() => comment.userId && navigate(`/profile/${comment.userId}`)}
@@ -750,7 +876,7 @@ const [replyingTo, setReplyingTo] = useState(null);
             <form onSubmit={handleComment} className={`p-4 border-t ${dark ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
               <div className="flex gap-3 relative z-20">
                 <img
-                  src={user?.profileImage || `https://ui-avatars.com/api/?name=${user?.fullName}`}
+                  src={getAvatar(user)}
                   alt={user?.fullName}
                   className="w-9 h-9 rounded-full object-cover flex-shrink-0"
                 />

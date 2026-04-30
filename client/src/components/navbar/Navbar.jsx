@@ -94,6 +94,9 @@ const Navbar = () => {
         return <Briefcase className="w-5 h-5 text-yellow-600" />;
       case 'message':
         return <MessageCircle className="w-5 h-5 text-blue-600" />;
+      case 'admin_broadcast':
+      case 'admin_message':
+        return <Bell className="w-5 h-5 text-emerald-600" />;
       default:
         return <Bell className="w-5 h-5 text-green-600" />;
     }
@@ -119,6 +122,9 @@ const Navbar = () => {
         return `Your application was accepted!`;
       case 'application_rejected':
         return `Your application was not selected`;
+      case 'admin_broadcast':
+      case 'admin_message':
+        return notification.title ? `${notification.title}: ${notification.message}` : notification.message || 'Message from AfroTask Admin';
       default:
         return notification.message || 'New notification';
     }
