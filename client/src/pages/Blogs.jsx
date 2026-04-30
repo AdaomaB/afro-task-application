@@ -199,7 +199,7 @@ export default function Blogs() {
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setTimeout(() => setInputFocused(false), 200)}
-              className='w-full bg-white pl-12 pr-12 text-gray-900 rounded-2xl text-xl py-4 border-2 border-gray-300 focus:border-green-500 focus:outline-none shadow-lg'
+              className='w-full bg-white pl-12 pr-12 text-gray-900 rounded-2xl text-sm md:py-4 p-2 border-2 border-gray-300 focus:border-green-500 focus:outline-none shadow-lg'
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
