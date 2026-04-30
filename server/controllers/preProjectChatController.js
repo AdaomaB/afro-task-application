@@ -66,7 +66,8 @@ export const getChatMessages = async (req, res) => {
       return res.status(404).json({ message: 'Chat not found' });
     }
     const chatData = chatDoc.data();
-    if (chatData.clientId !== userId && chatData.freelancerId !== userId) {
+    const isParticipant = chatData.clientId === userId || chatData.freelancerId === userId || req.user.role === 'admin';
+    if (!isParticipant) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     let query = db.collection('preProjectChats').doc(chatId).collection('messages')
@@ -123,7 +124,8 @@ export const sendMessage = async (req, res) => {
     }
 
     const chatData = chatDoc.data();
-    if (chatData.clientId !== userId && chatData.freelancerId !== userId) {
+    const isParticipant = chatData.clientId === userId || chatData.freelancerId === userId || req.user.role === 'admin';
+    if (!isParticipant) {
       console.log('Unauthorized send attempt');
       return res.status(403).json({ message: 'Unauthorized' });
     }
@@ -223,8 +225,7 @@ export const markAsRead = async (req, res) => {
     if (chatData.clientId !== userId && chatData.freelancerId !== userId) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
-    const batch = db.batch();
-    for (const messageId of messageIds) {
+    const batch = db.batch();    for (const messageId of messageIds) {
       const messageRef = db.collection('preProjectChats')
         .doc(chatId)
         .collection('messages')
@@ -254,6 +255,18 @@ export const getMyPreProjectChats = async (req, res) => {
         .where('clientId', '==', userId)
         .where('active', '==', true)
         .get();
+    } else if (req.user.role === 'admin') {
+      // Admin can be stored as either clientId or freelancerId — fetch both and merge
+      const [asClient, asFreelancer] = await Promise.all([
+        db.collection('preProjectChats').where('clientId', '==', userId).where('active', '==', true).get(),
+        db.collection('preProjectChats').where('freelancerId', '==', userId).where('active', '==', true).get(),
+      ]);
+      const seen = new Set();
+      const merged = [];
+      for (const doc of [...asClient.docs, ...asFreelancer.docs]) {
+        if (!seen.has(doc.id)) { seen.add(doc.id); merged.push(doc); }
+      }
+      chatsSnapshot = { docs: merged };
     } else {
       chatsSnapshot = await db.collection('preProjectChats')
         .where('freelancerId', '==', userId)
@@ -329,8 +342,9 @@ export const createDirectChat = async (req, res) => {
     }
 
     const currentRole = currentUserDoc.data().role;
-    const clientId = currentRole === 'client' ? userId : otherUserId;
-    const freelancerId = currentRole === 'freelancer' ? userId : otherUserId;
+    // Admin is treated as the "client" slot; if both are non-client, admin takes client slot
+    const clientId = (currentRole === 'client' || currentRole === 'admin') ? userId : otherUserId;
+    const freelancerId = (currentRole === 'client' || currentRole === 'admin') ? otherUserId : userId;
 
     // Check if a direct chat already exists between these two users
     const existing = await db.collection('preProjectChats')

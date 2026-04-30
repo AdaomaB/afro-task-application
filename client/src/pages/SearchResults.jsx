@@ -6,13 +6,15 @@ import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
+import AdminSidebar from '../components/AdminSidebar';
 import EnhancedPostCard from '../components/EnhancedPostCard';
 import JobCard from '../components/JobCard';
 
 export default function SearchResults() {
-  const { user } = useContext(AuthContext);
+  const { user: currentUser } = useContext(AuthContext);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const adminStored = (() => { try { return JSON.parse(localStorage.getItem('adminUser')); } catch { return null; } })();
   const query = searchParams.get('q') || '';
   
   const [results, setResults] = useState([]);
@@ -67,10 +69,20 @@ export default function SearchResults() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      {(currentUser?.role === 'client' || currentUser?.role === 'freelancer')
+        ? <Sidebar />
+        : <AdminSidebar
+            user={adminStored}
+            tab="profile"
+            setTab={(id) => navigate(`/admin/dashboard?tab=${id}`)}
+            setSearch={() => {}}
+            logout={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); navigate('/admin/login'); }}
+            onBroadcast={() => {}}
+          />
+      }
       
       <div className="flex-1 lg:ml-64">
-        <Navbar />
+        {(currentUser?.role === 'client' || currentUser?.role === 'freelancer') && <Navbar />}
         
         <div className="p-8">
           <div className="max-w-5xl mx-auto">

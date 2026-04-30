@@ -1,4 +1,5 @@
 import { db } from '../config/firebase.js';
+import { FieldValue } from 'firebase-admin/firestore';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 import { createNotification } from './notificationController.js';
 import { calculateRankingScore } from './rankingController.js';
@@ -43,10 +44,8 @@ export const createPost = async (req, res) => {
       likes: [],
       commentsCount: 0,
       views: 0,
-      createdAt: new Date().toISOString()
+      createdAt: FieldValue.serverTimestamp()
     };
-
-    const postRef = await db.collection('posts').add(postData);
 
     console.log('Post created successfully with ID:', postRef.id);
 
@@ -83,20 +82,50 @@ export const createPost = async (req, res) => {
   }
 };
 
+export const getPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const postDoc = await db.collection('posts').doc(postId).get();
+    if (!postDoc.exists) return res.status(404).json({ message: 'Post not found' });
+
+    const postData = { id: postDoc.id, ...postDoc.data() };
+    const userDoc = await db.collection('users').doc(postData.authorId).get();
+    postData.author = userDoc.exists ? {
+      fullName: userDoc.data().fullName,
+      profileImage: userDoc.data().profileImage,
+      role: userDoc.data().role
+    } : null;
+
+    res.json({ success: true, post: postData });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch post' });
+  }
+};
+
 export const getFeed = async (req, res) => {
   try {
-    const { page = 1, limit = 50, search, category } = req.query; // Added search and category params
+    const { page = 1, limit = 50, search, category } = req.query;
     const offset = (page - 1) * limit;
 
-    let query = db.collection('posts').orderBy('createdAt', 'desc');
+    // Fetch without orderBy — mixed createdAt types (Timestamp vs ISO string) break Firestore ordering.
+    // We normalise and sort in JS instead.
+    const postsSnapshot = await db.collection('posts').get();
 
-    // Fetch all posts first, then filter (Firestore limitation - can't do text search directly)
-    const postsSnapshot = await query.get();
+    // Helper: convert any createdAt value to a JS timestamp (ms) for reliable sorting
+    const toMs = (createdAt) => {
+      if (!createdAt) return 0;
+      // Firestore Timestamp object
+      if (typeof createdAt === 'object' && (createdAt._seconds !== undefined || createdAt.seconds !== undefined)) {
+        return (createdAt._seconds ?? createdAt.seconds) * 1000;
+      }
+      // ISO string or any other date string
+      const ms = new Date(createdAt).getTime();
+      return isNaN(ms) ? 0 : ms;
+    };
 
-    let allPosts = postsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    let allPosts = postsSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => toMs(b.createdAt) - toMs(a.createdAt));
 
     // Apply search filter
     if (search) {
@@ -194,7 +223,7 @@ export const likePost = async (req, res) => {
 export const reactToPost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { emoji } = req.body;
+    const { emoji, remove } = req.body;
     const userId = req.user.userId;
 
     const postRef = db.collection('posts').doc(postId);
@@ -205,46 +234,33 @@ export const reactToPost = async (req, res) => {
     }
 
     const postData = postDoc.data();
-    const reactions = postData.reactions || {};
-    const userReactions = postData.userReactions || {};
+    const reactions = { ...(postData.reactions || {}) };
+    const userReactions = { ...(postData.userReactions || {}) };
 
-    // Remove previous reaction if user had one
-    if (userReactions[userId]) {
-      const prevEmoji = userReactions[userId];
-      if (reactions[prevEmoji]) {
-        reactions[prevEmoji] = reactions[prevEmoji].filter(id => id !== userId);
-        if (reactions[prevEmoji].length === 0) {
-          delete reactions[prevEmoji];
-        }
-      }
+    // Always remove the user's previous reaction first
+    const prevEmoji = userReactions[userId];
+    if (prevEmoji && reactions[prevEmoji]) {
+      reactions[prevEmoji] = reactions[prevEmoji].filter(id => id !== userId);
+      if (reactions[prevEmoji].length === 0) delete reactions[prevEmoji];
+    }
+    delete userReactions[userId];
+
+    // Add new reaction unless this is a remove-only call
+    if (!remove && emoji) {
+      if (!reactions[emoji]) reactions[emoji] = [];
+      if (!reactions[emoji].includes(userId)) reactions[emoji].push(userId);
+      userReactions[userId] = emoji;
     }
 
-    // Add new reaction
-    if (!reactions[emoji]) {
-      reactions[emoji] = [];
-    }
-    if (!reactions[emoji].includes(userId)) {
-      reactions[emoji].push(userId);
-    }
-    userReactions[userId] = emoji;
+    const allUserIds = [...new Set(Object.values(reactions).flat())];
 
-    // Update likes array for backward compatibility
-    const allUserIds = Object.values(reactions).flat();
-    const uniqueUserIds = [...new Set(allUserIds)];
+    await postRef.update({ reactions, userReactions, likes: allUserIds });
 
-    await postRef.update({
-      reactions,
-      userReactions,
-      likes: uniqueUserIds
-    });
-
-    // Create notification if reacting to someone else's post
-    const postAuthorId = postData.authorId;
-    if (postAuthorId !== userId) {
-      await createNotification(postAuthorId, userId, 'reaction', { postId, emoji });
+    if (!remove && emoji && postData.authorId !== userId) {
+      await createNotification(postData.authorId, userId, 'reaction', { postId, emoji });
     }
 
-    res.json({ success: true, reactions });
+    res.json({ success: true, reactions, userReactions });
   } catch (error) {
     console.error('React to post error:', error);
     res.status(500).json({ message: 'Failed to react to post' });
@@ -283,7 +299,7 @@ export const addComment = async (req, res) => {
       content: content.trim(),
       parentId: parentId || null, // Add parentId for replies
       likes: [],
-      createdAt: new Date().toISOString(),
+      createdAt: FieldValue.serverTimestamp(),
       user: {
         fullName: userData.fullName || 'Unknown User',
         profileImage: userData.profileImage || null,
@@ -555,7 +571,7 @@ export const repostPost = async (req, res) => {
       views: 0,
       originalPostId: postId,
       originalAuthorId: originalPost.authorId,
-      createdAt: new Date().toISOString()
+      createdAt: FieldValue.serverTimestamp()
     };
 
     const repostRef = await db.collection('posts').add(repostData);

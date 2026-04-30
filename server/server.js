@@ -1,4 +1,3 @@
-import 'win-ca';
 // ... the rest of your imports
 import express from 'express';
 import dotenv from 'dotenv';
@@ -24,6 +23,7 @@ import rankingRoutes from './routes/rankingRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 dotenv.config();
 
@@ -104,6 +104,7 @@ app.use('/api/ranking', rankingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
