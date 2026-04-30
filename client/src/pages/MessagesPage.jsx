@@ -1,18 +1,28 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Paperclip, Smile, Search, MoreVertical } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { useDarkMode } from '../context/DarkModeContext';
 import Navbar from '../components/navbar/Navbar';
 import Sidebar from '../components/Sidebar';
+import AdminSidebar from '../components/AdminSidebar';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import EmojiPicker from 'emoji-picker-react';
 
 const MessagesPage = () => {
   const { user } = useContext(AuthContext);
+  const { user: currentUser } = useContext(AuthContext);
   const { dark } = useDarkMode();
+  const navigate = useNavigate();
+  const adminStored = (() => { try { return JSON.parse(localStorage.getItem('adminUser')); } catch { return null; } })();
+
+  // Unified "active user" — works for both regular users and admins
+  const activeUser = user || adminStored;
+  const isAdmin = !!(adminStored) || user?.role === 'admin';
+  const isRegularUser = currentUser?.role === 'client' || currentUser?.role === 'freelancer';
+
   const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -26,6 +36,17 @@ const MessagesPage = () => {
 
   const isFreelancer = user?.role === 'freelancer';
 
+  const getAvatar = (userObj, fallbackName = 'User') => {
+    if (userObj?.role === 'admin') {
+      return '/img/afro-task-logo.png';
+    }
+    return userObj?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(userObj?.fullName || fallbackName)}&background=00564C&color=fff`;
+  };
+
+  const activeUserAvatar = (isAdmin || activeUser?.role === 'admin')
+    ? '/img/afro-task-logo.png'
+    : (activeUser?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeUser?.fullName || 'You')}&background=00564C&color=fff`);
+
   useEffect(() => {
     fetchConversations();
     // Poll for new conversations every 5 seconds
@@ -36,19 +57,23 @@ const MessagesPage = () => {
   // Auto-select chat from URL params
   useEffect(() => {
     const chatId = searchParams.get('chatId');
-    if (chatId && conversations.length > 0) {
-      const chat = conversations.find(c => c.id === chatId);
-      if (chat) {
-        setSelectedChat(chat);
-      } else {
-        // Chat exists but not in list yet — fetch it directly
-        api.get('/pre-project-chats/my-chats').then(res => {
-          const found = (res.data.chats || []).find(c => c.id === chatId);
-          if (found) setSelectedChat(found);
-        }).catch(() => {});
-      }
+    if (!chatId) return;
+
+    // First check already-loaded conversations
+    const existing = conversations.find(c => c.id === chatId);
+    if (existing) {
+      setSelectedChat(existing);
+      return;
     }
-  }, [searchParams, conversations]);
+
+    // Not in list yet (empty list or not fetched) — fetch directly
+    api.get('/pre-project-chats/my-chats').then(res => {
+      const chats = res.data.chats || [];
+      setConversations(chats);
+      const found = chats.find(c => c.id === chatId);
+      if (found) setSelectedChat(found);
+    }).catch(() => {});
+  }, [searchParams, conversations.length]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -162,12 +187,22 @@ const MessagesPage = () => {
 
   return (
     <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <Sidebar />
+      {isRegularUser
+        ? <Sidebar />
+        : <AdminSidebar
+            user={adminStored}
+            tab="chats"
+            setTab={(id) => navigate(`/admin/dashboard?tab=${id}`)}
+            setSearch={() => {}}
+            logout={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); navigate('/admin/login'); }}
+            onBroadcast={() => {}}
+          />
+      }
       
       <div className="flex-1 lg:ml-64">
-        <Navbar />
+        {isRegularUser && <Navbar />}
         
-        <div className="h-[calc(100vh-64px)] flex flex-col md:flex-row">
+        <div className={`${isRegularUser ? 'h-[calc(100vh-64px)]' : 'h-screen'} flex flex-col md:flex-row`}>
           {/* Conversations List */}
           <div className={`${selectedChat ? 'hidden md:block' : 'block'} w-full md:w-80 ${dark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col`}>
             <div className={`p-4 border-b ${dark ? 'border-gray-700' : 'border-gray-200'}`}>
@@ -198,7 +233,7 @@ const MessagesPage = () => {
                     }`}
                   >
                     <img
-                      src={conv.otherUser?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.otherUser?.fullName || 'User')}`}
+                      src={getAvatar(conv.otherUser)}
                       alt={conv.otherUser?.fullName || 'User'}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
@@ -238,7 +273,7 @@ const MessagesPage = () => {
                       </svg>
                     </button>
                     <img
-                      src={selectedChat.otherUser?.profileImage || `https://ui-avatars.com/api/?name=${selectedChat.otherUser?.fullName}`}
+                      src={getAvatar(selectedChat.otherUser)}
                       alt={selectedChat.otherUser?.fullName}
                       className="w-10 h-10 rounded-full object-cover"
                     />
@@ -256,7 +291,7 @@ const MessagesPage = () => {
                 <div className={`flex-1 overflow-y-auto p-6 space-y-4 ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
                   <AnimatePresence>
                     {messages.map((message) => {
-                      const isOwn = message.senderId === user?.id;
+                      const isOwn = message.senderId === activeUser?.id;
                       
                       return (
                         <motion.div
@@ -267,19 +302,16 @@ const MessagesPage = () => {
                         >
                           <div className={`flex gap-2 max-w-md ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                             <img
-                              src={
-                                isOwn 
-                                  ? (user?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'You')}`)
-                                  : (selectedChat.otherUser?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedChat.otherUser?.fullName || 'User')}`)
-                              }
+                              src={isOwn ? activeUserAvatar : getAvatar(selectedChat.otherUser)}
                               alt={isOwn ? 'You' : selectedChat.otherUser?.fullName}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className={`w-8 h-8 rounded-full object-cover flex-shrink-0 ${(isOwn && isAdmin) ? 'bg-gray-200 object-contain p-0.5' : ''}`}
+                              onError={(e) => { e.target.src = '/img/afro-task-logo.png'; }}
                             />
                             <div>
                               {message.text && (
                                 <div className={`px-4 py-2 rounded-2xl ${
                                   isOwn 
-                                    ? isFreelancer ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+                                    ? (isFreelancer || isAdmin) ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
                                     : dark ? 'bg-gray-700 text-gray-100' : 'bg-gray-200 text-gray-900'
                                 }`}>
                                   <p className="text-sm">{String(message.text)}</p>
@@ -372,7 +404,7 @@ const MessagesPage = () => {
                       type="submit"
                       disabled={!newMessage.trim()}
                       className={`p-3 rounded-full transition disabled:opacity-50 ${
-                        isFreelancer 
+                        isFreelancer || isAdmin
                           ? 'bg-green-600 hover:bg-green-700' 
                           : 'bg-yellow-600 hover:bg-yellow-700'
                       } text-white`}

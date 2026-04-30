@@ -7,6 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import { useDarkMode } from "../context/DarkModeContext";
 import Navbar from "../components/navbar/Navbar";
 import Sidebar from "../components/Sidebar";
+import AdminSidebar from "../components/AdminSidebar";
 import ReviewModal from "../components/ReviewModal";
 import EnhancedPostCard from "../components/EnhancedPostCard";
 import {
@@ -58,6 +59,8 @@ const PublicProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { user: currentUser } = useContext(AuthContext);
+  const adminStored = (() => { try { return JSON.parse(localStorage.getItem('adminUser')); } catch { return null; } })();
   const { dark } = useDarkMode();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -370,6 +373,12 @@ useEffect(() => {
       const response = await api.get(`/profile/public/${userId}`);
       const profileData = response.data.profile;
 
+      // Redirect admin profiles to the dedicated admin profile page
+      if (profileData.role === 'admin') {
+        navigate(`/admin/profile/${userId}`, { replace: true });
+        return;
+      }
+
       // Fetch reviews if freelancer
       if (profileData.role === "freelancer") {
         try {
@@ -506,7 +515,8 @@ useEffect(() => {
       });
 
       if (response.data.success) {
-        const messagesPath = `/${user?.role}/messages?chatId=${response.data.chatId}`;
+        const role = adminStored ? 'admin' : user?.role;
+        const messagesPath = `/${role}/messages?chatId=${response.data.chatId}`;
         navigate(messagesPath);
         toast.success(`Opening chat with ${profile?.fullName}`);
       }
@@ -589,9 +599,19 @@ useEffect(() => {
   if (loading) {
     return (
       <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <Sidebar />
+        {(currentUser?.role === 'client' || currentUser?.role === 'freelancer')
+        ? <Sidebar />
+        : <AdminSidebar
+            user={adminStored}
+            tab="profile"
+            setTab={(id) => navigate(`/admin/dashboard?tab=${id}`)}
+            setSearch={() => {}}
+            logout={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); navigate('/admin/login'); }}
+            onBroadcast={() => {}}
+          />
+      }
         <div className="flex-1 lg:ml-64">
-          <Navbar />
+          {(currentUser?.role === 'client' || currentUser?.role === 'freelancer') && <Navbar />}
           <div className="p-4 md:p-8">
             <div className="max-w-6xl mx-auto">
               <div className="animate-pulse">
@@ -611,9 +631,19 @@ useEffect(() => {
   if (!profile) {
     return (
       <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <Sidebar />
+        {(currentUser?.role === 'client' || currentUser?.role === 'freelancer')
+        ? <Sidebar />
+        : <AdminSidebar
+            user={adminStored}
+            tab="profile"
+            setTab={(id) => navigate(`/admin/dashboard?tab=${id}`)}
+            setSearch={() => {}}
+            logout={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); navigate('/admin/login'); }}
+            onBroadcast={() => {}}
+          />
+      }
         <div className="flex-1 lg:ml-64">
-          <Navbar />
+          {(currentUser?.role === 'client' || currentUser?.role === 'freelancer') && <Navbar />}
           <div className="p-4 md:p-8">
             <div className="max-w-6xl mx-auto text-center py-12">
               <p className={`text-lg ${dark ? 'text-gray-400' : 'text-gray-600'}`}>Profile not found</p>
@@ -632,10 +662,20 @@ useEffect(() => {
 
   return (
     <div className={`flex min-h-screen ${dark ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <Sidebar />
+      {(currentUser?.role === 'client' || currentUser?.role === 'freelancer')
+        ? <Sidebar />
+        : <AdminSidebar
+            user={adminStored}
+            tab="profile"
+            setTab={(id) => navigate(`/admin/dashboard?tab=${id}`)}
+            setSearch={() => {}}
+            logout={() => { localStorage.removeItem('token'); localStorage.removeItem('adminUser'); navigate('/admin/login'); }}
+            onBroadcast={() => {}}
+          />
+      }
 
       <div className="w-screen lg:flex-1 lg:ml-64">
-        <Navbar />
+        {(currentUser?.role === 'client' || currentUser?.role === 'freelancer') && <Navbar />}
         <div className="py-2 md:p-8">
           <div className="mx-auto">
             {/* Back Button */}
